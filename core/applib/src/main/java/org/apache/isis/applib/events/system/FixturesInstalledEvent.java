@@ -17,18 +17,16 @@
  *  under the License.
  */
 
-package org.apache.isis.core.runtime.optionhandler;
+package org.apache.isis.applib.events.system;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
+import java.util.EventObject;
 
-import org.apache.isis.core.commons.configbuilder.IsisConfigurationBuilder;
+public class FixturesInstalledEvent extends EventObject {
 
-public interface OptionHandler extends IsisConfigurationBuilder.Primer {
+    private static final long serialVersionUID = 1L;
 
-    void addOption(Options options);
-
-    boolean handle(CommandLine commandLine, BootPrinter bootPrinter, Options options);
-
+    public FixturesInstalledEvent(final Object source) {
+        super(source);
+    }
 
 }
