@@ -87,6 +87,7 @@ public final class ObjectAdapterPropertyColumn extends ColumnAbstract<ObjectAdap
         final EntityModel entityModel = new EntityModel(adapter);
         final OneToOneAssociation property = (OneToOneAssociation) adapter.getSpecification().getAssociation(propertyExpression);
         final PropertyMemento pm = new PropertyMemento(property, entityModel.getIsisSessionFactory());
+
         final ScalarModel scalarModel = entityModel.getPropertyModel(pm);
 
         scalarModel.setRenderingHint(RenderingHint.PROPERTY_COLUMN);

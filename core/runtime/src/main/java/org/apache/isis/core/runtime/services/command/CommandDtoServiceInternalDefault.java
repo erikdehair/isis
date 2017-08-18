@@ -31,6 +31,8 @@ import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.services.background.ActionInvocationMemento;
 import org.apache.isis.applib.services.bookmark.Bookmark;
 import org.apache.isis.applib.services.bookmark.BookmarkService;
+import org.apache.isis.applib.services.command.Command;
+import org.apache.isis.applib.services.command.CommandContext;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager;
 import org.apache.isis.core.metamodel.adapter.oid.RootOid;
@@ -57,7 +59,8 @@ import org.apache.isis.schema.utils.CommandDtoUtils;
 import org.apache.isis.schema.utils.CommonDtoUtils;
 
 @DomainService(
-        nature = NatureOfService.DOMAIN
+        nature = NatureOfService.DOMAIN,
+        menuOrder = "" + Integer.MAX_VALUE
 )
 public class CommandDtoServiceInternalDefault implements CommandDtoServiceInternal {
 
@@ -180,7 +183,8 @@ public class CommandDtoServiceInternalDefault implements CommandDtoServiceIntern
         dto.setMajorVersion("1");
         dto.setMinorVersion("0");
 
-        dto.setTransactionId(UUID.randomUUID().toString());
+        String transactionId = determineTransactionId().toString();
+        dto.setTransactionId(transactionId);
 
         for (ObjectAdapter targetAdapter : targetAdapters) {
             final RootOid rootOid = (RootOid) targetAdapter.getOid();
@@ -191,12 +195,25 @@ public class CommandDtoServiceInternalDefault implements CommandDtoServiceIntern
         return dto;
     }
 
+    protected UUID determineTransactionId() {
+        Command command = commandContext.getCommand();
+        if (command != null && command.getTransactionId() != null) {
+            return command.getTransactionId();
+        } else {
+            return UUID.randomUUID();
+        }
+    }
+
     @Override
     public void addActionArgs(
             final ObjectAction objectAction,
             final ActionDto actionDto,
             final ObjectAdapter[] argAdapters) {
         final String actionId = CommandUtil.memberIdentifierFor(objectAction);
+        final ObjectSpecification onType = objectAction.getOnType();
+        final String objectType = onType.getSpecId().asString();
+        final String localId = objectAction.getIdentifier().toNameIdentityString();
+        actionDto.setLogicalMemberIdentifier(objectType + "#" + localId);
         actionDto.setMemberIdentifier(actionId);
 
         List<ObjectActionParameter> actionParameters = objectAction.getParameters();
@@ -222,6 +239,10 @@ public class CommandDtoServiceInternalDefault implements CommandDtoServiceIntern
             final ObjectAdapter valueAdapter) {
 
         final String actionIdentifier = CommandUtil.memberIdentifierFor(property);
+        final ObjectSpecification onType = property.getOnType();
+        final String objectType = onType.getSpecId().asString();
+        final String localId = property.getIdentifier().toNameIdentityString();
+        propertyDto.setLogicalMemberIdentifier(objectType + "#" + localId);
         propertyDto.setMemberIdentifier(actionIdentifier);
 
         final ObjectSpecification valueSpec = property.getSpecification();
@@ -235,6 +256,9 @@ public class CommandDtoServiceInternalDefault implements CommandDtoServiceIntern
     // //////////////////////////////////////
 
     //region > injected services
+    @javax.inject.Inject
+    CommandContext commandContext;
+
     @javax.inject.Inject
     private BookmarkService bookmarkService;
 

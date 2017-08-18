@@ -20,8 +20,10 @@
 package org.apache.isis.viewer.wicket.ui.components.collectioncontents.ajaxtable;
 
 import java.util.List;
+import java.util.Map;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -33,6 +35,7 @@ import org.apache.isis.applib.annotation.Where;
 import org.apache.isis.applib.filter.Filter;
 import org.apache.isis.applib.filter.Filters;
 import org.apache.isis.applib.layout.component.Grid;
+import org.apache.isis.applib.services.tablecol.TableColumnOrderService;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager.ConcurrencyChecking;
 import org.apache.isis.core.metamodel.adapter.version.ConcurrencyException;
@@ -43,7 +46,6 @@ import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.spec.feature.Contributed;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAssociation;
 import org.apache.isis.viewer.wicket.model.common.OnConcurrencyExceptionHandler;
-import org.apache.isis.viewer.wicket.model.isis.WicketViewerSettings;
 import org.apache.isis.viewer.wicket.model.mementos.ObjectAdapterMemento;
 import org.apache.isis.viewer.wicket.model.models.EntityCollectionModel;
 import org.apache.isis.viewer.wicket.ui.components.collection.bulk.BulkActionsProvider;
@@ -183,9 +185,47 @@ public class CollectionContentsAsAjaxTablePanel
                 associationDoesNotReferenceParent(parentSpecIfAny));
         
         final List<? extends ObjectAssociation> propertyList = typeOfSpec.getAssociations(Contributed.INCLUDED, filter);
+        final Map<String, ObjectAssociation> propertyById = Maps.newLinkedHashMap();
         for (final ObjectAssociation property : propertyList) {
+            propertyById.put(property.getId(), property);
+        }
+        List<String> propertyIds = Lists.newArrayList(propertyById.keySet());
+
+        // optional SPI to reorder
+        final List<TableColumnOrderService> tableColumnOrderServices =
+                getServicesInjector().lookupServices(TableColumnOrderService.class);
+
+        for (final TableColumnOrderService tableColumnOrderService : tableColumnOrderServices) {
+            final List<String> propertyReorderedIds = reordered(tableColumnOrderService, propertyIds);
+            if(propertyReorderedIds != null) {
+                propertyIds = propertyReorderedIds;
+                break;
+            }
+        }
+
+        for (final String propertyId : propertyIds) {
+            final ObjectAssociation property = propertyById.get(propertyId);
             final ColumnAbstract<ObjectAdapter> nopc = createObjectAdapterPropertyColumn(property);
             columns.add(nopc);
+        }
+    }
+
+    private List<String> reordered(
+            final TableColumnOrderService tableColumnOrderService,
+            final List<String> propertyIds) {
+
+        final Class<?> collectionType = getModel().getTypeOfSpecification().getCorrespondingClass();
+
+        final ObjectAdapterMemento parentObjectAdapterMemento = getModel().getParentObjectAdapterMemento();
+        if(parentObjectAdapterMemento != null) {
+            final ObjectAdapter parentObjectAdapter = parentObjectAdapterMemento
+                    .getObjectAdapter(ConcurrencyChecking.NO_CHECK, getPersistenceSession(), getSpecificationLoader());
+            final Object parent = parentObjectAdapter.getObject();
+            final String collectionId = getModel().getCollectionMemento().getId();
+
+            return tableColumnOrderService.orderParented(parent, collectionId, collectionType, propertyIds);
+        } else {
+            return tableColumnOrderService.orderStandalone(collectionType, propertyIds);
         }
     }
 
@@ -233,14 +273,5 @@ public class CollectionContentsAsAjaxTablePanel
     }
 
 
-    //region > dependencies
-
-    @com.google.inject.Inject
-    private WicketViewerSettings settings;
-    protected WicketViewerSettings getSettings() {
-        return settings;
-    }
-
-    //endregion
 
 }

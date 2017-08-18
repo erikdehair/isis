@@ -71,21 +71,21 @@ public class EntityLinkSimplePanel extends FormComponentPanelAbstract<ObjectAdap
     }
 
     private void syncWithInput() {
-        final ObjectAdapter adapter = getPendingElseCurrentAdapter();
+        final ObjectAdapter adapter = getEntityModel().getObject(); // getPendingElseCurrentAdapter();
 
         if (adapter != null) {
-            final EntityModel entityModelForLink = new EntityModel(adapter);
-            entityModelForLink.setContextAdapterIfAny(getEntityModel().getContextAdapterIfAny());
-            entityModelForLink.setRenderingHint(getEntityModel().getRenderingHint());
-            
+            final EntityModel entityModelForLink = getEntityModel();
+
             final ComponentFactory componentFactory = getComponentFactoryRegistry().findComponentFactory(ComponentType.ENTITY_ICON_AND_TITLE, entityModelForLink);
-            final Component component = componentFactory.createComponent(entityModelForLink);
+
+            final Component component = componentFactory.createComponent(ID_ENTITY_ICON_AND_TITLE, entityModelForLink);
             addOrReplace(component);
-            
             permanentlyHide(ID_ENTITY_TITLE_NULL);
+
         } else {
             // represent no object by a simple label displaying '(none)'
             addOrReplace(new Label(ID_ENTITY_TITLE_NULL, "(none)"));
+            permanentlyHide(ID_ENTITY_TITLE_NULL);
             permanentlyHide(ID_ENTITY_ICON_AND_TITLE);
         }
     }

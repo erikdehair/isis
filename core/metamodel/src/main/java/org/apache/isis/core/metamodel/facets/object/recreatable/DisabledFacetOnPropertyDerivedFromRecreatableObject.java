@@ -22,21 +22,31 @@ package org.apache.isis.core.metamodel.facets.object.recreatable;
 import org.apache.isis.applib.annotation.When;
 import org.apache.isis.applib.annotation.Where;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
+import org.apache.isis.core.metamodel.facetapi.Facet;
 import org.apache.isis.core.metamodel.facetapi.FacetHolder;
 import org.apache.isis.core.metamodel.facets.members.disabled.DisabledFacetAbstract;
 import org.apache.isis.core.metamodel.facets.object.viewmodel.ViewModelFacet;
 
 public class DisabledFacetOnPropertyDerivedFromRecreatableObject extends DisabledFacetAbstract {
 
-    public DisabledFacetOnPropertyDerivedFromRecreatableObject(final FacetHolder holder) {
-        super(When.ALWAYS, Where.ANYWHERE, holder);
+    public DisabledFacetOnPropertyDerivedFromRecreatableObject(
+            final FacetHolder holder,
+            final Semantics semantics) {
+        super(
+                DisabledFacetOnPropertyDerivedFromRecreatableObject.class, // so don't clobber any other DisabledFacet's
+                When.ALWAYS, Where.ANYWHERE, holder, semantics);
     }
 
     @Override
     public String disabledReason(final ObjectAdapter target) {
         final ViewModelFacet facet = target.getSpecification().getFacet(ViewModelFacet.class);
         final boolean cloneable = facet.isCloneable(target.getObject());
-        return !cloneable ? "Non-cloneable view models are read-only" : null;
+        if (!cloneable) {
+            return "Non-cloneable view models are read-only";
+        }
+
+        final Facet underlyingFacet = getUnderlyingFacet();
+        return null;
     }
 
 }

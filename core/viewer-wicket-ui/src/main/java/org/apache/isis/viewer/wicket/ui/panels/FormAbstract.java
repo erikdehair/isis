@@ -19,7 +19,6 @@
 
 package org.apache.isis.viewer.wicket.ui.panels;
 
-import org.apache.wicket.markup.html.IHeaderContributor;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.IFormSubmitter;
 import org.apache.wicket.model.IModel;
@@ -27,6 +26,8 @@ import org.apache.wicket.model.IModel;
 import org.apache.isis.core.commons.authentication.AuthenticationSession;
 import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager.ConcurrencyChecking;
 import org.apache.isis.core.metamodel.deployment.DeploymentCategory;
+import org.apache.isis.core.metamodel.services.ServicesInjector;
+import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
 import org.apache.isis.core.runtime.system.context.IsisContext;
 import org.apache.isis.core.runtime.system.persistence.PersistenceSession;
 import org.apache.isis.core.runtime.system.session.IsisSessionFactory;
@@ -36,7 +37,7 @@ import org.apache.isis.viewer.wicket.ui.pages.PageClassRegistry;
 import org.apache.isis.viewer.wicket.ui.pages.PageClassRegistryAccessor;
 
 public abstract class FormAbstract<T> extends Form<T>
-        implements IHeaderContributor, ComponentFactoryRegistryAccessor, PageClassRegistryAccessor {
+        implements ComponentFactoryRegistryAccessor, PageClassRegistryAccessor {
 
     private static final long serialVersionUID = 1L;
 
@@ -110,6 +111,14 @@ public abstract class FormAbstract<T> extends Form<T>
 
     protected DeploymentCategory getDeploymentCategory() {
         return getIsisSessionFactory().getDeploymentCategory();
+    }
+
+    public SpecificationLoader getSpecificationLoader() {
+        return getIsisSessionFactory().getSpecificationLoader();
+    }
+
+    protected ServicesInjector getServicesInjector() {
+        return getIsisSessionFactory().getServicesInjector();
     }
 
     protected IsisSessionFactory getIsisSessionFactory() {

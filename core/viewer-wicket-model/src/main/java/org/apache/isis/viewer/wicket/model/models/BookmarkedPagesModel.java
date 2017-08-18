@@ -32,7 +32,7 @@ import org.apache.isis.core.commons.config.IsisConfiguration;
 import org.apache.isis.core.metamodel.adapter.oid.RootOid;
 
 
-public class BookmarkedPagesModel extends ModelAbstract<List<? extends BookmarkTreeNode>> {
+public class BookmarkedPagesModel extends ModelAbstract<List<BookmarkTreeNode>> {
 
 
     private static final long serialVersionUID = 1L;
@@ -49,7 +49,7 @@ public class BookmarkedPagesModel extends ModelAbstract<List<? extends BookmarkT
         // hack: remove any garbage that might've got stored in 'rootNodes'
         cleanUpGarbage(rootNodes);
         
-        final PageParameters candidatePP = bookmarkableModel.getPageParameters();
+        final PageParameters candidatePP = bookmarkableModel.getPageParametersWithoutUiHints();
         RootOid oid = BookmarkTreeNode.oidFrom(candidatePP);
         if(oid == null) {
             // ignore

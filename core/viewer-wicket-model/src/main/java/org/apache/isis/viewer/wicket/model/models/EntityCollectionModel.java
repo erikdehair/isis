@@ -19,10 +19,18 @@
 
 package org.apache.isis.viewer.wicket.model.models;
 
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+
+import org.apache.wicket.Component;
+
 import org.apache.isis.applib.layout.component.CollectionLayoutData;
 import org.apache.isis.core.commons.factory.InstanceUtil;
 import org.apache.isis.core.commons.lang.ClassUtil;
@@ -44,12 +52,6 @@ import org.apache.isis.viewer.wicket.model.links.LinkAndLabel;
 import org.apache.isis.viewer.wicket.model.links.LinksProvider;
 import org.apache.isis.viewer.wicket.model.mementos.CollectionMemento;
 import org.apache.isis.viewer.wicket.model.mementos.ObjectAdapterMemento;
-import org.apache.wicket.Component;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 
 /**
  * Model representing a collection of entities, either {@link Type#STANDALONE
@@ -289,7 +291,7 @@ public class EntityCollectionModel extends ModelAbstract<List<ObjectAdapter>> im
     /**
      * Additional links to render (if any)
      */
-    private List<LinkAndLabel> entityActions = Lists.newArrayList();
+    private List<LinkAndLabel> linkAndLabels = Lists.newArrayList();
 
     /**
      * Optionally populated only if {@link Type#PARENTED}.
@@ -384,7 +386,7 @@ public class EntityCollectionModel extends ModelAbstract<List<ObjectAdapter>> im
      */
     public CollectionLayoutData getLayoutData() {
         return entityModel != null
-                ? (CollectionLayoutData) entityModel.getLayoutMetadata()
+                ? entityModel.getCollectionLayoutData()
                 : null;
     }
 
@@ -460,13 +462,13 @@ public class EntityCollectionModel extends ModelAbstract<List<ObjectAdapter>> im
         this.toggledMementosList.clear();
     }
 
-    public void addEntityActions(List<LinkAndLabel> entityActions) {
-        this.entityActions.addAll(entityActions);
+    public void addLinkAndLabels(List<LinkAndLabel> linkAndLabels) {
+        this.linkAndLabels.addAll(linkAndLabels);
     }
 
     @Override
     public List<LinkAndLabel> getLinks() {
-        return Collections.unmodifiableList(entityActions);
+        return Collections.unmodifiableList(linkAndLabels);
     }
 
     public EntityCollectionModel asDummy() {

@@ -29,9 +29,11 @@ import org.apache.isis.core.metamodel.facetapi.FeatureType;
 import org.apache.isis.core.metamodel.facetapi.MethodRemover;
 import org.apache.isis.core.metamodel.facets.MethodPrefixConstants;
 import org.apache.isis.core.metamodel.facets.PropertyOrCollectionIdentifyingFacetFactoryAbstract;
+import org.apache.isis.core.metamodel.facets.collparam.semantics.CollectionSemanticsFacetDefault;
 import org.apache.isis.core.metamodel.methodutils.MethodScope;
 import org.apache.isis.core.metamodel.services.ServicesInjector;
 import org.apache.isis.core.metamodel.services.persistsession.PersistenceSessionServiceInternal;
+import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 
 public class CollectionAccessorFacetViaAccessorFactory
         extends PropertyOrCollectionIdentifyingFacetFactoryAbstract {
@@ -51,13 +53,18 @@ public class CollectionAccessorFacetViaAccessorFactory
         final Method accessorMethod = processMethodContext.getMethod();
         processMethodContext.removeMethod(accessorMethod);
 
+        final Class<?> cls = processMethodContext.getCls();
+        final ObjectSpecification typeSpec = getSpecificationLoader().loadSpecification(cls);
+
         final FacetHolder holder = processMethodContext.getFacetHolder();
         FacetUtil.addFacet(
                 new CollectionAccessorFacetViaAccessor(
-                        accessorMethod, holder,
+                        typeSpec, accessorMethod, holder,
                         getDeploymentCategory(), getConfiguration(), getSpecificationLoader(),
                         getAuthenticationSessionProvider(), adapterManager
                 ));
+
+        FacetUtil.addFacet(CollectionSemanticsFacetDefault.forCollection(accessorMethod, holder));
     }
 
 

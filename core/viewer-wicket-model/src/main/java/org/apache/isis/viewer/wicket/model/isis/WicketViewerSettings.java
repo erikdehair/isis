@@ -21,6 +21,7 @@ package org.apache.isis.viewer.wicket.model.isis;
 
 import java.io.Serializable;
 
+import org.apache.isis.applib.annotation.PromptStyle;
 
 public interface WicketViewerSettings extends Serializable {
 
@@ -65,5 +66,60 @@ public interface WicketViewerSettings extends Serializable {
      */
     String getTimestampPattern();
 
+    /**
+     * in Firefox and more recent versions of Chrome 54+, cannot copy out of disabled fields; instead we use the
+     * readonly attribute (https://www.w3.org/TR/2014/REC-html5-20141028/forms.html#the-readonly-attribute)
+     * This behaviour is enabled by default but can be disabled using this flag
+     */
+    boolean isReplaceDisabledTagWithReadonlyTag();
+
+    /**
+     * Whether to disable a form submit button after it has been clicked, to prevent users causing an error if they
+     * do a double click.
+     *
+     * This behaviour is enabled by default, but can be disabled using this flag.
+     */
+    boolean isPreventDoubleClickForFormSubmit();
+
+    /**
+     * Whether to disable a no-arg action button after it has been clicked, to prevent users causing an error if they
+     * do a double click.
+     *
+     * This behaviour is enabled by default, but can be disabled using this flag.
+     */
+    boolean isPreventDoubleClickForNoArgAction();
+
+    /**
+     * Whether to show an indicator for a form submit button that it has been clicked.
+     *
+     * This behaviour is enabled by default, but can be disabled using this flag.
+     */
+    boolean isUseIndicatorForFormSubmit();
+
+    /**
+     * Whether to show an indicator for a no-arg action button that it has been clicked.
+     *
+     * This behaviour is enabled by default, but can be disabled using this flag.
+     */
+    boolean isUseIndicatorForNoArgAction();
+
+    /**
+     * Whether to use a modal dialog for property edits and for actions associated with properties.
+     * This can be overridden on a case-by-case basis using <code>@PropertyLayout#promptStyle</code> and
+     * <code>@ActionLayout#promptStyle</code>.
+     *
+     * This behaviour is disabled by default; the viewer will use an inline prompt in these cases, making for a smoother
+     * user experience. If enabled then this reinstates the pre-1.15.0 behaviour of using a dialog prompt in all cases.
+     */
+    PromptStyle getPromptStyle();
+
+    /**
+     * Whether to redirect to a new page, even if the object being shown (after an action invocation or a property edit)
+     * is the same as the previous page.
+     *
+     * This behaviour is disabled by default; the viewer will update the existing page if it can, making for a
+     * smoother user experience. If enabled then this reinstates the pre-1.15.0 behaviour of redirecting in all cases.
+     */
+    boolean isRedirectEvenIfSameObject();
 
 }

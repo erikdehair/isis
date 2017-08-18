@@ -20,162 +20,190 @@ package org.apache.isis.viewer.wicket.ui.components.widgets.linkandlabel;
 import java.util.concurrent.Callable;
 
 import org.apache.wicket.Application;
+import org.apache.wicket.MarkupContainer;
+import org.apache.wicket.Page;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.attributes.AjaxRequestAttributes;
-import org.apache.wicket.ajax.markup.html.AjaxLink;
-import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.link.AbstractLink;
-import org.apache.wicket.request.IRequestHandler;
+import org.apache.wicket.request.cycle.RequestCycle;
 
+import org.apache.isis.applib.annotation.PromptStyle;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
+import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
+import org.apache.isis.core.runtime.system.context.IsisContext;
 import org.apache.isis.core.runtime.system.persistence.PersistenceSession;
+import org.apache.isis.core.runtime.system.session.IsisSessionFactory;
+import org.apache.isis.viewer.wicket.model.isis.WicketViewerSettings;
+import org.apache.isis.viewer.wicket.model.isis.WicketViewerSettingsAccessor;
 import org.apache.isis.viewer.wicket.model.links.LinkAndLabel;
 import org.apache.isis.viewer.wicket.model.models.ActionModel;
 import org.apache.isis.viewer.wicket.model.models.ActionPrompt;
 import org.apache.isis.viewer.wicket.model.models.ActionPromptProvider;
+import org.apache.isis.viewer.wicket.model.models.EntityModel;
+import org.apache.isis.viewer.wicket.model.models.FormExecutor;
+import org.apache.isis.viewer.wicket.model.models.InlinePromptContext;
+import org.apache.isis.viewer.wicket.model.models.ScalarModel;
 import org.apache.isis.viewer.wicket.ui.ComponentType;
 import org.apache.isis.viewer.wicket.ui.app.registry.ComponentFactoryRegistry;
 import org.apache.isis.viewer.wicket.ui.app.registry.ComponentFactoryRegistryAccessor;
 import org.apache.isis.viewer.wicket.ui.components.actionprompt.ActionPromptHeaderPanel;
-import org.apache.isis.viewer.wicket.ui.components.actions.ActionPanel;
+import org.apache.isis.viewer.wicket.ui.components.actions.ActionFormExecutorStrategy;
+import org.apache.isis.viewer.wicket.ui.components.actions.ActionParametersPanel;
+import org.apache.isis.viewer.wicket.ui.components.scalars.ScalarPanelAbstract2;
 import org.apache.isis.viewer.wicket.ui.pages.PageClassRegistry;
 import org.apache.isis.viewer.wicket.ui.pages.PageClassRegistryAccessor;
+import org.apache.isis.viewer.wicket.ui.pages.entity.EntityPage;
+import org.apache.isis.viewer.wicket.ui.panels.FormExecutorDefault;
 import org.apache.isis.viewer.wicket.ui.util.CssClassAppender;
-
-import de.agilecoders.wicket.core.markup.html.bootstrap.button.Buttons;
 
 public abstract class ActionLinkFactoryAbstract implements ActionLinkFactory {
 
     private static final long serialVersionUID = 1L;
 
-    protected AbstractLink newLink(
+    protected final EntityModel targetEntityModel;
+    private final ScalarModel scalarModelForAssociationIfAny;
+
+    protected ActionLinkFactoryAbstract(
+            final EntityModel targetEntityModel,
+            final ScalarModel scalarModelForAssociationIfAny) {
+        this.targetEntityModel = targetEntityModel;
+        this.scalarModelForAssociationIfAny = scalarModelForAssociationIfAny;
+    }
+
+    protected ActionLink newLink(
             final String linkId,
-            final ObjectAdapter objectAdapter,
             final ObjectAction action) {
 
-        final ActionModel actionModel = ActionModel.create(objectAdapter, action);
+        final ActionModel actionModel = ActionModel.create(this.targetEntityModel, action);
 
-        // this returns non-null if the action is no-arg and returns a URL or a Blob or a Clob.  Otherwise can use default handling
-        // TODO: the method looks at the actual compile-time return type; cannot see a way to check at runtime what is returned.
-        // TODO: see https://issues.apache.org/jira/browse/ISIS-1264 for further detail.
-        final AjaxDeferredBehaviour ajaxDeferredBehaviour = determineDeferredBehaviour(action, actionModel);
+        final ActionLink link =
+                new ActionLink(linkId, actionModel, action) {
+                    private static final long serialVersionUID = 1L;
 
-        final AbstractLink link = new AjaxLink<Object>(linkId) {
-            private static final long serialVersionUID = 1L;
+                    protected void doOnClick(AjaxRequestTarget target) {
 
-            @Override
-            public void onClick(AjaxRequestTarget target) {
+                        ActionLinkFactoryAbstract.this.onClick(this, target);
+                    }
 
-                if (ajaxDeferredBehaviour != null) {
-                    ajaxDeferredBehaviour.initiate(target);
-                }
-                else {
-                    final ActionPromptProvider promptProvider = ActionPromptProvider.Util.getFrom(getPage());
-                    final ActionPrompt actionPrompt = promptProvider.getActionPrompt();
-                    final ActionPromptHeaderPanel titlePanel =
-                            PersistenceSession.ConcurrencyChecking.executeWithConcurrencyCheckingDisabled(
-                            new Callable<ActionPromptHeaderPanel>() {
-                                @Override
-                                public ActionPromptHeaderPanel call() throws Exception {
-                                    final String titleId = actionPrompt.getTitleId();
-                                    return new ActionPromptHeaderPanel(titleId, actionModel);
-                                }
-                            });
-                    final ActionPanel actionPanel =
-                            (ActionPanel) getComponentFactoryRegistry().createComponent(
-                                    ComponentType.ACTION_PROMPT, actionPrompt.getContentId(), actionModel);
-
-                    actionPanel.setShowHeader(false);
-
-                    actionPrompt.setTitle(titlePanel, target);
-                    actionPrompt.setPanel(actionPanel, target);
-                    actionPanel.setActionPrompt(actionPrompt);
-                    actionPrompt.showPrompt(target);
-                }
-            }
-
-            @Override
-            protected void updateAjaxAttributes(AjaxRequestAttributes attributes) {
-                super.updateAjaxAttributes(attributes);
-
-                // allow the event to bubble so the menu is hidden after click on an item
-                attributes.setEventPropagation(AjaxRequestAttributes.EventPropagation.BUBBLE);
-            }
-
-            @Override
-            protected void onComponentTag(ComponentTag tag) {
-                super.onComponentTag(tag);
-
-                Buttons.fixDisabledState(this, tag);
-            }
-        };
-
-        if (ajaxDeferredBehaviour != null) {
-            link.add(ajaxDeferredBehaviour);
-        }
+                };
 
         link.add(new CssClassAppender("noVeil"));
-
         return link;
     }
 
-    private static AjaxDeferredBehaviour determineDeferredBehaviour(final ObjectAction action,
-            final ActionModel actionModel) {
-        // TODO: should unify with ActionResultResponseType (as used in ActionPanel)
-        if (isNoArgReturnTypeRedirect(action)) {
-            /**
-             * adapted from:
-             * 
-             * @see https://cwiki.apache.org/confluence/display/WICKET/AJAX+update+and+file+download+in+one+blow
-             */
-            return new AjaxDeferredBehaviour(AjaxDeferredBehaviour.OpenUrlStrategy.NEW_WINDOW) {
 
-                private static final long serialVersionUID = 1L;
+    private void onClick(
+            final ActionLink actionLink,
+            final AjaxRequestTarget target) {
 
-                @Override
-                protected IRequestHandler getRequestHandler() {
-                    ObjectAdapter resultAdapter = actionModel.executeHandlingApplicationExceptions();
-                    final Object value = resultAdapter.getObject();
-                    return ActionModel.redirectHandler(value);
+        final ActionModel actionModel = actionLink.getActionModel();
+
+        InlinePromptContext inlinePromptContext = determineInlinePromptContext();
+        PromptStyle promptStyle = actionModel.getPromptStyle();
+
+        if(inlinePromptContext == null || promptStyle.isDialog()) {
+            final ActionPromptProvider promptProvider = ActionPromptProvider.Util.getFrom(actionLink.getPage());
+            final ActionPrompt prompt = promptProvider.getActionPrompt();
+
+            // REVIEW: I wonder if this is still needed after the ISIS-1613 rework?
+            final ActionPromptHeaderPanel titlePanel =
+                    PersistenceSession.ConcurrencyChecking.executeWithConcurrencyCheckingDisabled(
+                            new Callable<ActionPromptHeaderPanel>() {
+                                @Override
+                                public ActionPromptHeaderPanel call() throws Exception {
+                                    final String titleId = prompt.getTitleId();
+                                    return new ActionPromptHeaderPanel(titleId, actionModel);
+                                }
+                            });
+
+
+            //
+            // previously this if/else was in the ActionParametersPanel
+            //
+            // now though we only build that panel if we know that there *are* parameters.
+            //
+            if(actionModel.hasParameters()) {
+
+                final ActionParametersPanel actionParametersPanel =
+                        (ActionParametersPanel) getComponentFactoryRegistry().createComponent(
+                                ComponentType.ACTION_PROMPT, prompt.getContentId(), actionModel);
+
+                actionParametersPanel.setShowHeader(false);
+
+                prompt.setTitle(titlePanel, target);
+                prompt.setPanel(actionParametersPanel, target);
+                actionParametersPanel.setActionPrompt(prompt);
+                prompt.showPrompt(target);
+
+            } else {
+
+
+                final Page page = actionLink.getPage();
+
+                // returns true - if redirecting to new page, or repainting all components.
+                // returns false - if invalid args; if concurrency exception;
+
+                final FormExecutor formExecutor =
+                        new FormExecutorDefault<>(new ActionFormExecutorStrategy(actionModel));
+                boolean succeeded = formExecutor.executeAndProcessResults(page, null, null);
+
+                if(succeeded) {
+
+                    // nothing to do
+
+                    //
+                    // the formExecutor will have either redirected, or scheduled a response,
+                    // or repainted components as required
+                    //
+
+                } else {
+
+                    // render the target entity again
+                    //
+                    // (One way this can occur is if an event subscriber has a defect and throws an exception; in which case
+                    // the EventBus' exception handler will automatically veto.  This results in a growl message rather than
+                    // an error page, but is probably 'good enough').
+                    final ObjectAdapter targetAdapter = actionModel.getTargetAdapter();
+
+                    final EntityPage entityPage =
+
+                            // disabling concurrency checking after the layout XML (grid) feature
+                            // was throwing an exception when rebuild grid after invoking action
+                            // not certain why that would be the case, but think it should be
+                            // safe to simply disable while recreating the page to re-render back to user.
+                            AdapterManager.ConcurrencyChecking.executeWithConcurrencyCheckingDisabled(
+                                    new Callable<EntityPage>() {
+                                        @Override public EntityPage call() throws Exception {
+                                            return new EntityPage(targetAdapter, null);
+                                        }
+                                    }
+                            );
+
+                    getIsisSessionFactory().getCurrentSession().getPersistenceSession().getTransactionManager().flushTransaction();
+
+                    // "redirect-after-post"
+                    final RequestCycle requestCycle = RequestCycle.get();
+                    requestCycle.setResponsePage(entityPage);
+
                 }
-            };
+            }
+
+
+        } else {
+
+            MarkupContainer scalarTypeContainer = inlinePromptContext.getScalarTypeContainer();
+
+            actionModel.setInlinePromptContext(inlinePromptContext);
+            getComponentFactoryRegistry().addOrReplaceComponent(scalarTypeContainer,
+                    ScalarPanelAbstract2.ID_SCALAR_IF_REGULAR_INLINE_PROMPT_FORM, ComponentType.PARAMETERS, actionModel);
+
+            inlinePromptContext.getScalarIfRegular().setVisible(false);
+            inlinePromptContext.getScalarIfRegularInlinePromptForm().setVisible(true);
+
+            target.add(scalarTypeContainer);
         }
-        if (isNoArgReturnTypeDownload(action)) {
-
-            /**
-             * adapted from:
-             * 
-             * @see https://cwiki.apache.org/confluence/display/WICKET/AJAX+update+and+file+download+in+one+blow
-             */
-            return new AjaxDeferredBehaviour(AjaxDeferredBehaviour.OpenUrlStrategy.SAME_WINDOW) {
-
-                private static final long serialVersionUID = 1L;
-
-                @Override
-                protected IRequestHandler getRequestHandler() {
-                    final ObjectAdapter resultAdapter = actionModel.executeHandlingApplicationExceptions();
-                    final Object value = resultAdapter.getObject();
-                    return ActionModel.downloadHandler(value);
-                }
-            };
-        }
-        return null;
     }
 
-    // TODO: should unify with ActionResultResponseType (as used in ActionPanel)
-    private static boolean isNoArgReturnTypeRedirect(final ObjectAction action) {
-        return action.getParameterCount() == 0 &&
-                action.getReturnType() != null &&
-                action.getReturnType().getCorrespondingClass() == java.net.URL.class;
-    }
-
-    // TODO: should unify with ActionResultResponseType (as used in ActionPanel)
-    private static boolean isNoArgReturnTypeDownload(final ObjectAction action) {
-        return action.getParameterCount() == 0 && action.getReturnType() != null &&
-                (action.getReturnType().getCorrespondingClass() == org.apache.isis.applib.value.Blob.class ||
-                action.getReturnType().getCorrespondingClass() == org.apache.isis.applib.value.Clob.class);
-    }
 
     protected LinkAndLabel newLinkAndLabel(
             final ObjectAdapter objectAdapter,
@@ -183,14 +211,19 @@ public abstract class ActionLinkFactoryAbstract implements ActionLinkFactory {
             final AbstractLink link,
             final String disabledReasonIfAny) {
 
-        final boolean blobOrClob = ObjectAction.Utils.returnsBlobOrClob(objectAction);
+        final boolean whetherReturnsBlobOrClob = ObjectAction.Util.returnsBlobOrClob(objectAction);
 
-        return LinkAndLabel.newLinkAndLabel(objectAdapter, objectAction, link, disabledReasonIfAny, blobOrClob);
+        return LinkAndLabel.newLinkAndLabel(objectAdapter, objectAction, link, disabledReasonIfAny, whetherReturnsBlobOrClob);
     }
 
-    // ////////////////////////////////////////////////////////////
-    // Dependencies
-    // ////////////////////////////////////////////////////////////
+    private InlinePromptContext determineInlinePromptContext() {
+        return scalarModelForAssociationIfAny != null
+                ? scalarModelForAssociationIfAny.getInlinePromptContext()
+                : null;
+    }
+
+
+    //region > dependencies
 
     protected ComponentFactoryRegistry getComponentFactoryRegistry() {
         return ((ComponentFactoryRegistryAccessor) Application.get()).getComponentFactoryRegistry();
@@ -199,5 +232,15 @@ public abstract class ActionLinkFactoryAbstract implements ActionLinkFactory {
     protected PageClassRegistry getPageClassRegistry() {
         return ((PageClassRegistryAccessor) Application.get()).getPageClassRegistry();
     }
+
+    protected WicketViewerSettings getSettings() {
+        return ((WicketViewerSettingsAccessor)Application.get()).getSettings();
+    }
+
+    protected IsisSessionFactory getIsisSessionFactory() {
+        return IsisContext.getSessionFactory();
+    }
+
+    //endregion
 
 }

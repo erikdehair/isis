@@ -20,37 +20,30 @@
 package org.apache.isis.viewer.wicket.ui.panels;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.markup.html.IHeaderContributor;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 
 import org.apache.isis.applib.annotation.SemanticsOf;
-import org.apache.isis.applib.services.i18n.TranslationService;
 import org.apache.isis.core.commons.authentication.AuthenticationSession;
+import org.apache.isis.core.commons.config.IsisConfiguration;
 import org.apache.isis.core.metamodel.deployment.DeploymentCategory;
 import org.apache.isis.core.metamodel.services.ServicesInjector;
 import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
-import org.apache.isis.core.runtime.system.session.IsisSessionFactoryBuilder;
 import org.apache.isis.core.runtime.system.context.IsisContext;
 import org.apache.isis.core.runtime.system.persistence.PersistenceSession;
 import org.apache.isis.core.runtime.system.session.IsisSessionFactory;
-import org.apache.isis.core.runtime.system.IsisSystem;
 import org.apache.isis.viewer.wicket.model.hints.UiHintContainer;
+import org.apache.isis.viewer.wicket.model.isis.WicketViewerSettings;
 import org.apache.isis.viewer.wicket.ui.ComponentType;
 import org.apache.isis.viewer.wicket.ui.app.registry.ComponentFactoryRegistry;
 import org.apache.isis.viewer.wicket.ui.app.registry.ComponentFactoryRegistryAccessor;
 import org.apache.isis.viewer.wicket.ui.util.Components;
 
-import de.agilecoders.wicket.core.markup.html.bootstrap.components.TooltipConfig;
-import de.agilecoders.wicket.extensions.markup.html.bootstrap.confirmation.ConfirmationBehavior;
-import de.agilecoders.wicket.extensions.markup.html.bootstrap.confirmation.ConfirmationConfig;
-
 /**
  * Convenience adapter for {@link Panel}s built up using {@link ComponentType}s.
  */
 // TODO mgrigorov: extend GenericPanel and make T the type of the model object, not the model
-public abstract class PanelAbstract<T extends IModel<?>> extends Panel
-            implements IHeaderContributor {
+public abstract class PanelAbstract<T extends IModel<?>> extends Panel {
 
     private static final long serialVersionUID = 1L;
 
@@ -118,11 +111,6 @@ public abstract class PanelAbstract<T extends IModel<?>> extends Panel
         return UiHintContainer.Util.hintContainerOf(this);
     }
 
-    // seemes to be unused
-    public <T extends UiHintContainer> T getUiHintContainer(final Class<T> additionalConstraint) {
-        return UiHintContainer.Util.hintContainerOf(this, additionalConstraint);
-    }
-
 
     // ///////////////////////////////////////////////////////////////////
     // Convenience
@@ -165,31 +153,11 @@ public abstract class PanelAbstract<T extends IModel<?>> extends Panel
 
 
     protected void addConfirmationDialogIfAreYouSureSemantics(final Component component, final SemanticsOf semanticsOf) {
-        if (!semanticsOf.isAreYouSure()) {
-            return;
-        }
 
-        final TranslationService translationService =
-                getPersistenceSession().getServicesInjector().lookupService(TranslationService.class);
+        final ServicesInjector servicesInjector = getPersistenceSession().getServicesInjector();
 
-        ConfirmationConfig confirmationConfig = new ConfirmationConfig();
-
-        final String context = IsisSessionFactoryBuilder.class.getName();
-        final String areYouSure = translationService.translate(context, IsisSystem.MSG_ARE_YOU_SURE);
-        final String confirm = translationService.translate(context, IsisSystem.MSG_CONFIRM);
-        final String cancel = translationService.translate(context, IsisSystem.MSG_CANCEL);
-
-        confirmationConfig
-                .withTitle(areYouSure)
-                .withBtnOkLabel(confirm)
-                .withBtnCancelLabel(cancel)
-                .withPlacement(TooltipConfig.Placement.right)
-                .withBtnOkClass("btn btn-danger")
-                .withBtnCancelClass("btn btn-default");
-
-        component.add(new ConfirmationBehavior(confirmationConfig));
+        PanelUtil.addConfirmationDialogIfAreYouSureSemantics(component, semanticsOf, servicesInjector);
     }
-
 
     public DeploymentCategory getDeploymentCategory() {
         return getIsisSessionFactory().getDeploymentCategory();
@@ -202,6 +170,9 @@ public abstract class PanelAbstract<T extends IModel<?>> extends Panel
 
     public PersistenceSession getPersistenceSession() {
         return getIsisSessionFactory().getCurrentSession().getPersistenceSession();
+    }
+    protected IsisConfiguration getConfiguration() {
+        return getIsisSessionFactory().getConfiguration();
     }
 
     public SpecificationLoader getSpecificationLoader() {
@@ -216,6 +187,12 @@ public abstract class PanelAbstract<T extends IModel<?>> extends Panel
         return IsisContext.getSessionFactory();
     }
 
+
+    @com.google.inject.Inject
+    WicketViewerSettings settings;
+    protected WicketViewerSettings getSettings() {
+        return settings;
+    }
 
 
 }

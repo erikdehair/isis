@@ -17,6 +17,8 @@
 
 package org.apache.isis.core.metamodel.spec.feature;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import com.google.common.base.Predicate;
@@ -27,6 +29,8 @@ import org.apache.isis.applib.Identifier;
 import org.apache.isis.applib.annotation.ActionLayout;
 import org.apache.isis.applib.annotation.ActionSemantics;
 import org.apache.isis.applib.annotation.Bulk;
+import org.apache.isis.applib.annotation.PromptStyle;
+import org.apache.isis.applib.annotation.SemanticsOf;
 import org.apache.isis.applib.annotation.Where;
 import org.apache.isis.applib.filter.Filter;
 import org.apache.isis.applib.value.Blob;
@@ -35,6 +39,7 @@ import org.apache.isis.core.commons.lang.StringFunctions;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.consent.Consent;
 import org.apache.isis.core.metamodel.consent.InteractionInitiatedBy;
+import org.apache.isis.core.metamodel.deployment.DeploymentCategory;
 import org.apache.isis.core.metamodel.facetapi.Facet;
 import org.apache.isis.core.metamodel.facetapi.FacetFilters;
 import org.apache.isis.core.metamodel.facets.actions.action.invocation.ActionInvocationFacet;
@@ -45,8 +50,10 @@ import org.apache.isis.core.metamodel.facets.members.cssclass.CssClassFacet;
 import org.apache.isis.core.metamodel.facets.members.cssclassfa.CssClassFaFacet;
 import org.apache.isis.core.metamodel.facets.members.cssclassfa.CssClassFaPosition;
 import org.apache.isis.core.metamodel.facets.members.order.MemberOrderFacet;
+import org.apache.isis.core.metamodel.facets.object.promptStyle.PromptStyleFacet;
 import org.apache.isis.core.metamodel.facets.object.wizard.WizardFacet;
 import org.apache.isis.core.metamodel.interactions.ValidatingInteractionAdvisor;
+import org.apache.isis.core.metamodel.layout.memberorderfacet.MemberOrderFacetComparator;
 import org.apache.isis.core.metamodel.spec.ActionType;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 
@@ -197,10 +204,12 @@ public interface ObjectAction extends ObjectMember {
 
     //endregion
 
-    //region > Utils
-    public static final class Utils {
+    //region > Util
+    public static final class Util {
 
-        private Utils() {
+        final static MemberOrderFacetComparator memberOrderFacetComparator = new MemberOrderFacetComparator(false);
+
+        private Util() {
         }
 
         public static String nameFor(final ObjectAction objAction) {
@@ -215,16 +224,31 @@ public interface ObjectAction extends ObjectMember {
             return "(no name)";
         }
 
+        public static SemanticsOf semanticsOf(final ObjectAction objectAction) {
+        	return SemanticsOf.from(objectAction.getSemantics());
+        }
+        
+        public static boolean isAreYouSureSemantics(final ObjectAction objectAction) {
+        	return semanticsOf(objectAction).isAreYouSure();
+        }
+        
+        public static boolean isNonIdempotent(ObjectAction objectAction) {
+        	return !semanticsOf(objectAction).isIdempotentInNature();
+    	}
+        
+        public static boolean isNoParameters(ObjectAction objectAction) {
+        	return objectAction.getParameterCount()==0;
+		}
+        
         public static boolean returnsBlobOrClob(final ObjectAction objectAction) {
-            boolean blobOrClob = false;
             final ObjectSpecification returnType = objectAction.getReturnType();
             if (returnType != null) {
                 Class<?> cls = returnType.getCorrespondingClass();
                 if (Blob.class.isAssignableFrom(cls) || Clob.class.isAssignableFrom(cls)) {
-                    blobOrClob = true;
+                    return true;
                 }
             }
-            return blobOrClob;
+            return false;
         }
 
         public static String actionIdentifierFor(final ObjectAction action) {
@@ -260,6 +284,92 @@ public interface ObjectAction extends ObjectMember {
             return cssClassFacet != null ? cssClassFacet.cssClass(objectAdapter) : null;
         }
 
+
+        public static List<ObjectAction> findTopLevel(
+                final ObjectAdapter adapter,
+                final DeploymentCategory deploymentCategory) {
+            final List<ObjectAction> topLevelActions = Lists.newArrayList();
+
+            addTopLevelActions(adapter, ActionType.USER, topLevelActions);
+            if(deploymentCategory.isPrototyping()) {
+                addTopLevelActions(adapter, ActionType.PROTOTYPE, topLevelActions);
+            }
+            return topLevelActions;
+        }
+
+        static void addTopLevelActions(
+                final ObjectAdapter adapter,
+                final ActionType actionType,
+                final List<ObjectAction> topLevelActions) {
+
+            final ObjectSpecification adapterSpec = adapter.getSpecification();
+
+            @SuppressWarnings({ "unchecked", "deprecation" })
+            Filter<ObjectAction> filter = org.apache.isis.applib.filter.Filters.and(
+                    Filters.memberOrderNotAssociationOf(adapterSpec),
+                    Filters.dynamicallyVisible(adapter, InteractionInitiatedBy.USER, Where.ANYWHERE),
+                    Filters.notBulkOnly(),
+                    Filters.excludeWizardActions(adapterSpec));
+
+            final List<ObjectAction> userActions = adapterSpec.getObjectActions(actionType, Contributed.INCLUDED, filter);
+            topLevelActions.addAll(userActions);
+        }
+
+
+        public static List<ObjectAction> findForAssociation(
+                final ObjectAdapter adapter,
+                final ObjectAssociation association, final DeploymentCategory deploymentCategory) {
+            final List<ObjectAction> associatedActions = Lists.newArrayList();
+
+            addActions(adapter, ActionType.USER, association, associatedActions);
+            if(deploymentCategory.isPrototyping()) {
+                addActions(adapter, ActionType.PROTOTYPE, association, associatedActions);
+            }
+
+            Collections.sort(associatedActions, new Comparator<ObjectAction>() {
+
+                @Override
+                public int compare(ObjectAction o1, ObjectAction o2) {
+                    final MemberOrderFacet m1 = o1.getFacet(MemberOrderFacet.class);
+                    final MemberOrderFacet m2 = o2.getFacet(MemberOrderFacet.class);
+                    return memberOrderFacetComparator.compare(m1, m2);
+                }
+            });
+            return associatedActions;
+        }
+
+        static List<ObjectAction> addActions(
+                final ObjectAdapter adapter,
+                final ActionType type,
+                final ObjectAssociation association, final List<ObjectAction> associatedActions) {
+            final ObjectSpecification objectSpecification = adapter.getSpecification();
+
+            @SuppressWarnings({ "unchecked", "deprecation" })
+            Filter<ObjectAction> filter = org.apache.isis.applib.filter.Filters.and(
+                    Filters.memberOrderOf(association),
+                    // visibility needs to be determined at point of rendering, by ActionLink itself
+                    // Filters.dynamicallyVisible(adapter, InteractionInitiatedBy.USER, Where.ANYWHERE),
+                    Filters.notBulkOnly(),
+                    Filters.excludeWizardActions(objectSpecification));
+
+            final List<ObjectAction> userActions = objectSpecification.getObjectActions(type, Contributed.INCLUDED, filter);
+            associatedActions.addAll(userActions);
+            return userActions;
+        }
+
+        public static PromptStyle promptStyleFor(final ObjectAction objectAction) {
+            PromptStyleFacet facet = objectAction.getFacet(PromptStyleFacet.class);
+            if(facet == null) {
+                // don't think this can occur, see PromptStyleFallback
+                return PromptStyle.INLINE;
+            }
+            final PromptStyle promptStyle = facet.value();
+            if(promptStyle == PromptStyle.AS_CONFIGURED) {
+                // don't think this can occur, see PromptStyleConfiguration
+                return PromptStyle.INLINE;
+            }
+            return promptStyle;
+        }
     }
 
     //endregion

@@ -16,8 +16,6 @@
  */
 package org.apache.isis.applib.services.swagger;
 
-import javax.inject.Inject;
-
 import org.apache.isis.applib.IsisApplibModule;
 import org.apache.isis.applib.annotation.Action;
 import org.apache.isis.applib.annotation.ActionLayout;
@@ -32,7 +30,8 @@ import org.apache.isis.applib.value.Clob;
 
 
 @DomainService(
-        nature = NatureOfService.VIEW_MENU_ONLY
+        nature = NatureOfService.VIEW_MENU_ONLY,
+        objectType = "isisApplib.SwaggerServiceMenu"
 )
 @DomainServiceLayout(
         named = "Prototyping",
@@ -55,7 +54,7 @@ public class SwaggerServiceMenu {
             cssClassFa = "fa-download"
     )
     @MemberOrder(sequence="500.600.1")
-    public Clob downloadSwaggerSpec(
+    public Clob downloadSwaggerSchemaDefinition(
             @ParameterLayout(named = "Filename")
             final String fileNamePrefix,
             final SwaggerService.Visibility visibility,
@@ -65,13 +64,13 @@ public class SwaggerServiceMenu {
         return new Clob(fileName, format.mediaType(), spec);
     }
 
-    public String default0DownloadSwaggerSpec() {
+    public String default0DownloadSwaggerSchemaDefinition() {
         return "swagger";
     }
-    public SwaggerService.Visibility default1DownloadSwaggerSpec() {
+    public SwaggerService.Visibility default1DownloadSwaggerSchemaDefinition() {
         return SwaggerService.Visibility.PRIVATE;
     }
-    public SwaggerService.Format default2DownloadSwaggerSpec() {
+    public SwaggerService.Format default2DownloadSwaggerSchemaDefinition() {
         return SwaggerService.Format.YAML;
     }
 

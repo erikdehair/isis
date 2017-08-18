@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -38,8 +39,9 @@ import org.apache.isis.applib.layout.component.FieldSet;
 import org.apache.isis.applib.layout.component.PropertyLayoutData;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager;
-import org.apache.isis.core.metamodel.consent.Consent;
-import org.apache.isis.core.metamodel.consent.InteractionInitiatedBy;
+import org.apache.isis.core.metamodel.facets.all.hide.HiddenFacet;
+import org.apache.isis.core.metamodel.spec.ObjectSpecification;
+import org.apache.isis.core.metamodel.spec.ObjectSpecificationException;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAssociation;
 import org.apache.isis.core.metamodel.spec.feature.OneToOneAssociation;
@@ -49,7 +51,7 @@ import org.apache.isis.viewer.wicket.model.models.EntityModel;
 import org.apache.isis.viewer.wicket.model.models.ScalarModel;
 import org.apache.isis.viewer.wicket.ui.ComponentType;
 import org.apache.isis.viewer.wicket.ui.components.actionmenu.entityactions.AdditionalLinksPanel;
-import org.apache.isis.viewer.wicket.ui.components.actionmenu.entityactions.EntityActionUtil;
+import org.apache.isis.viewer.wicket.ui.components.actionmenu.entityactions.LinkAndLabelUtil;
 import org.apache.isis.viewer.wicket.ui.panels.HasDynamicallyVisibleContent;
 import org.apache.isis.viewer.wicket.ui.panels.PanelAbstract;
 import org.apache.isis.viewer.wicket.ui.util.Components;
@@ -66,85 +68,129 @@ public class PropertyGroup extends PanelAbstract<EntityModel> implements HasDyna
     private static final String ID_PROPERTY = "property";
 
     private final FieldSet fieldSet;
+    private final boolean visible;
 
-    public PropertyGroup(final String id, final EntityModel model) {
+    public PropertyGroup(final String id, final EntityModel model, final FieldSet fieldSet) {
         super(id, model);
-        fieldSet = (FieldSet) model.getLayoutMetadata();
+        this.fieldSet = fieldSet;
 
+        // the UI is only ever built once.
         buildGui();
+
+        final ImmutableList<ObjectAssociation> associations = getObjectAssociations();
+        this.visible = !associations.isEmpty();
     }
 
     public EntityModel getModel() {
         return (EntityModel) getDefaultModel();
     }
 
+
     private void buildGui() {
-
-        final List<PropertyLayoutData> properties = fieldSet.getProperties();
-
-        // changed to NO_CHECK because more complex BS3 layouts trip concurrency exception (haven't investigated as to why).
-        final ObjectAdapter adapter = getModel().load(AdapterManager.ConcurrencyChecking.NO_CHECK);
 
         final WebMarkupContainer div = new WebMarkupContainer(ID_MEMBER_GROUP);
 
         String groupName = fieldSet.getName();
 
-        div.add(new Label(ID_MEMBER_GROUP_NAME, groupName));
+        final ImmutableList<ObjectAssociation> associations = getObjectAssociations();
 
         final List<LinkAndLabel> memberGroupActions = Lists.newArrayList();
-
         final RepeatingView propertyRv = new RepeatingView(ID_PROPERTIES);
-        div.add(propertyRv);
+        div.addOrReplace(propertyRv);
 
-        final ImmutableList<ObjectAssociation> visibleAssociations = FluentIterable.from(properties)
-                .filter(new Predicate<PropertyLayoutData>() {
-                    @Override
-                    public boolean apply(final PropertyLayoutData propertyLayoutData) {
-                        return propertyLayoutData.getMetadataError() == null;
-                    }
-                })
-                .transform(new Function<PropertyLayoutData, ObjectAssociation>() {
-                    @Override
-                    public ObjectAssociation apply(final PropertyLayoutData propertyLayoutData) {
-                        return  adapter.getSpecification().getAssociation(propertyLayoutData.getId());
-                    }
-                })
-                .filter(new Predicate<ObjectAssociation>() {
-                    @Override public boolean apply(@Nullable final ObjectAssociation objectAssociation) {
-                        final Consent visibility =
-                                objectAssociation .isVisible(adapter, InteractionInitiatedBy.USER, Where.OBJECT_FORMS);
-                        return visibility.isAllowed();
-                    }
-                })
-                .toList();
-
-        for (final ObjectAssociation association : visibleAssociations) {
+        for (final ObjectAssociation association : associations) {
             final WebMarkupContainer propertyRvContainer = new WebMarkupContainer(propertyRv.newChildId());
-            propertyRv.add(propertyRvContainer);
+            propertyRv.addOrReplace(propertyRvContainer);
             addPropertyToForm(getModel(), (OneToOneAssociation) association, propertyRvContainer, memberGroupActions);
-            visible = true;
         }
 
-        final List<LinkAndLabel> actionsPanel = LinkAndLabel
-                .positioned(memberGroupActions, ActionLayout.Position.PANEL);
-        final List<LinkAndLabel> actionsPanelDropDown = LinkAndLabel
-                .positioned(memberGroupActions, ActionLayout.Position.PANEL_DROPDOWN);
+        WebMarkupContainer panelHeading = new WebMarkupContainer("panelHeading");
+        div.addOrReplace(panelHeading);
+        if(Strings.isNullOrEmpty(groupName)) {
+            panelHeading.setVisibilityAllowed(false);
+        } else {
+            panelHeading.addOrReplace(new Label(ID_MEMBER_GROUP_NAME, groupName));
+            final List<LinkAndLabel> actionsPanel = LinkAndLabel
+                    .positioned(memberGroupActions, ActionLayout.Position.PANEL);
+            final List<LinkAndLabel> actionsPanelDropDown = LinkAndLabel
+                    .positioned(memberGroupActions, ActionLayout.Position.PANEL_DROPDOWN);
 
-        AdditionalLinksPanel.addAdditionalLinks(
-                div, ID_ASSOCIATED_ACTION_LINKS_PANEL,
-                actionsPanel,
-                AdditionalLinksPanel.Style.INLINE_LIST);
-        AdditionalLinksPanel.addAdditionalLinks(
-                div, ID_ASSOCIATED_ACTION_LINKS_PANEL_DROPDOWN,
-                actionsPanelDropDown,
-                AdditionalLinksPanel.Style.DROPDOWN);
+            AdditionalLinksPanel.addAdditionalLinks(
+                    panelHeading, ID_ASSOCIATED_ACTION_LINKS_PANEL,
+                    actionsPanel,
+                    AdditionalLinksPanel.Style.INLINE_LIST);
+            AdditionalLinksPanel.addAdditionalLinks(
+                    panelHeading, ID_ASSOCIATED_ACTION_LINKS_PANEL_DROPDOWN,
+                    actionsPanelDropDown,
+                    AdditionalLinksPanel.Style.DROPDOWN);
+
+        }
 
         // either add the built content, or hide entire
-        if(!visible) {
+        if(associations.isEmpty()) {
             Components.permanentlyHide(this, div.getId());
         } else {
-            this.add(div);
+            this.addOrReplace(div);
         }
+    }
+
+    private ImmutableList<ObjectAssociation> getObjectAssociations() {
+        final List<PropertyLayoutData> properties = this.fieldSet.getProperties();
+        // changed to NO_CHECK because more complex BS3 layouts trip concurrency exception
+        // (haven't investigated as to why).
+        final ObjectAdapter adapter = getModel().load(AdapterManager.ConcurrencyChecking.NO_CHECK);
+        return getObjectAssociations(properties, adapter);
+    }
+
+    private ImmutableList<ObjectAssociation> getObjectAssociations(
+            final List<PropertyLayoutData> properties,
+            final ObjectAdapter adapter) {
+
+        //
+        // previously we filtered out any invisible properties.
+        // However, the inline prompt/don't redirect logic introduced in 1.15.0 means that we keep the same page,
+        // and it may be that individual properties start out as invisible but then become visible later.
+        //
+        // therefore the responsibility of determining whether an individual property's component should be visible
+        // or not moves to ScalarPanelAbstract2#onConfigure(...)
+        //
+
+        return FluentIterable.from(properties)
+                    .filter(new Predicate<PropertyLayoutData>() {
+                        @Override
+                        public boolean apply(final PropertyLayoutData propertyLayoutData) {
+                            return propertyLayoutData.getMetadataError() == null;
+                        }
+                    })
+                    .transform(new Function<PropertyLayoutData, ObjectAssociation>() {
+                        @Override
+                        public ObjectAssociation apply(final PropertyLayoutData propertyLayoutData) {
+                            ObjectSpecification adapterSpecification = adapter.getSpecification();
+                            try {
+                                // this shouldn't happen, but has been reported (https://issues.apache.org/jira/browse/ISIS-1574),
+                                // suggesting that in some cases the GridService can get it wrong.  This is therefore a hack...
+                                return adapterSpecification.getAssociation(propertyLayoutData.getId());
+                            } catch (ObjectSpecificationException e) {
+                                return null;
+                            }
+                        }
+                    })
+                .filter(new Predicate<ObjectAssociation>() {
+                    @Override public boolean apply(@Nullable final ObjectAssociation objectAssociation) {
+                        if(objectAssociation == null) {
+                            return false;
+                        }
+                        final HiddenFacet facet = objectAssociation.getFacet(HiddenFacet.class);
+                        if(facet != null && !facet.isNoop()) {
+                            // static invisible.
+                            if(facet.where() == Where.EVERYWHERE || facet.where() == Where.OBJECT_FORMS) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                })
+                    .toList();
     }
 
     private void addPropertyToForm(
@@ -152,21 +198,23 @@ public class PropertyGroup extends PanelAbstract<EntityModel> implements HasDyna
             final OneToOneAssociation otoa,
             final WebMarkupContainer container,
             final List<LinkAndLabel> entityActions) {
+
         final PropertyMemento pm = new PropertyMemento(otoa, entityModel.getIsisSessionFactory());
 
         final ScalarModel scalarModel = entityModel.getPropertyModel(pm);
+
+
         getComponentFactoryRegistry()
                 .addOrReplaceComponent(container, ID_PROPERTY, ComponentType.SCALAR_NAME_AND_VALUE, scalarModel);
 
+        final ObjectAdapter adapter = entityModel.load(AdapterManager.ConcurrencyChecking.NO_CHECK);
         final List<ObjectAction> associatedActions =
-                EntityActionUtil.getObjectActionsForAssociation(entityModel, otoa, getDeploymentCategory());
+                ObjectAction.Util.findForAssociation(adapter, otoa, getDeploymentCategory());
 
         entityActions.addAll(
-                EntityActionUtil.asLinkAndLabelsForAdditionalLinksPanel(entityModel, associatedActions));
+                LinkAndLabelUtil.asActionLinksForAdditionalLinksPanel(entityModel, associatedActions, null));
     }
 
-
-    private boolean visible = false;
     @Override
     public boolean isVisible() {
         return visible;

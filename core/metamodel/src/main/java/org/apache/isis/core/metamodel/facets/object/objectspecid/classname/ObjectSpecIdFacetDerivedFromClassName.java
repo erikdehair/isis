@@ -24,7 +24,10 @@ import org.apache.isis.core.metamodel.facets.object.objectspecid.ObjectSpecIdFac
 
 public class ObjectSpecIdFacetDerivedFromClassName extends ObjectSpecIdFacetAbstract {
 
+    public ObjectSpecIdFacetDerivedFromClassName(final Class<?> cls, final FacetHolder holder) {
+        this(cls.getCanonicalName(), holder);
+    }
     public ObjectSpecIdFacetDerivedFromClassName(final String value, final FacetHolder holder) {
-        super(value, holder);
+        super(value, holder, Derivation.DERIVED);
     }
 }

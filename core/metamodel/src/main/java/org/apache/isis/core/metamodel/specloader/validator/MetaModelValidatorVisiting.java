@@ -19,11 +19,13 @@
 
 package org.apache.isis.core.metamodel.specloader.validator;
 
-import java.util.Collection;
+import java.util.List;
+
+import com.google.common.collect.Lists;
 
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 
-public final class MetaModelValidatorVisiting extends MetaModelValidatorAbstract {
+public class MetaModelValidatorVisiting extends MetaModelValidatorAbstract {
 
     public interface Visitor {
         /**
@@ -42,16 +44,57 @@ public final class MetaModelValidatorVisiting extends MetaModelValidatorAbstract
         
     @Override
     public final void validate(ValidationFailures validationFailures) {
-        final Collection<ObjectSpecification> objectSpecs = specificationLoader.allSpecifications();
-        for (final ObjectSpecification objSpec : objectSpecs) {
+
+        validateAll(validationFailures);
+
+        summarize(validationFailures);
+    }
+
+    private void validateAll(final ValidationFailures validationFailures) {
+
+        final List<ObjectSpecification> specsValidated = Lists.newArrayList();
+
+        while(validateSpecs(specsValidated, validationFailures)) {
+            // validate in a loop, because the act of validating might cause additional specs to be uncovered
+        }
+
+    }
+
+    private boolean validateSpecs(
+            final List<ObjectSpecification> specsAlreadyValidated,
+            final ValidationFailures validationFailures) {
+
+        // all currently known specs
+        // (we take a protective copy in case any of the metamodel validators cause us to discover further object specs)
+        final List<ObjectSpecification> specsToValidate =
+                Lists.newArrayList(specificationLoader.allSpecifications());
+
+        // don't validate any specs already processed
+        specsToValidate.removeAll(specsAlreadyValidated);
+        if(specsToValidate.isEmpty()) {
+            // don't call us again
+            return false;
+        }
+
+        // validate anything new
+        for (final ObjectSpecification objSpec : specsToValidate) {
             if(!visitor.visit(objSpec, validationFailures)) {
                 break;
             }
         }
+
+        // add the new specs just validated to the list (for next time)
+        specsAlreadyValidated.addAll(specsToValidate);
+
+        // go round the loop again
+        return true;
+    }
+
+    private void summarize(final ValidationFailures validationFailures) {
         if(visitor instanceof SummarizingVisitor) {
             SummarizingVisitor summarizingVisitor = (SummarizingVisitor) visitor;
             summarizingVisitor.summarize(validationFailures);
         }
     }
-    
+
 }

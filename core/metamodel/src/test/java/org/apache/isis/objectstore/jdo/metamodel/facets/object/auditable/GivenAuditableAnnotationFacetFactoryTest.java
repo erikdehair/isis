@@ -18,10 +18,13 @@
  */
 package org.apache.isis.objectstore.jdo.metamodel.facets.object.auditable;
 
-import junit.framework.Assert;
-
 import java.util.List;
+
 import javax.jdo.annotations.PersistenceCapable;
+
+import org.datanucleus.enhancement.Persistable;
+import org.junit.Assert;
+
 import org.apache.isis.core.metamodel.facetapi.Facet;
 import org.apache.isis.core.metamodel.facetapi.FeatureType;
 import org.apache.isis.core.metamodel.facets.AbstractFacetFactoryTest;
@@ -29,6 +32,7 @@ import org.apache.isis.core.metamodel.facets.FacetFactory;
 import org.apache.isis.core.metamodel.facets.object.audit.AuditableFacet;
 import org.apache.isis.core.metamodel.facets.object.domainobject.auditing.AuditableFacetForAuditedAnnotation;
 import org.apache.isis.core.objectstore.jdo.applib.annotations.Auditable;
+
 
 
 public class GivenAuditableAnnotationFacetFactoryTest extends
@@ -57,12 +61,11 @@ public class GivenAuditableAnnotationFacetFactoryTest extends
         assertFalse(contains(featureTypes, FeatureType.COLLECTION));
         Assert.assertFalse(contains(featureTypes, FeatureType.ACTION));
         assertFalse(contains(featureTypes,
-                FeatureType.ACTION_PARAMETER));
+                FeatureType.ACTION_PARAMETER_SCALAR));
     }
 
     public void testAuditableAnnotationPickedUpOnClass() {
-        @Auditable
-        class Customer {
+        @Auditable abstract class Customer implements Persistable {
         }
 
         facetFactory.process(new FacetFactory.ProcessClassContext(Customer.class, methodRemover, facetHolder));
@@ -74,7 +77,7 @@ public class GivenAuditableAnnotationFacetFactoryTest extends
 
     public void testIfNoAuditableAnnotationThenNoFacet() {
 
-        class Customer {
+        abstract class Customer implements Persistable {
         }
 
         facetFactory.process(new FacetFactory.ProcessClassContext(Customer.class, methodRemover, facetHolder));
@@ -86,7 +89,7 @@ public class GivenAuditableAnnotationFacetFactoryTest extends
 
     public void testNoMethodsRemoved() {
         @PersistenceCapable
-        class Customer {
+        abstract class Customer implements Persistable {
         }
 
         facetFactory.process(new FacetFactory.ProcessClassContext(Customer.class, methodRemover, facetHolder));

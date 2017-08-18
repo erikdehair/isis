@@ -97,6 +97,7 @@ import org.apache.isis.core.metamodel.spec.feature.OneToManyAssociation;
 import org.apache.isis.core.metamodel.spec.feature.OneToOneAssociation;
 import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
 import org.apache.isis.core.metamodel.specloader.facetprocessor.FacetProcessor;
+import org.apache.isis.objectstore.jdo.metamodel.facets.object.persistencecapable.JdoPersistenceCapableFacet;
 
 public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implements ObjectSpecification {
 
@@ -153,7 +154,9 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
 
 
     private final List<ObjectSpecification> interfaces = Lists.newArrayList();
-    private final SubclassList subclasses = new SubclassList();
+    private final SubclassList directSubclasses = new SubclassList();
+    // built lazily
+    private SubclassList transitiveSubclasses;
 
     private final Class<?> correspondingClass;
     private final String fullName;
@@ -324,7 +327,7 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
     }
 
     private void updateSubclasses(final ObjectSpecification subclass) {
-        this.subclasses.addSubclass(subclass);
+        this.directSubclasses.addSubclass(subclass);
     }
 
     protected void sortAndUpdateAssociations(final List<ObjectAssociation> associations) {
@@ -599,12 +602,46 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
 
     @Override
     public List<ObjectSpecification> subclasses() {
-        return subclasses.toList();
+        return subclasses(Depth.DIRECT);
+    }
+
+    @Override
+    public List<ObjectSpecification> subclasses(final Depth depth) {
+        if (depth == Depth.DIRECT) {
+            return directSubclasses.toList();
+        }
+
+        // depth == Depth.TRANSITIVE)
+        if (transitiveSubclasses == null) {
+            transitiveSubclasses = transitiveSubclasses();
+        }
+
+        return transitiveSubclasses.toList();
+    }
+
+    private synchronized SubclassList transitiveSubclasses() {
+        final SubclassList appendTo = new SubclassList();
+        appendSubclasses(this, appendTo);
+        transitiveSubclasses = appendTo;
+        return transitiveSubclasses;
+    }
+
+    private SubclassList appendSubclasses(
+            final ObjectSpecification objectSpecification,
+            final SubclassList appendTo) {
+
+        final List<ObjectSpecification> directSubclasses = objectSpecification.subclasses(Depth.DIRECT);
+        for (ObjectSpecification subclass : directSubclasses) {
+            appendTo.addSubclass(subclass);
+            appendSubclasses(subclass, appendTo);
+        }
+
+        return appendTo;
     }
 
     @Override
     public boolean hasSubclasses() {
-        return subclasses.hasSubclasses();
+        return directSubclasses.hasSubclasses();
     }
 
     @Override
@@ -681,7 +718,8 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
                 return oa;
             }
         }
-        throw new ObjectSpecificationException("No association called '" + id + "' in '" + getSingularName() + "'");
+        throw new ObjectSpecificationException(
+                String.format("No association called '%s' in '%s'", id, getSingularName()));
     }
 
     private ObjectAssociation getAssociationWithId(final String id) {
@@ -994,7 +1032,7 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
                                 return true;
                             }
                         }),
-                        createMixedInAssociationFunctor(this, mixinType)
+                        createMixedInAssociationFunctor(this, mixinType, mixinFacet.value())
                 ));
 
         toAppendTo.addAll(mixedInAssociations);
@@ -1006,7 +1044,8 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
 
     private Function<ObjectActionDefault, ObjectAssociation> createMixedInAssociationFunctor(
             final ObjectSpecification mixedInType,
-            final Class<?> mixinType) {
+            final Class<?> mixinType,
+            final String mixinMethodName) {
         return new Function<ObjectActionDefault, ObjectAssociation>(){
             @Override
             public ObjectAssociation apply(final ObjectActionDefault mixinAction) {
@@ -1020,10 +1059,10 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
                 final ObjectSpecification returnType = mixinAction.getReturnType();
                 if (returnType.isNotCollection()) {
                     return new OneToOneAssociationMixedIn(
-                            mixinAction, mixedInType, mixinType, servicesInjector);
+                            mixinAction, mixedInType, mixinType, mixinMethodName, servicesInjector);
                 } else {
                     return new OneToManyAssociationMixedIn(
-                            mixinAction, mixedInType, mixinType, servicesInjector);
+                            mixinAction, mixedInType, mixinType, mixinMethodName, servicesInjector);
                 }
             }
         };
@@ -1137,11 +1176,12 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
     private void addMixedInActionsIfAny(
             final Class<?> mixinType,
             final List<ObjectAction> mixedInActionsToAppendTo) {
-        final ObjectSpecification specification = getSpecificationLoader().loadSpecification(mixinType);
-        if (specification == this) {
+
+        final ObjectSpecification mixinSpec = getSpecificationLoader().loadSpecification(mixinType);
+        if (mixinSpec == this) {
             return;
         }
-        final MixinFacet mixinFacet = specification.getFacet(MixinFacet.class);
+        final MixinFacet mixinFacet = mixinSpec.getFacet(MixinFacet.class);
         if(mixinFacet == null) {
             // this shouldn't happen; perhaps it would be more correct to throw an exception?
             return;
@@ -1151,7 +1191,7 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
         }
 
         final List<ObjectAction> actions = Lists.newArrayList();
-        final List<ObjectAction> mixinActions = specification.getObjectActions(ActionType.ALL, Contributed.INCLUDED, Filters
+        final List<ObjectAction> mixinActions = mixinSpec.getObjectActions(ActionType.ALL, Contributed.INCLUDED, Filters
                 .<ObjectAction>any());
         for (final ObjectAction mixinTypeAction : mixinActions) {
             if (isAlwaysHidden(mixinTypeAction)) {
@@ -1162,12 +1202,12 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
             }
             final ObjectActionDefault mixinAction = (ObjectActionDefault) mixinTypeAction;
             final NotContributedFacet notContributedFacet = mixinAction.getFacet(NotContributedFacet.class);
-            if(notContributedFacet.toActions()) {
+            if(notContributedFacet != null && notContributedFacet.toActions()) {
                 continue;
             }
 
             ObjectActionMixedIn mixedInAction =
-                    new ObjectActionMixedIn(mixinType, mixinAction, this, servicesInjector);
+                    new ObjectActionMixedIn(mixinType, mixinFacet.value(), mixinAction, this, servicesInjector);
             facetProcessor.processMemberOrder(metadataProperties, mixedInAction);
             actions.add(mixedInAction);
         }
@@ -1247,6 +1287,16 @@ public abstract class ObjectSpecificationAbstract extends FacetHolderImpl implem
     @Override
     public boolean isValueOrIsParented() {
         return isValue() || isParented();
+    }
+
+    @Override
+    public boolean isPersistenceCapable() {
+        return containsFacet(JdoPersistenceCapableFacet.class);
+    }
+
+    @Override
+    public boolean isPersistenceCapableOrViewModel() {
+        return isViewModel() || isPersistenceCapable();
     }
 
 

@@ -26,8 +26,8 @@ import org.apache.isis.viewer.wicket.ui.components.about.AboutPanelFactory;
 import org.apache.isis.viewer.wicket.ui.components.actionlink.ActionLinkPanelFactory;
 import org.apache.isis.viewer.wicket.ui.components.actionmenu.serviceactions.ServiceActionsPanelFactory;
 import org.apache.isis.viewer.wicket.ui.components.actionmenu.serviceactions.TertiaryMenuPanelFactory;
-import org.apache.isis.viewer.wicket.ui.components.actions.ActionInfoPanelFactory;
-import org.apache.isis.viewer.wicket.ui.components.actions.ActionPanelFactory;
+import org.apache.isis.viewer.wicket.ui.components.actioninfo.ActionInfoPanelFactory;
+import org.apache.isis.viewer.wicket.ui.components.actions.ActionParametersPanelFactory;
 import org.apache.isis.viewer.wicket.ui.components.actions.ActionParametersFormPanelFactory;
 import org.apache.isis.viewer.wicket.ui.components.bookmarkedpages.BookmarkedPagesPanelFactory;
 import org.apache.isis.viewer.wicket.ui.components.collectioncontents.ajaxtable.CollectionContentsAsAjaxTablePanelFactory;
@@ -64,7 +64,7 @@ import org.apache.isis.viewer.wicket.ui.components.value.StandaloneValuePanelFac
 import org.apache.isis.viewer.wicket.ui.components.voidreturn.VoidReturnPanelFactory;
 import org.apache.isis.viewer.wicket.ui.components.welcome.WelcomePanelFactory;
 import org.apache.isis.viewer.wicket.ui.components.widgets.entitysimplelink.EntityLinkSimplePanelFactory;
-import org.apache.isis.viewer.wicket.ui.components.widgets.valuechoices.ValueChoicesSelect2PanelFactory;
+import org.apache.isis.viewer.wicket.ui.components.scalars.valuechoices.ValueChoicesSelect2PanelFactory;
 
 import java.util.ServiceLoader;
 
@@ -236,7 +236,7 @@ public class ComponentFactoryRegistrarDefault implements ComponentFactoryRegistr
     }
 
     protected void addComponentFactoriesForAction(final ComponentFactoryList componentFactories) {
-        componentFactories.add(new ActionPanelFactory());
+        componentFactories.add(new ActionParametersPanelFactory());
         componentFactories.add(new StandaloneCollectionPanelFactory());
     }
 

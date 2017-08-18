@@ -18,23 +18,19 @@
  */
 package org.apache.isis.viewer.wicket.ui.components.scalars.isisapplib;
 
-import de.agilecoders.wicket.extensions.markup.html.bootstrap.form.fileinput.BootstrapFileInputField;
-import org.apache.isis.applib.value.Blob;
-import org.apache.isis.applib.value.NamedWithMimeType;
-import org.apache.isis.core.commons.lang.CloseableExtensions;
-import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
-import org.apache.isis.viewer.wicket.model.links.LinkAndLabel;
-import org.apache.isis.viewer.wicket.model.models.ScalarModel;
-import org.apache.isis.viewer.wicket.ui.components.actionmenu.entityactions.EntityActionUtil;
-import org.apache.isis.viewer.wicket.ui.components.scalars.ScalarPanelAbstract;
-import org.apache.isis.viewer.wicket.ui.components.widgets.bootstrap.FormGroup;
-import org.apache.isis.viewer.wicket.ui.util.Components;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
+
+import javax.activation.MimeType;
+import javax.imageio.ImageIO;
+
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
-import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.extensions.markup.html.image.resource.ThumbnailImageResource;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
@@ -50,14 +46,18 @@ import org.apache.wicket.request.resource.IResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.activation.MimeType;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.List;
+import org.apache.isis.applib.value.Blob;
+import org.apache.isis.applib.value.NamedWithMimeType;
+import org.apache.isis.core.commons.lang.CloseableExtensions;
+import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
+import org.apache.isis.viewer.wicket.model.models.ScalarModel;
+import org.apache.isis.viewer.wicket.ui.components.scalars.ScalarPanelAbstract2;
+import org.apache.isis.viewer.wicket.ui.components.widgets.bootstrap.FormGroup;
+import org.apache.isis.viewer.wicket.ui.util.Components;
 
-public abstract class IsisBlobOrClobPanelAbstract<T extends NamedWithMimeType> extends ScalarPanelAbstract {
+import de.agilecoders.wicket.extensions.markup.html.bootstrap.form.fileinput.BootstrapFileInputField;
+
+public abstract class IsisBlobOrClobPanelAbstract<T extends NamedWithMimeType> extends ScalarPanelAbstract2 {
 
 
     private static final long serialVersionUID = 1L;
@@ -85,71 +85,90 @@ public abstract class IsisBlobOrClobPanelAbstract<T extends NamedWithMimeType> e
         }
 
     @Override
-    protected FormGroup addComponentForRegular() {
+    protected FormGroup createComponentForRegular() {
         fileUploadField = createFileUploadField(ID_SCALAR_VALUE);
         fileUploadField.setLabel(Model.of(getModel().getName()));
         
-        final FormGroup labelIfRegular = new FormGroup(ID_SCALAR_IF_REGULAR, fileUploadField);
-        labelIfRegular.add(fileUploadField);
+        final FormGroup scalarIfRegularFormGroup = new FormGroup(ID_SCALAR_IF_REGULAR, fileUploadField);
+        scalarIfRegularFormGroup.add(fileUploadField);
     
         final Label scalarName = new Label(ID_SCALAR_NAME, getModel().getName());
-        labelIfRegular.add(scalarName);
+        scalarIfRegularFormGroup.add(scalarName);
 
-        // find the links...
-        final List<LinkAndLabel> entityActions = EntityActionUtil.getEntityActionLinksForAssociation(this.scalarModel, getDeploymentCategory());
-
-        addPositioningCssTo(labelIfRegular, entityActions);
 
         wicketImage = asWicketImage(ID_IMAGE);
         if(wicketImage != null) {
             wicketImage.setOutputMarkupId(true);
-            labelIfRegular.addOrReplace(wicketImage);
+            scalarIfRegularFormGroup.addOrReplace(wicketImage);
         } else {
-            Components.permanentlyHide(labelIfRegular, ID_IMAGE);
+            Components.permanentlyHide(scalarIfRegularFormGroup, ID_IMAGE);
         }
         
-        updateFileNameLabel(ID_FILE_NAME, labelIfRegular);
-        updateDownloadLink(ID_SCALAR_IF_REGULAR_DOWNLOAD, labelIfRegular);
-        
-        addOrReplace(labelIfRegular);
-        addFeedbackOnlyTo(labelIfRegular, fileUploadField);
-        addEditPropertyTo(labelIfRegular);
+        updateFileNameLabel(ID_FILE_NAME, scalarIfRegularFormGroup);
+        updateDownloadLink(ID_SCALAR_IF_REGULAR_DOWNLOAD, scalarIfRegularFormGroup);
 
-        // ... add entity links to panel (below and to right)
-        addEntityActionLinksBelowAndRight(labelIfRegular, entityActions);
-
-        return labelIfRegular;
+        return scalarIfRegularFormGroup;
     }
 
+    protected Component getScalarValueComponent() {
+        return fileUploadField;
+    }
+
+    // //////////////////////////////////////
+
+    /**
+     * Inline prompts are <i>not</i> supported by this component.
+     */
+    @Override
+    protected InlinePromptConfig getInlinePromptConfig() {
+        return InlinePromptConfig.notSupported();
+    }
+
+
+    // //////////////////////////////////////
+
+    @Override
+    protected Component createComponentForCompact() {
+        final MarkupContainer scalarIfCompact = new WebMarkupContainer(ID_SCALAR_IF_COMPACT);
+        MarkupContainer downloadLink = updateDownloadLink(ID_SCALAR_IF_COMPACT_DOWNLOAD, scalarIfCompact);
+        if(downloadLink != null) {
+            updateFileNameLabel("fileNameIfCompact", downloadLink);
+        }
+
+        return scalarIfCompact;
+    }
+
+
+    // //////////////////////////////////////
+
     private Image asWicketImage(String id) {
-        
+
         final ObjectAdapter adapter = getModel().getObject();
         if(adapter == null) {
             return null;
         }
-        
+
         final Object object = adapter.getObject();
         if(!(object instanceof Blob)) {
             return null;
-        } 
-        
+        }
+
         final Blob blob = (Blob)object;
         final MimeType mimeType = blob.getMimeType();
         if(mimeType == null || !mimeType.getPrimaryType().equals("image")) {
             return null;
-        } 
-        
+        }
+
         final BufferedImage image = asBufferedImage(blob);
         if(image == null) {
             return null;
         }
-        
+
         final BufferedDynamicImageResource imageResource = new BufferedDynamicImageResource();
         imageResource.setImage(image);
         final ThumbnailImageResource thumbnailImageResource = new ThumbnailImageResource(imageResource, 300);
-        
-        final NonCachingImage wicketImage = new NonCachingImage(id, thumbnailImageResource);
-        return wicketImage;
+
+        return new NonCachingImage(id, thumbnailImageResource);
     }
 
     private BufferedImage asBufferedImage(final Blob blob) {
@@ -157,7 +176,7 @@ public abstract class IsisBlobOrClobPanelAbstract<T extends NamedWithMimeType> e
         if(bytes == null) {
             return null;
         }
-        
+
         final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         try {
             return ImageIO.read(bais);
@@ -168,26 +187,18 @@ public abstract class IsisBlobOrClobPanelAbstract<T extends NamedWithMimeType> e
         }
     }
 
-    @Override
-    protected Component addComponentForCompact() {
-        final MarkupContainer scalarIfCompact = new WebMarkupContainer(ID_SCALAR_IF_COMPACT);
-        MarkupContainer downloadLink = updateDownloadLink(ID_SCALAR_IF_COMPACT_DOWNLOAD, scalarIfCompact);
-        if(downloadLink != null) {
-            updateFileNameLabel("fileNameIfCompact", downloadLink);
-        }
-        addOrReplace(scalarIfCompact);
-        return scalarIfCompact;
-    }
 
-    protected void onBeforeRenderWhenViewMode() {
+    // //////////////////////////////////////
+
+    protected void onInitializeWhenViewMode() {
         updateRegularFormComponents(InputFieldVisibility.NOT_VISIBLE);
     }
 
-    protected void onBeforeRenderWhenDisabled(final String disableReason) {
+    protected void onInitializeWhenDisabled(final String disableReason) {
         updateRegularFormComponents(InputFieldVisibility.NOT_VISIBLE);
     }
 
-    protected void onBeforeRenderWhenEnabled() {
+    protected void onInitializeWhenEnabled() {
         updateRegularFormComponents(InputFieldVisibility.VISIBLE);
     }
 
@@ -336,16 +347,17 @@ public abstract class IsisBlobOrClobPanelAbstract<T extends NamedWithMimeType> e
         return getBlobOrClob(getModel());
     }
 
-    @Override
-    protected void addFormComponentBehavior(Behavior behavior) {
-        fileUploadField.add(behavior);
-    }
 
-    
     /**
      * Mandatory hook method.
      */
     protected abstract IResource newResource(final T namedWithMimeType);
+
+
+    @Override
+    protected String getScalarPanelType() {
+        return "isisBlobPanel";
+    }
 
 
 }

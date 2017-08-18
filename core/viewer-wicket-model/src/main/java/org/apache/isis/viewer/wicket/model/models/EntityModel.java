@@ -20,11 +20,8 @@
 package org.apache.isis.viewer.wicket.model.models;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import org.apache.wicket.Component;
@@ -32,8 +29,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 
 import org.apache.isis.applib.annotation.BookmarkPolicy;
-import org.apache.isis.applib.services.bookmark.Bookmark;
-import org.apache.isis.applib.services.hint.HintStore;
+import org.apache.isis.applib.layout.component.CollectionLayoutData;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager.ConcurrencyChecking;
 import org.apache.isis.core.metamodel.adapter.oid.OidMarshaller;
@@ -43,6 +39,8 @@ import org.apache.isis.core.metamodel.consent.InteractionInitiatedBy;
 import org.apache.isis.core.metamodel.facets.object.bookmarkpolicy.BookmarkPolicyFacet;
 import org.apache.isis.core.metamodel.spec.ObjectSpecId;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
+import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
+import org.apache.isis.core.runtime.system.persistence.PersistenceSession;
 import org.apache.isis.viewer.wicket.model.common.PageParametersUtils;
 import org.apache.isis.viewer.wicket.model.hints.UiHintContainer;
 import org.apache.isis.viewer.wicket.model.mementos.ObjectAdapterMemento;
@@ -57,7 +55,7 @@ import org.apache.isis.viewer.wicket.model.util.ComponentHintKey;
  * So that the model is {@link Serializable}, the {@link ObjectAdapter} is
  * stored as a {@link ObjectAdapterMemento}.
  */
-public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiHintContainer {
+public class EntityModel extends BookmarkableModel<ObjectAdapter> implements ObjectAdapterModel, UiHintContainer {
 
     private static final long serialVersionUID = 1L;
 
@@ -86,6 +84,15 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
             // the memento for the transient ObjectAdapter can be accessed.
         }
         return pageParameters;
+    }
+
+    public void resetVersion() {
+        if(getObjectAdapterMemento() == null) {
+            return;
+        }
+        final PersistenceSession persistenceSession = getPersistenceSession();
+        final SpecificationLoader specificationLoader = getSpecificationLoader();
+        getObjectAdapterMemento().resetVersion(persistenceSession, specificationLoader);
     }
 
     public enum RenderingHint {
@@ -131,25 +138,26 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
     private RenderingHint renderingHint = RenderingHint.REGULAR;
     private final PendingModel pendingModel;
 
+
     /**
      * {@link ConcurrencyException}, if any, that might have occurred previously
      */
     private ConcurrencyException concurrencyException;
 
-    private final HintPageParameterSerializer hintPageParameterSerializer;
+
 
     // //////////////////////////////////////////////////////////
     // constructors
     // //////////////////////////////////////////////////////////
 
     public EntityModel() {
-        this((ObjectAdapterMemento)null);
+        this.adapterMemento = null;
+        this.pendingModel = new PendingModel(this);
+        this.propertyScalarModels = Maps.newHashMap();
     }
 
     public EntityModel(final PageParameters pageParameters) {
         this(ObjectAdapterMemento.createPersistent(rootOidFrom(pageParameters)));
-        hintPageParameterSerializer.updateHintStore(pageParameters);
-
     }
 
     public EntityModel(final ObjectAdapter adapter) {
@@ -164,11 +172,19 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
     public EntityModel(
             final ObjectAdapterMemento adapterMemento,
             final Map<PropertyMemento, ScalarModel> propertyScalarModels) {
+        this(propertyScalarModels, adapterMemento);
+    }
+
+    // this constructor was introduced just so that, when debugging, could distinguish between EntityModel instantiated
+    // in its own right, vs instantiated via the cloneWithLayoutMetadata.
+    private EntityModel(
+            final Map<PropertyMemento, ScalarModel> propertyScalarModels,
+            final ObjectAdapterMemento adapterMemento) {
         this.adapterMemento = adapterMemento;
         this.pendingModel = new PendingModel(this);
         this.propertyScalarModels = propertyScalarModels;
-        this.hintPageParameterSerializer = new HintPageParameterSerializer(this);
     }
+
 
     public static String oidStr(final PageParameters pageParameters) {
         return PageParameterNames.OBJECT_OID.getStringFrom(pageParameters);
@@ -187,58 +203,18 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
     @Override
     public PageParameters getPageParameters() {
         PageParameters pageParameters = createPageParameters(getObject());
-        hintPageParameterSerializer.hintStoreToPageParameters(pageParameters);
+        HintPageParameterSerializer.hintStoreToPageParameters(pageParameters, this);
         return pageParameters;
     }
 
-    public PageParameters getPageParametersWithoutUiHints() {
-        return createPageParameters(getObject());
+    @Override
+    public boolean isInlinePrompt() {
+        return false;
     }
 
-    class HintPageParameterSerializer implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-        private static final String PREFIX = "hint-";
-
-        private final EntityModel entityModel;
-
-        public HintPageParameterSerializer(final EntityModel entityModel) {
-            this.entityModel = entityModel;
-        }
-
-        public void hintStoreToPageParameters(
-                final PageParameters pageParameters) {
-            final HintStore hintStore = getHintStore();
-            final Bookmark bookmark= entityModel.getObjectAdapterMemento().asBookmark();
-            Set<String> hintKeys = hintStore.findHintKeys(bookmark);
-            for (String hintKey : hintKeys) {
-                ComponentHintKey.create(hintKey).hintTo(bookmark, pageParameters, PREFIX);
-            }
-        }
-
-        public void updateHintStore(
-                final PageParameters pageParameters) {
-            Set<String> namedKeys = pageParameters.getNamedKeys();
-            if(namedKeys.contains("no-hints")) {
-                getHintStore().removeAll(entityModel.getObjectAdapterMemento().asBookmark());
-                return;
-            }
-            List<ComponentHintKey> newComponentHintKeys = Lists.newArrayList();
-            for (String namedKey : namedKeys) {
-                if(namedKey.startsWith(PREFIX)) {
-                    String value = pageParameters.get(namedKey).toString(null);
-                    String key = namedKey.substring(5);
-                    final ComponentHintKey componentHintKey = ComponentHintKey.create(key);
-                    newComponentHintKeys.add(componentHintKey);
-                    final Bookmark bookmark = entityModel.getObjectAdapterMemento().asBookmark();
-                    componentHintKey.set(bookmark, value);
-                }
-            }
-        }
-
-        protected HintStore getHintStore() {
-            return getIsisSessionFactory().getServicesInjector().lookupService(HintStore.class);
-        }
+    @Override
+    public PageParameters getPageParametersWithoutUiHints() {
+        return createPageParameters(getObject());
     }
 
     // //////////////////////////////////////////////////////////
@@ -249,7 +225,7 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
     public String getHint(final Component component, final String keyName) {
         final ComponentHintKey componentHintKey = ComponentHintKey.create(component, keyName);
         if(componentHintKey != null) {
-            return componentHintKey.get(getObjectAdapterMemento().asBookmark());
+            return componentHintKey.get(getObjectAdapterMemento().asHintingBookmark());
         }
         return null;
     }
@@ -257,7 +233,7 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
     @Override
     public void setHint(Component component, String keyName, String hintValue) {
         ComponentHintKey componentHintKey = ComponentHintKey.create(component, keyName);
-        componentHintKey.set(this.getObjectAdapterMemento().asBookmark(), hintValue);
+        componentHintKey.set(this.getObjectAdapterMemento().asHintingBookmark(), hintValue);
     }
 
     @Override
@@ -345,7 +321,8 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
      */
     @Override
     public ObjectAdapter load() {
-        return load(ConcurrencyChecking.CHECK);
+        final ObjectAdapter objectAdapter = load(ConcurrencyChecking.CHECK);
+        return objectAdapter;
     }
 
 
@@ -353,6 +330,17 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
     public void setObject(final ObjectAdapter adapter) {
         super.setObject(adapter);
         adapterMemento = ObjectAdapterMemento.createOrNull(adapter);
+    }
+
+    public void setObjectMemento(
+            final ObjectAdapterMemento memento,
+            final PersistenceSession persistenceSession,
+            final SpecificationLoader specificationLoader) {
+        super.setObject(
+                memento != null
+                        ? memento.getObjectAdapter(ConcurrencyChecking.CHECK, persistenceSession, specificationLoader)
+                        : null);
+        adapterMemento = memento;
     }
 
 
@@ -366,7 +354,7 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
     public ScalarModel getPropertyModel(final PropertyMemento pm) {
         ScalarModel scalarModel = propertyScalarModels.get(pm);
         if (scalarModel == null) {
-            scalarModel = new ScalarModel(getObjectAdapterMemento(), pm);
+            scalarModel = new ScalarModel(this, pm);
             if (isViewMode()) {
                 scalarModel.toViewMode();
             } else {
@@ -461,7 +449,8 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
             final ScalarModel scalarModel = propertyScalarModels.get(propertyMemento);
             scalarModel.detach();
         }
-        propertyScalarModels.clear();
+        // we no longer clear these, because we want to call resetPropertyModels(...) after an object has been updated.
+        //propertyScalarModels.clear();
     }
 
     // //////////////////////////////////////////////////////////
@@ -573,22 +562,15 @@ public class EntityModel extends BookmarkableModel<ObjectAdapter> implements UiH
     // tab and column metadata (if any)
     // //////////////////////////////////////////////////////////
 
-    private Object layoutMetadata;
+    private CollectionLayoutData collectionLayoutData;
 
-    public Object getLayoutMetadata() {
-        return layoutMetadata;
+    public CollectionLayoutData getCollectionLayoutData() {
+        return collectionLayoutData;
     }
 
-    /**
-     * Returns a new copy that SHARES the property scalar models (for edit form).
-     */
-    public EntityModel cloneWithLayoutMetadata(final Object layoutMetadata) {
-        final EntityModel entityModel = new EntityModel(this.adapterMemento, this.propertyScalarModels);
-        entityModel.layoutMetadata = layoutMetadata;
-        return entityModel;
+    public void setCollectionLayoutData(final CollectionLayoutData collectionLayoutData) {
+        this.collectionLayoutData = collectionLayoutData;
     }
-
-
 
 
 

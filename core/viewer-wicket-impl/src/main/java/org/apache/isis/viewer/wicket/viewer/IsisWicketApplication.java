@@ -19,8 +19,11 @@
 
 package org.apache.isis.viewer.wicket.viewer;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
@@ -28,23 +31,33 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.Resources;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 
 import org.apache.wicket.Application;
+import org.apache.wicket.Component;
 import org.apache.wicket.ConverterLocator;
 import org.apache.wicket.IConverterLocator;
 import org.apache.wicket.Page;
 import org.apache.wicket.RuntimeConfigurationType;
 import org.apache.wicket.SharedResources;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.authentication.IAuthenticationStrategy;
 import org.apache.wicket.authentication.strategy.DefaultAuthenticationStrategy;
 import org.apache.wicket.authroles.authentication.AuthenticatedWebApplication;
 import org.apache.wicket.authroles.authentication.AuthenticatedWebSession;
 import org.apache.wicket.core.request.mapper.MountedMapper;
+import org.apache.wicket.devutils.debugbar.DebugBar;
+import org.apache.wicket.devutils.debugbar.InspectorDebugPanel;
+import org.apache.wicket.devutils.debugbar.PageSizeDebugPanel;
+import org.apache.wicket.devutils.debugbar.SessionSizeDebugPanel;
+import org.apache.wicket.devutils.debugbar.VersionDebugContributor;
+import org.apache.wicket.devutils.diskstore.DebugDiskDataStore;
 import org.apache.wicket.guice.GuiceComponentInjector;
 import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.head.filter.JavaScriptFilteredIntoFooterHeaderResponse;
@@ -55,7 +68,9 @@ import org.apache.wicket.request.cycle.IRequestCycleListener;
 import org.apache.wicket.request.cycle.PageRequestHandlerTracker;
 import org.apache.wicket.request.cycle.RequestCycleListenerCollection;
 import org.apache.wicket.request.resource.CssResourceReference;
-import org.apache.wicket.settings.IRequestCycleSettings.RenderStrategy;
+import org.apache.wicket.settings.DebugSettings;
+import org.apache.wicket.settings.RequestCycleSettings;
+import org.apache.wicket.util.IContextProvider;
 import org.apache.wicket.util.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +95,7 @@ import org.apache.isis.schema.utils.ChangesDtoUtils;
 import org.apache.isis.schema.utils.CommandDtoUtils;
 import org.apache.isis.schema.utils.InteractionDtoUtils;
 import org.apache.isis.viewer.wicket.model.isis.WicketViewerSettings;
+import org.apache.isis.viewer.wicket.model.isis.WicketViewerSettingsAccessor;
 import org.apache.isis.viewer.wicket.model.mementos.ObjectAdapterMemento;
 import org.apache.isis.viewer.wicket.model.models.ImageResourceCache;
 import org.apache.isis.viewer.wicket.model.models.PageType;
@@ -137,7 +153,7 @@ import net.ftlines.wicketsource.WicketSource;
  */
 public class IsisWicketApplication
         extends AuthenticatedWebApplication
-        implements ComponentFactoryRegistryAccessor, PageClassRegistryAccessor {
+        implements ComponentFactoryRegistryAccessor, PageClassRegistryAccessor, WicketViewerSettingsAccessor {
 
     private static final long serialVersionUID = 1L;
     
@@ -153,6 +169,18 @@ public class IsisWicketApplication
     private static final String WICKET_REMEMBER_ME_COOKIE_KEY = "isis.viewer.wicket.rememberMe.cookieKey";
     private static final String WICKET_REMEMBER_ME_COOKIE_KEY_DEFAULT = "isisWicketRememberMe";
     private static final String WICKET_REMEMBER_ME_ENCRYPTION_KEY = "isis.viewer.wicket.rememberMe.encryptionKey";
+
+    /**
+     * A configuration setting which value determines whether debug bar and other stuff influenced by {@link DebugSettings#isDevelopmentUtilitiesEnabled()} is enabled or not.
+     *
+     * <p>
+     *     By default, depends on the mode (prototyping = enabled, server = disabled).  This property acts as an override.
+     * </p>
+     */
+    public static final String ENABLE_DEVELOPMENT_UTILITIES_KEY = "isis.viewer.wicket.developmentUtilities.enable";
+    public static final boolean ENABLE_DEVELOPMENT_UTILITIES_DEFAULT = false;
+
+
 
     private final IsisLoggingConfigurer loggingConfigurer = new IsisLoggingConfigurer();
 
@@ -207,6 +235,10 @@ public class IsisWicketApplication
     @com.google.inject.Inject
     private DeploymentCategory deploymentCategory;
 
+    @com.google.inject.Inject
+    private WicketViewerSettings settings;
+
+
     private boolean determiningConfigurationType;
     private DeploymentTypeWicketAbstract deploymentType;
 
@@ -221,7 +253,7 @@ public class IsisWicketApplication
 
     /**
      * Although there are warnings about not overriding this method, it doesn't seem possible
-     * to call {@link #setResourceSettings(org.apache.wicket.settings.IResourceSettings)} in the
+     * to call {@link #setResourceSettings(org.apache.wicket.settings.ResourceSettings)} in the
      * {@link #init()} method.
      */
     @Override
@@ -231,7 +263,63 @@ public class IsisWicketApplication
         // settings before any other.
         setResourceSettings(new IsisResourceSettings(this));
 
+        // this doesn't seem to accomplish anything
+        // addListenerToStripRemovedComponentsFromAjaxTargetResponse();
+
         super.internalInit();
+    }
+
+    @Override
+    public Application setAjaxRequestTargetProvider(final IContextProvider<AjaxRequestTarget, Page> ajaxRequestTargetProvider) {
+        final Application application = super.setAjaxRequestTargetProvider(new IContextProvider<AjaxRequestTarget, Page>(){
+            @Override
+            public AjaxRequestTarget get(final Page context) {
+                return decorate(ajaxRequestTargetProvider.get(context));
+            }
+
+            AjaxRequestTarget decorate(final AjaxRequestTarget ajaxRequestTarget) {
+                ajaxRequestTarget.registerRespondListener(
+                        new TargetRespondListenerToResetQueryResultCache());
+                return ajaxRequestTarget;
+            }
+        } );
+        return application;
+    }
+
+    // idea here is to avoid XmlPartialPageUpdate spitting out warnings, eg:
+    //
+    // 13:08:36,642  [XmlPartialPageUpdate qtp1988859660-18 WARN ]  Component '[AjaxLink [Component id = copyLink]]' with markupid: 'copyLink94c' not rendered because it was already removed from page
+    //  13:08:36,642  [XmlPartialPageUpdate qtp1988859660-18 WARN ]  Component '[SimpleClipboardModalWindow [Component id = simpleClipboardModalWindow]]' with markupid: 'simpleClipboardModalWindow94e' not rendered because it was already removed from page
+    // 13:08:36,643  [XmlPartialPageUpdate qtp1988859660-18 WARN ]  Component '[AjaxFallbackLink [Component id = link]]' with markupid: 'link951' not rendered because it was already removed from page
+    // 13:08:36,643  [XmlPartialPageUpdate qtp1988859660-18 WARN ]  Component '[AjaxFallbackLink [Component id = link]]' with markupid: 'link952' not rendered because it was already removed from page
+    // 13:08:36,655  [XmlPartialPageUpdate qtp1988859660-18 WARN ]  Component '[AjaxLink [Component id = clearBookmarkLink]]' with markupid: 'clearBookmarkLink953' not rendered because it was already removed from page
+    //
+    // however, doesn't seem to work (even though the provided map is mutable).
+    // must be some other sort of side-effect which causes the enqueued component(s) to be removed from page between
+    // this listener firing and XmlPartialPageUpdate actually attempting to render the change components
+    //
+    private boolean addListenerToStripRemovedComponentsFromAjaxTargetResponse() {
+        return getAjaxRequestTargetListeners().add(new AjaxRequestTarget.AbstractListener(){
+
+            @Override
+            public void onBeforeRespond(Map<String, Component> map, AjaxRequestTarget target)
+            {
+
+                List<String> idsToRemove = Lists.newArrayList();
+                final Set<Map.Entry<String, Component>> entries = map.entrySet();
+                for (Map.Entry<String, Component> entry : entries) {
+                    final Component component = entry.getValue();
+                    final Page page = component.findParent(Page.class);
+                    if(page == null) {
+                        idsToRemove.add(entry.getKey());
+                    }
+                }
+                for (String id : idsToRemove) {
+                    map.remove(id);
+                }
+
+            }
+        });
     }
 
     /**
@@ -251,7 +339,7 @@ public class IsisWicketApplication
 
             configureLogging(isisConfigDir);
     
-            getRequestCycleSettings().setRenderStrategy(RenderStrategy.REDIRECT_TO_RENDER);
+            getRequestCycleSettings().setRenderStrategy(RequestCycleSettings.RenderStrategy.REDIRECT_TO_RENDER);
 
             getResourceSettings().setParentFolderPlaceholder("$up$");
 
@@ -312,6 +400,35 @@ public class IsisWicketApplication
             if(mmie != null) {
                 log(mmie.getValidationErrors());
             }
+
+            if(getDeploymentCategory().isPrototyping()) {
+                DebugDiskDataStore.register(this);
+                LOG.info("DebugDiskDataStore registered; access via ~/wicket/internal/debug/diskDataStore");
+                LOG.info("DebugDiskDataStore: eg, http://localhost:8080/wicket/wicket/internal/debug/diskDataStore");
+            }
+
+            if(!getDebugSettings().isDevelopmentUtilitiesEnabled()) {
+                boolean enableDevUtils = configuration
+                        .getBoolean(ENABLE_DEVELOPMENT_UTILITIES_KEY, ENABLE_DEVELOPMENT_UTILITIES_DEFAULT);
+                if(enableDevUtils) {
+                    getDebugSettings().setDevelopmentUtilitiesEnabled(true);
+
+                    // copied from DebugBarInitializer
+                    // this is hacky, but need to do this because IInitializer#init() called before
+                    // the Application's #init() is called.
+                    // an alternative, better, design might be to move Isis' own initialization into an
+                    // implementation of IInitializer?
+                    DebugBar.registerContributor(VersionDebugContributor.DEBUG_BAR_CONTRIB, this);
+                    DebugBar.registerContributor(InspectorDebugPanel.DEBUG_BAR_CONTRIB, this);
+                    DebugBar.registerContributor(SessionSizeDebugPanel.DEBUG_BAR_CONTRIB, this);
+                    DebugBar.registerContributor(PageSizeDebugPanel.DEBUG_BAR_CONTRIB, this);
+                }
+            }
+
+            LOG.info("storeSettings.inmemoryCacheSize        : " + getStoreSettings().getInmemoryCacheSize());
+            LOG.info("storeSettings.asynchronousQueueCapacity: " + getStoreSettings().getAsynchronousQueueCapacity());
+            LOG.info("storeSettings.maxSizePerSession        : " + getStoreSettings().getMaxSizePerSession());
+            LOG.info("storeSettings.fileStoreFolder          : " + getStoreSettings().getFileStoreFolder());
 
         } catch(RuntimeException ex) {
             // because Wicket's handling in its WicketFilter (that calls this method) does not log the exception.
@@ -389,7 +506,9 @@ public class IsisWicketApplication
      * app is restarted.
      */
     protected String defaultEncryptionKeyIfNotConfigured() {
-        return UUID.randomUUID().toString();
+        return getDeploymentCategory().isProduction()
+                ? UUID.randomUUID().toString()
+                : "PrototypingEncryptionKey";
     }
 
     private void log(final Set<String> validationErrors) {
@@ -410,7 +529,6 @@ public class IsisWicketApplication
         ApplicationSettings select2Settings = ApplicationSettings.get();
         select2Settings.setCssReference(new Select2BootstrapCssReference());
         select2Settings.setJavaScriptReference(new Select2JsReference());
-        select2Settings.setIncludeJqueryUI(false);
     }
 
     protected void configureWicketSourcePluginIfNecessary() {
@@ -424,6 +542,20 @@ public class IsisWicketApplication
             WicketSource.configure(this);
         }
     }
+
+    /**
+     * For convenience of subclasses.
+     */
+    protected static String readLines(final Class<?> contextClass, final String resourceName, final String fallback) {
+        try {
+            List<String> readLines = Resources.readLines(Resources.getResource(contextClass, resourceName), Charset.defaultCharset());
+            final String aboutText = Joiner.on("\n").join(readLines);
+            return aboutText;
+        } catch (IOException e) {
+            return fallback;
+        }
+    }
+
 
     // //////////////////////////////////////
 
@@ -445,7 +577,7 @@ public class IsisWicketApplication
         settings.setDeferJavascript(false);
         Bootstrap.install(this, settings);
 
-        getHeaderContributorListenerCollection().add(new IHeaderContributor() {
+        getHeaderContributorListeners().add(new IHeaderContributor() {
             @Override
             public void renderHead(IHeaderResponse response) {
                 BootstrapBaseBehavior bootstrapBaseBehavior = new BootstrapBaseBehavior();
@@ -754,8 +886,6 @@ public class IsisWicketApplication
 
 
     protected void initWicketComponentInjection(final Injector injector) {
-        // if serializable, then brings in dependency on cglib, and in turn asm.
-        // This would block us from migrating to DN 4.0.x
         getComponentInstantiationListeners().add(new GuiceComponentInjector(this, injector, false));
     }
 
@@ -859,6 +989,11 @@ public class IsisWicketApplication
 
     public DeploymentCategory getDeploymentCategory() {
         return deploymentCategory;
+    }
+
+    @Override
+    public WicketViewerSettings getSettings() {
+        return settings;
     }
 
 }

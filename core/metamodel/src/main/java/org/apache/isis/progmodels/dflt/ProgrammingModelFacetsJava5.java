@@ -19,6 +19,7 @@ package org.apache.isis.progmodels.dflt;
 
 import org.apache.isis.core.commons.config.IsisConfiguration;
 import org.apache.isis.core.metamodel.facets.actions.action.ActionAnnotationFacetFactory;
+import org.apache.isis.core.metamodel.facets.actions.action.ActionChoicesForCollectionParameterFacetFactory;
 import org.apache.isis.core.metamodel.facets.actions.contributing.maxlenannot.MaxLengthFacetOnActionAnnotationFactory;
 import org.apache.isis.core.metamodel.facets.actions.contributing.paged.PagedFacetOnActionFactory;
 import org.apache.isis.core.metamodel.facets.actions.defaults.method.ActionDefaultsFacetViaMethodFactory;
@@ -44,6 +45,7 @@ import org.apache.isis.core.metamodel.facets.collections.paged.PagedFacetOnColle
 import org.apache.isis.core.metamodel.facets.collections.parented.ParentedFacetSinceCollectionFactory;
 import org.apache.isis.core.metamodel.facets.collections.sortedby.annotation.SortedByFacetAnnotationFactory;
 import org.apache.isis.core.metamodel.facets.fallback.FallbackFacetFactory;
+import org.apache.isis.core.metamodel.facets.jaxb.JaxbXmlJavaTypeAdapterFacetFactory;
 import org.apache.isis.core.metamodel.facets.members.cssclass.annotprop.CssClassFacetOnActionFromConfiguredRegexFactory;
 import org.apache.isis.core.metamodel.facets.members.cssclass.annotprop.CssClassFacetOnMemberFactory;
 import org.apache.isis.core.metamodel.facets.members.cssclassfa.annotprop.CssClassFaFacetOnMemberFactory;
@@ -368,6 +370,7 @@ public final class ProgrammingModelFacetsJava5 extends ProgrammingModelAbstract 
         addFactory(new ImmutableFacetMarkerInterfaceFactory());
 
         addFactory(new RecreatableObjectFacetFactory());
+        addFactory(new JaxbXmlJavaTypeAdapterFacetFactory());
         addFactory(new MixinFacetForMixinAnnotationFactory());
 
 
@@ -404,6 +407,14 @@ public final class ProgrammingModelFacetsJava5 extends ProgrammingModelAbstract 
 
         addFactory(new GridFacetFactory());
 
+        // must come before DomainObjectLayoutFacetFactory
+        // (so subscribers on titleUi event etc can override)
+        addFactory(new TitleAnnotationFacetFactory());
+        addFactory(new TitleFacetViaMethodsFactory());
+        addFactory(new IconFacetMethodFactory());
+        addFactory(new CssClassFacetMethodFactory());
+
+
         addFactory(new DomainServiceLayoutFacetFactory());
         addFactory(new DomainObjectLayoutFacetFactory());
         // must come after MultiLine
@@ -412,13 +423,7 @@ public final class ProgrammingModelFacetsJava5 extends ProgrammingModelAbstract 
         addFactory(new ActionLayoutFacetFactory());
         addFactory(new CollectionLayoutFacetFactory());
 
-        // must come after DomainObjectLayoutFacetFactory
-        addFactory(new TitleAnnotationFacetFactory());
-        addFactory(new TitleFacetViaMethodsFactory());
-        addFactory(new IconFacetMethodFactory());
-        addFactory(new CssClassFacetMethodFactory());
 
-        
         addFactory(new NamedFacetOnTypeAnnotationFactory());
         addFactory(new NamedFacetOnMemberFactory());
         
@@ -523,7 +528,9 @@ public final class ProgrammingModelFacetsJava5 extends ProgrammingModelAbstract 
         // should come near the end, after any facets that install PropertySetterFacet have run.
         addFactory(new DisabledFacetOnPropertyInferredFactory());
 
-        
+
+        addFactory(new ActionChoicesForCollectionParameterFacetFactory());
+
         addFactory(new AuditableFacetMarkerInterfaceFactory());
 
         addFactory(new FacetsFacetAnnotationFactory());

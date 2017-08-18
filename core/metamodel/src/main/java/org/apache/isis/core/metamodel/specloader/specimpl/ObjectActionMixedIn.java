@@ -18,7 +18,6 @@ package org.apache.isis.core.metamodel.specloader.specimpl;
 
 import java.util.List;
 
-import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
@@ -31,6 +30,9 @@ import org.apache.isis.core.metamodel.consent.InteractionResultSet;
 import org.apache.isis.core.metamodel.facetapi.FacetHolder;
 import org.apache.isis.core.metamodel.facetapi.FacetHolderImpl;
 import org.apache.isis.core.metamodel.facetapi.FacetUtil;
+import org.apache.isis.core.metamodel.facetapi.FeatureType;
+import org.apache.isis.core.metamodel.facets.FacetedMethodParameter;
+import org.apache.isis.core.metamodel.facets.TypedHolder;
 import org.apache.isis.core.metamodel.facets.all.named.NamedFacetInferred;
 import org.apache.isis.core.metamodel.interactions.InteractionUtils;
 import org.apache.isis.core.metamodel.interactions.UsabilityContext;
@@ -72,6 +74,7 @@ public class ObjectActionMixedIn extends ObjectActionDefault implements MixedInM
 
     public ObjectActionMixedIn(
             final Class<?> mixinType,
+            final String mixinMethodName,
             final ObjectActionDefault mixinAction,
             final ObjectSpecification mixedInType,
             final ServicesInjector objectMemberDependencies) {
@@ -87,7 +90,7 @@ public class ObjectActionMixedIn extends ObjectActionDefault implements MixedInM
         // adjust name if necessary
         final String name = getName();
 
-        if(Strings.isNullOrEmpty(name) || Objects.equal(name, DEFAULT_MEMBER_NAME)) {
+        if(Strings.isNullOrEmpty(name) || name.equalsIgnoreCase(mixinMethodName)) {
             String memberName = determineNameFrom(mixinAction);
             FacetUtil.addFacet(new NamedFacetInferred(memberName, facetHolder));
         }
@@ -128,13 +131,23 @@ public class ObjectActionMixedIn extends ObjectActionDefault implements MixedInM
             return parameters;
         }
         final List<ObjectActionParameter> mixinActionParameters = mixinAction.getParameters();
+        final List<FacetedMethodParameter> paramPeers = getFacetedMethod().getParameters();
+
         final List<ObjectActionParameter> mixedInParameters = Lists.newArrayList();
 
-        for (ObjectActionParameter mixinActionParameter : mixinActionParameters) {
+        for(int paramNum = 0; paramNum < mixinActionParameters.size(); paramNum++) {
+
             final ObjectActionParameterAbstract mixinParameter =
-                    (ObjectActionParameterAbstract) mixinActionParameter;
-            final ObjectActionParameterMixedIn mixedInParameter;
-            mixedInParameter = new OneToOneActionParameterMixedIn(mixinParameter, this);
+                    (ObjectActionParameterAbstract) mixinActionParameters.get(paramNum);
+
+            final TypedHolder paramPeer = paramPeers.get(paramNum);
+            final ObjectSpecification specification = ObjectMemberAbstract
+                    .getSpecification(getSpecificationLoader(), paramPeer.getType());
+
+            final ObjectActionParameterMixedIn mixedInParameter =
+                    mixinParameter.getPeer().getFeatureType() == FeatureType.ACTION_PARAMETER_SCALAR
+                            ? new OneToOneActionParameterMixedIn(mixinParameter, this)
+                            : new OneToManyActionParameterMixedIn(mixinParameter, this);
             mixedInParameters.add(mixedInParameter);
         }
         return mixedInParameters;

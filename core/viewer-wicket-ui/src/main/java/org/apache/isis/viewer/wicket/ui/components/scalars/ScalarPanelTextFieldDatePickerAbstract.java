@@ -24,17 +24,16 @@ import java.io.Serializable;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.form.AbstractTextComponent;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Fragment;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.util.convert.IConverter;
-import org.apache.wicket.validation.IValidatable;
-import org.apache.wicket.validation.IValidator;
-import org.apache.wicket.validation.ValidationError;
 
+import org.apache.isis.applib.services.i18n.LocaleProvider;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.facets.objectvalue.renderedadjusted.RenderedAdjustedFacet;
+import org.apache.isis.core.runtime.system.context.IsisContext;
 import org.apache.isis.viewer.wicket.model.isis.WicketViewerSettings;
 import org.apache.isis.viewer.wicket.model.models.ScalarModel;
 import org.apache.isis.viewer.wicket.ui.components.scalars.datepicker.TextFieldWithDateTimePicker;
@@ -71,20 +70,13 @@ public abstract class ScalarPanelTextFieldDatePickerAbstract<T extends Serializa
         return new TextFieldWithDateTimePicker<>(id, newTextFieldValueModel(), cls, converter);
     }
 
-    @Override
-    protected Fragment createTextFieldFragment(String id) {
-        return new Fragment(id, "date", ScalarPanelTextFieldDatePickerAbstract.this);
-    }
 
     @Override
-    protected void addSemantics() {
-        super.addSemantics();
-
-        addObjectAdapterValidator();
+    protected String createTextFieldFragmentId() {
+        return "date";
     }
 
-    
-    protected Component addComponentForCompact() {
+    protected Component createComponentForCompact() {
         Fragment compactFragment = getCompactFragment(CompactType.SPAN);
         final Label label = new Label(ID_SCALAR_IF_COMPACT, newTextFieldValueModel()) {
             @Override
@@ -103,10 +95,23 @@ public abstract class ScalarPanelTextFieldDatePickerAbstract<T extends Serializa
 
         compactFragment.add(label);
 
-        scalarTypeContainer.addOrReplace(compactFragment);
         return label;
     }
-    
+
+    protected IModel<String> obtainInlinePromptModel() {
+        return new Model<String>() {
+            @Override public String getObject() {
+                ObjectAdapter object = scalarModel.getObject();
+                final T value = object != null ? (T) object.getObject() : null;
+                final String str =
+                        value != null
+                                ? converter.convertToString(value, getLocaleProvider().getLocale())
+                                : null;
+                return str;
+            }
+        };
+    }
+
     /**
      * Optional override for subclasses to explicitly indicate desired amount to adjust compact form of textField
      */
@@ -114,35 +119,17 @@ public abstract class ScalarPanelTextFieldDatePickerAbstract<T extends Serializa
         return null;
     }
 
-    private void addObjectAdapterValidator() {
-        final AbstractTextComponent<T> textField = getTextField();
-
-        textField.add(new IValidator<T>() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void validate(final IValidatable<T> validatable) {
-                final T proposed = validatable.getValue();
-                final ObjectAdapter proposedAdapter = adapterFor(proposed);
-                String reasonIfAny = scalarModel.validate(proposedAdapter);
-                if (reasonIfAny != null) {
-                    final ValidationError error = new ValidationError();
-                    error.setMessage(reasonIfAny);
-                    validatable.error(error);
-                }
-            }
-        });
-    }
 
     
     @com.google.inject.Inject
-    private WicketViewerSettings settings;
+    WicketViewerSettings settings;
     protected WicketViewerSettings getSettings() {
         return settings;
     }
 
-    private ObjectAdapter adapterFor(final Object pojo) {
-        return getPersistenceSession().adapterFor(pojo);
+    private LocaleProvider getLocaleProvider() {
+        return IsisContext.getSessionFactory().getServicesInjector().lookupService(LocaleProvider.class);
     }
+
 
 }

@@ -20,12 +20,16 @@ package org.apache.isis.viewer.wicket.model.links;
 
 import java.io.Serializable;
 import java.util.List;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+
 import org.apache.wicket.markup.html.link.AbstractLink;
+
 import org.apache.isis.applib.annotation.ActionLayout;
 import org.apache.isis.applib.annotation.ActionSemantics;
+import org.apache.isis.applib.annotation.PromptStyle;
 import org.apache.isis.applib.annotation.SemanticsOf;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.facets.members.cssclassfa.CssClassFaPosition;
@@ -48,15 +52,16 @@ public class LinkAndLabel implements Serializable {
             final String disabledReasonIfAny,
             final boolean blobOrClob) {
 
-        final String name = ObjectAction.Utils.nameFor(objectAction);
+        final String name = ObjectAction.Util.nameFor(objectAction);
 
         final boolean explorationOrPrototype = objectAction.isPrototype();
-        final String actionIdentifier = ObjectAction.Utils.actionIdentifierFor(objectAction);
-        final String description = ObjectAction.Utils.descriptionOf(objectAction);
-        final String cssClass = ObjectAction.Utils.cssClassFor(objectAction, objectAdapter);
-        final String cssClassFa = ObjectAction.Utils.cssClassFaFor(objectAction);
-        final CssClassFaPosition cssClassFaPosition = ObjectAction.Utils.cssClassFaPositionFor(objectAction);
-        final ActionLayout.Position actionLayoutPosition = ObjectAction.Utils.actionLayoutPositionOf(objectAction);
+        final String actionIdentifier = ObjectAction.Util.actionIdentifierFor(objectAction);
+        final String description = ObjectAction.Util.descriptionOf(objectAction);
+        final String cssClass = ObjectAction.Util.cssClassFor(objectAction, objectAdapter);
+        final String cssClassFa = ObjectAction.Util.cssClassFaFor(objectAction);
+        final CssClassFaPosition cssClassFaPosition = ObjectAction.Util.cssClassFaPositionFor(objectAction);
+        final ActionLayout.Position actionLayoutPosition = ObjectAction.Util.actionLayoutPositionOf(objectAction);
+        final PromptStyle promptStyle = ObjectAction.Util.promptStyleFor(objectAction);
         final ActionSemantics.Of semantics = objectAction.getSemantics();
 
         return new LinkAndLabel(
@@ -66,6 +71,7 @@ public class LinkAndLabel implements Serializable {
                 actionIdentifier,
                 cssClass, cssClassFa, cssClassFaPosition, actionLayoutPosition,
                 SemanticsOf.from(semantics),
+                promptStyle,
                 Parameters.fromParameterCount(objectAction.getParameterCount()));
     }
 
@@ -79,9 +85,6 @@ public class LinkAndLabel implements Serializable {
 
         public boolean isNoParameters() {
             return this == NO_PARAMETERS;
-        }
-        public boolean isTakesParameters() {
-            return this == TAKES_PARAMETERS;
         }
     }
 
@@ -97,6 +100,7 @@ public class LinkAndLabel implements Serializable {
     private final CssClassFaPosition cssClassFaPosition;
     private final ActionLayout.Position position;
     private final SemanticsOf semanticsOf;
+    private final PromptStyle promptStyle;
     private Parameters parameters;
 
     private LinkAndLabel(
@@ -112,6 +116,7 @@ public class LinkAndLabel implements Serializable {
             final CssClassFaPosition cssClassFaPosition,
             final ActionLayout.Position position,
             final SemanticsOf semanticsOf,
+            final PromptStyle promptStyle,
             final Parameters parameters) {
         this.link = link;
         this.label = label;
@@ -125,6 +130,7 @@ public class LinkAndLabel implements Serializable {
         this.cssClassFaPosition = cssClassFaPosition;
         this.position = position;
         this.semanticsOf = semanticsOf;
+        this.promptStyle = promptStyle;
         this.parameters = parameters;
     }
 
@@ -136,7 +142,7 @@ public class LinkAndLabel implements Serializable {
         return label;
     }
 
-    public String getDisabledReasonIfAny() {
+    public String getReasonDisabledIfAny() {
         return disabledReasonIfAny;
     }
 
@@ -176,6 +182,10 @@ public class LinkAndLabel implements Serializable {
         return semanticsOf;
     }
 
+    public PromptStyle getPromptStyle() {
+        return promptStyle;
+    }
+
     public Parameters getParameters() {
         return parameters;
     }
@@ -190,4 +200,11 @@ public class LinkAndLabel implements Serializable {
             };
         }
     }
+
+    public static class Util {
+        private Util(){}
+
+
+    }
+
 }

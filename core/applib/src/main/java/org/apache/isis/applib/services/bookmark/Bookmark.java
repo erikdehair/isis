@@ -38,7 +38,7 @@ public class Bookmark implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private static final char SEPARATOR = ':';
+    protected static final char SEPARATOR = ':';
 
     public OidDto toOidDto() {
         final OidDto oidDto = new OidDto();
@@ -124,9 +124,9 @@ public class Bookmark implements Serializable {
         }
     }
 
-    private final String objectType;
+    protected final String objectType;
     private final String identifier;
-    private final ObjectState state;
+    protected final ObjectState state;
 
 
     /**
@@ -201,4 +201,23 @@ public class Bookmark implements Serializable {
     public String toString() {
         return state.getCode() + objectType + SEPARATOR + identifier;
     }
+
+
+    public static class AsStringType {
+
+        private AsStringType() {}
+
+        public static class Meta {
+
+            /**
+             * Is based on the defacto limit of a request URL in web browsers such as IE8
+             */
+            public static final int MAX_LEN = 2000;
+
+            private Meta() {}
+
+        }
+
+    }
+
 }

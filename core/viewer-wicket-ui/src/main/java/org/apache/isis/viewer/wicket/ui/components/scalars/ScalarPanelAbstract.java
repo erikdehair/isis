@@ -25,13 +25,10 @@ import com.google.common.collect.Lists;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.behavior.Behavior;
-import org.apache.wicket.feedback.ComponentFeedbackMessageFilter;
-import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.LabeledWebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.model.Model;
@@ -43,30 +40,26 @@ import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager;
 import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager.ConcurrencyChecking;
 import org.apache.isis.core.metamodel.facets.members.cssclass.CssClassFacet;
 import org.apache.isis.core.metamodel.facets.objectvalue.labelat.LabelAtFacet;
-import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
 import org.apache.isis.viewer.wicket.model.links.LinkAndLabel;
-import org.apache.isis.viewer.wicket.model.models.ActionPrompt;
-import org.apache.isis.viewer.wicket.model.models.ActionPromptProvider;
 import org.apache.isis.viewer.wicket.model.models.EntityModel.RenderingHint;
 import org.apache.isis.viewer.wicket.model.models.ScalarModel;
-import org.apache.isis.viewer.wicket.ui.ComponentType;
 import org.apache.isis.viewer.wicket.ui.components.actionmenu.entityactions.AdditionalLinksPanel;
-import org.apache.isis.viewer.wicket.ui.components.property.PropertyEditPanel;
-import org.apache.isis.viewer.wicket.ui.components.property.PropertyEditPromptHeaderPanel;
 import org.apache.isis.viewer.wicket.ui.components.scalars.TextFieldValueModel.ScalarModelProvider;
 import org.apache.isis.viewer.wicket.ui.panels.PanelAbstract;
-import org.apache.isis.viewer.wicket.ui.util.Components;
 import org.apache.isis.viewer.wicket.ui.util.CssClassAppender;
-
-import de.agilecoders.wicket.core.markup.html.bootstrap.common.NotificationPanel;
 
 /**
  * Adapter for {@link PanelAbstract panel}s that use a {@link ScalarModel} as
  * their backing model.
- * 
+ *
  * <p>
  * Supports the concept of being {@link Rendering#COMPACT} (eg within a table) or
  * {@link Rendering#REGULAR regular} (eg within a form).
+ *
+ * <p>
+ *     REVIEW: this has been replaced by {@link ScalarPanelAbstract2} and is unused by the core framework.
+ *     It is however still used by some wicket addons (specifically, pdfjs).
+ * </p>
  */
 public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> implements ScalarModelProvider {
 
@@ -153,13 +146,13 @@ public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> imp
     protected Fragment getCompactFragment(CompactType type) {
         Fragment compactFragment;
         switch (type) {
-            case INPUT_CHECKBOX:
-                compactFragment = new Fragment("scalarIfCompact", "compactAsInputCheckbox", ScalarPanelAbstract.this);
-                break;
-            case SPAN:
-            default:
-                compactFragment = new Fragment("scalarIfCompact", "compactAsSpan", ScalarPanelAbstract.this);
-                break;
+        case INPUT_CHECKBOX:
+            compactFragment = new Fragment("scalarIfCompact", "compactAsInputCheckbox", ScalarPanelAbstract.this);
+            break;
+        case SPAN:
+        default:
+            compactFragment = new Fragment("scalarIfCompact", "compactAsSpan", ScalarPanelAbstract.this);
+            break;
         }
         return compactFragment;
     }
@@ -184,7 +177,7 @@ public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> imp
         }
 
         final ScalarModel scalarModel = getModel();
-        final String disableReasonIfAny = scalarModel.disable(getRendering().getWhere());
+        final String disableReasonIfAny = scalarModel.whetherDisabled(getRendering().getWhere());
 
         if (scalarModel.isViewMode()) {
             onBeforeRenderWhenViewMode();
@@ -195,12 +188,13 @@ public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> imp
                 onBeforeRenderWhenEnabled();
             }
         }
+
         super.onBeforeRender();
     }
 
     /**
      * hook for highly dynamic components, eg conditional choices.
-     * 
+     *
      * <p>
      * Returning <tt>true</tt> means that the component is always rebuilt prior to
      * every {@link #onBeforeRender() render}ing.
@@ -211,22 +205,22 @@ public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> imp
 
     /**
      * Builds GUI lazily prior to first render.
-     * 
+     *
      * <p>
      * This design allows the panel to be configured first.
      *
      * @see #onBeforeRender()
      */
     private void buildGui() {
-        
+
         // REVIEW: this is nasty, both write to the same entityLink field
         // even though only one is used
         componentIfCompact = addComponentForCompact();
         componentIfRegular = addComponentForRegular();
-        
+
         getRendering().buildGui(this);
         addCssForMetaModel();
-        
+
         if(!subscribers.isEmpty()) {
             addFormComponentBehavior(new ScalarUpdatingBehavior());
         }
@@ -244,6 +238,10 @@ public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> imp
             for (ScalarModelSubscriber subscriber : subscribers) {
                 subscriber.onUpdate(target, ScalarPanelAbstract.this);
             }
+
+            // hmmm... this doesn't seem to be picked up...
+            target.appendJavaScript(
+                    String.format("Wicket.Event.publish(Isis.Topic.FOCUS_FIRST_ACTION_PARAMETER, '%s')", getMarkupId()));
         }
 
         @Override
@@ -269,8 +267,7 @@ public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> imp
         ScalarModel model = getModel();
         final CssClassFacet facet = model.getFacet(CssClassFacet.class);
         if(facet != null) {
-            final ObjectAdapter parentAdapter = model.getParentObjectAdapterMemento().getObjectAdapter(ConcurrencyChecking.NO_CHECK,
-                    getPersistenceSession(), getSpecificationLoader());
+            final ObjectAdapter parentAdapter = model.getParentEntityModel().load(ConcurrencyChecking.NO_CHECK);
             final String cssClass = facet.cssClass(parentAdapter);
             CssClassAppender.appendCssClassTo(this, cssClass);
         }
@@ -284,44 +281,6 @@ public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> imp
 
     protected abstract Component addComponentForCompact();
 
-    protected void addFeedbackOnlyTo(final MarkupContainer markupContainer, final Component component) {
-        markupContainer.addOrReplace(new NotificationPanel(ID_FEEDBACK, component, new ComponentFeedbackMessageFilter(component)));
-    }
-
-    protected void addEditPropertyTo(final MarkupContainer markupContainer) {
-        final String disableReasonIfAny = scalarModel.disable(getRendering().getWhere());
-        if (disableReasonIfAny == null && scalarModel.isViewMode()) {
-            final WebMarkupContainer editProperty = new WebMarkupContainer(ID_EDIT_PROPERTY);
-
-            editProperty.setOutputMarkupId(true);
-
-            editProperty.add(new AjaxEventBehavior("click") {
-                protected void onEvent(AjaxRequestTarget target) {
-
-                    final ActionPrompt prompt = ActionPromptProvider.Util
-                            .getFrom(ScalarPanelAbstract.this).getActionPrompt();
-
-                    PropertyEditPromptHeaderPanel titlePanel = new PropertyEditPromptHeaderPanel(prompt.getTitleId(),
-                            scalarModel);
-
-                    final PropertyEditPanel propertyEditPanel =
-                            (PropertyEditPanel) getComponentFactoryRegistry().createComponent(
-                                    ComponentType.PROPERTY_EDIT_PROMPT, prompt.getContentId(), scalarModel);
-
-                    propertyEditPanel.setShowHeader(false);
-
-                    prompt.setTitle(titlePanel, target);
-                    prompt.setPanel(propertyEditPanel, target);
-                    prompt.showPrompt(target);
-
-                }
-            });
-
-            markupContainer.addOrReplace(editProperty);
-        } else {
-            Components.permanentlyHide(markupContainer, ID_EDIT_PROPERTY);
-        }
-    }
 
     /**
      * Optional hook.
@@ -366,14 +325,14 @@ public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> imp
         final LabelAtFacet facet = model.getFacet(LabelAtFacet.class);
         if (facet != null) {
             switch (facet.label()) {
-                case LEFT:
-                    return "label-left";
-                case RIGHT:
-                    return "label-right";
-                case NONE:
-                    return "label-none";
-                case TOP:
-                    return "label-top";
+            case LEFT:
+                return "label-left";
+            case RIGHT:
+                return "label-right";
+            case NONE:
+                return "label-none";
+            case TOP:
+                return "label-top";
             }
         }
         return "label-left";
@@ -405,11 +364,20 @@ public abstract class ScalarPanelAbstract extends PanelAbstract<ScalarModel> imp
 
     /**
      * Optional hook method
-     * 
+     *
      * @return true - indicates has been updated, so update dynamically via ajax
      */
     public boolean updateChoices(ObjectAdapter[] pendingArguments) {
         return false;
+    }
+
+    /**
+     * Repaints this panel of just some of its children
+     *
+     * @param target The Ajax request handler
+     */
+    public void repaint(AjaxRequestTarget target) {
+        target.add(this);
     }
 
 

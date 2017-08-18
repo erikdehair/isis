@@ -59,6 +59,10 @@ body {
     filter: alpha(opacity=50);
 }
 
+#veil .text-center {
+    margin-top: 100px;
+}
+
 .table .table td {
     border: none;
 }
@@ -261,6 +265,7 @@ body {
 .linksSelectorPanel .viewLinks {
     float:right;
     display:block;
+    margin-left: 15px;
 }
 
 .linksSelectorPanel ul.dropdown-menu {
@@ -385,6 +390,7 @@ div.entityHeaderPanel .entityActions .cssMenuPanel .cssMenuItems:first-child {
     font-size: 1.8em;
     font-weight:normal;
     text-decoration:none;
+    padding-right: 30px;
 }
 
 
@@ -457,6 +463,10 @@ span.containedButtonPanel {
 
 span .fa {
     padding-right: 2px;
+}
+
+span .fontAwesomeIcon {
+    margin-right: 6px;
 }
 
 .additionalLinkList {
@@ -601,12 +611,19 @@ div.label-left .choicesPlaceholder {
 }
 
 div.label-right .scalarValueWrapper {
-    padding-left: 28.5%;
+    padding-left: 30%;
 }
 
 div.label-right .scalarValueWrapper .control-label{
     vertical-align: sub;
 }
+
+div.label-right .scalarValueWrapper .feedback-links-below-wrapper {
+    padding-left: 30%;
+    width: 70%;
+    float: left;
+}
+
 /* Labels on the left/top/none END */
 
 
@@ -794,27 +811,50 @@ tr.headers th form input {
 .editing .edit {
     padding-top: 2px;
     float: right;
-    margin-bottom: 10px;
 }
 
-.stringPanel .scalarValueInput .editing .edit {
+.multiLineStringPanel .scalarValueInput .editing .edit {
+    margin-top: -30px;
+}
+
+.scalarValueInput .editing .edit {
     margin-top: -20px;
-	z-index: 2;
+	z-index: 20000;
+}
+
+.referencePanel .scalarValueInput .editing .edit,
+.isisBlobPanel .scalarValueInput .editing .edit,
+.isisClobPanel .scalarValueInput .editing .edit,
+.booleanPanel .scalarValueInput .editing .edit {
+    margin-top: 0px;
+}
+
+@-moz-document url-prefix() {
+    .scalarValueInput .editing .edit {
+        margin-right: -17px;
+    }
 }
 
 .actions-right .scalarPlaceholder .scalarValueInput {
     width: 90%;
     float: left;
+    margin-bottom: 0px;
 }
 
-.actions-right .additionalLinkListInline {
-    margin-top: -22px;
+.characterPanel .actions-right .scalarPlaceholder .scalarValueInput {
+    margin-bottom: 4px;
 }
+.multiLineStringPanel .actions-right .scalarPlaceholder .scalarValueInput {
+    margin-bottom: 4px;
+}
+
+
 
 .booleanPanel .actions-right .additionalLinkListInline {
     margin-top: 0px;
 }
 
+.valuePanel .actions-right .additionalLinkListInline,
 .valueChoicesSelect2Panel .actions-right .additionalLinkListInline,
 .stringPanel .actions-right .additionalLinkListInline,
 .referencePanel .actions-right .additionalLinkListInline,
@@ -832,4 +872,107 @@ tr.headers th form input {
 .entityHeaderPanel .entityActions ul.additionalLinkList li.additionalLinkItem {
     padding-top: 3px;
     padding-bottom: 7px;
+}
+
+.propertyEditForm .buttons .wicket-ajax-indicator,
+.actionParametersForm .buttons .wicket-ajax-indicator,
+.additionalLinkList .wicket-ajax-indicator {
+    margin-left: 4px;
+    margin-right: 10px;
+}
+
+.additionalLinkList .wicket-ajax-indicator img {
+    margin-top: 7px;
+    margin-left: -5px;
+    margin-right: 10px;
+}
+
+.select2-container-multi.input-sm {
+    height: inherit;
+}
+
+li.select2-results__option {
+    min-height: 30px;
+}
+
+.scalarNameAndValueComponentType .inlinePromptForm {
+    border: 2px solid;
+    padding: 10px;
+    margin-bottom: 20px
+}
+
+.scalarNameAndValueComponentType .inlinePromptForm .form-group {
+    padding-left: 5px;
+    padding-right: 15px;
+}
+
+.booleanPanel .form-control.scalarValueInlinePromptLink,
+.referencePanel .form-control.scalarValueInlinePromptLink {
+    display: inline-block;
+    width: 85%;
+}
+
+a.form-control.scalarValueInlinePromptLink {
+    text-decoration: none;
+}
+
+.booleanPanel div.label-left .scalarValueWrapper .form-control.scalarValueInlinePromptLink,
+.referencePanel div.label-left .scalarValueWrapper .form-control.scalarValueInlinePromptLink {
+    width: 90%;
+}
+.booleanPanel div.label-left.actions-right .scalarValueWrapper .form-control.scalarValueInlinePromptLink,
+.referencePanel div.label-left.actions-right .scalarValueWrapper .form-control.scalarValueInlinePromptLink {
+    width: 85%;
+}
+
+.referencePanel .inlinePrompt .entityIconAndTitlePanel .entityImage {
+    margin-right: 10px;
+}
+.referencePanel .inlinePrompt .entityIconAndTitlePanel .entityTitle {
+    display: none;
+}
+
+/*
+instead of this CSS (which would force this highlighting everywhere, instead suggest use a browser extension
+such as https://chrome.google.com/webstore/detail/focus-indicator/heeoeadndnhebmfebjccbhmccmaoedlf
+
+#container  a:focus,
+#container  .btn:focus,
+#container  input:focus,
+#container  :focus {
+    outline-color: maroon;
+    outline-style: solid;
+    outline-width: 2px;
+}
+
+#container  a.edit:focus {
+    padding: 3px;
+}
+*/
+
+#container.page #wicketDebugBar {
+    padding-top: 60px;
+    padding-bottom: 30px;
+}
+#container.page #wicketDebugBar a#wicketDebugBarCollapse img {
+    margin-top: 2px;
+    margin-right: 20px;
+}
+#container.page #wicketDebugBar span#wicketDebugBarContents > span {
+    vertical-align: sub;
+}
+#container.page #wicketDebugBar span.wicketversioncontrib {
+    display: none;
+}
+#container.page #wicketDebugBar span#wicketDebugBarContents a img {
+    margin-top: -5px;
+}
+#container.page #wicketDebugBar span#wicketDebugBarContents a#wicketDebugBarRemove img {
+    margin-top: 2px;
+}
+
+/* ISIS-1626, confirmation dialog for no-parameter menu actions
+   allow confirmation dialog popup to escape boundaries of parent html li element*/
+.popover .open > .dropdown-menu {
+  overflow: visible;
 }

@@ -26,13 +26,17 @@ import org.apache.isis.applib.query.Query;
 import org.apache.isis.applib.services.bookmark.Bookmark;
 import org.apache.isis.applib.services.bookmark.BookmarkService2;
 import org.apache.isis.applib.services.xactn.Transaction;
+import org.apache.isis.applib.services.xactn.TransactionState;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.adapter.oid.Oid;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.spec.feature.OneToManyAssociation;
 import org.apache.isis.core.runtime.system.transaction.TransactionalClosure;
 
-@DomainService(nature = NatureOfService.DOMAIN)
+@DomainService(
+        nature = NatureOfService.DOMAIN,
+        menuOrder = "" + Integer.MAX_VALUE
+)
 public class PersistenceSessionServiceInternalNoop implements PersistenceSessionServiceInternal {
 
 
@@ -151,4 +155,8 @@ public class PersistenceSessionServiceInternalNoop implements PersistenceSession
         throw new UnsupportedOperationException("Not supported by this implementation of PersistenceSessionServiceInternal");
     }
 
+    @Override
+    public TransactionState getTransactionState() {
+        throw new UnsupportedOperationException("Not supported by this implementation of PersistenceSessionServiceInternal");
+    }
 }

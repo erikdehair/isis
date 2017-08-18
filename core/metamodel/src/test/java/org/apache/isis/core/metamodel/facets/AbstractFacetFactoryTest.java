@@ -40,7 +40,6 @@ import org.apache.isis.core.metamodel.facetapi.FeatureType;
 import org.apache.isis.core.metamodel.facetapi.IdentifiedHolder;
 import org.apache.isis.core.metamodel.services.ServicesInjector;
 import org.apache.isis.core.metamodel.services.persistsession.PersistenceSessionServiceInternal;
-import org.apache.isis.core.metamodel.services.transtate.TransactionStateProviderInternal;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
 import org.apache.isis.core.unittestsupport.jmocking.JUnitRuleMockery2;
@@ -71,7 +70,6 @@ public abstract class AbstractFacetFactoryTest extends TestCase {
     protected AuthenticationSessionProvider mockAuthenticationSessionProvider;
     protected AuthenticationSession mockAuthenticationSession;
 
-    protected TransactionStateProviderInternal mockTransactionStateProviderInternal;
     protected PersistenceSessionServiceInternal mockPersistenceSessionServiceInternal;
 
     protected IsisConfigurationDefault stubConfiguration;
@@ -104,7 +102,8 @@ public abstract class AbstractFacetFactoryTest extends TestCase {
                 Identifier.propertyOrCollectionIdentifier(Customer.class, "firstName"));
         facetedMethod = FacetedMethod.createForProperty(Customer.class, "firstName");
         facetedMethodParameter = new FacetedMethodParameter(
-                facetedMethod.getOwningType(), facetedMethod.getMethod(), String.class);
+                FeatureType.ACTION_PARAMETER_SCALAR, facetedMethod.getOwningType(), facetedMethod.getMethod(), String.class
+        );
 
         methodRemover = new ProgrammableMethodRemover();
 
@@ -116,12 +115,10 @@ public abstract class AbstractFacetFactoryTest extends TestCase {
         mockAuthenticationSession = context.mock(AuthenticationSession.class);
 
         mockPersistenceSessionServiceInternal = context.mock(PersistenceSessionServiceInternal.class);
-        mockTransactionStateProviderInternal = context.mock(TransactionStateProviderInternal.class);
 
         mockSpecificationLoader = context.mock(SpecificationLoader.class);
 
         stubServicesInjector = new ServicesInjector(Lists.newArrayList(
-                mockTransactionStateProviderInternal,
                 stubConfiguration,
                 mockAuthenticationSessionProvider,
                 mockSpecificationLoader,

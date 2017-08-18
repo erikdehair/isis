@@ -27,12 +27,17 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.wicketstuff.select2.ChoiceProvider;
 import org.wicketstuff.select2.Response;
 import org.wicketstuff.select2.Select2Choice;
 import org.wicketstuff.select2.Settings;
-import org.wicketstuff.select2.TextChoiceProvider;
 
 import org.apache.isis.core.commons.authentication.MessageBroker;
+import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager;
+import org.apache.isis.core.metamodel.adapter.oid.OidMarshaller;
+import org.apache.isis.core.metamodel.adapter.oid.RootOid;
+import org.apache.isis.viewer.wicket.model.mementos.PageParameterNames;
 import org.apache.isis.viewer.wicket.model.models.EntityModel;
 import org.apache.isis.viewer.wicket.ui.errors.JGrowlUtil;
 import org.apache.isis.viewer.wicket.ui.pages.entity.EntityPage;
@@ -43,6 +48,11 @@ public class BreadcrumbPanel extends PanelAbstract<IModel<Void>> {
     private static final long serialVersionUID = 1L;
     
     private static final String ID_BREADCRUMBS = "breadcrumbs";
+    /**
+     * A configuration setting which value determines whether the breadcrumbs should be available in the footer
+     */
+    public static final String SHOW_BREADCRUMBS_KEY = "isis.viewer.wicket.breadcrumbs.showChooser";
+    public static final boolean SHOW_BREADCRUMBS_DEFAULT = true;
 
     public BreadcrumbPanel(String id) {
         super(id);
@@ -55,20 +65,35 @@ public class BreadcrumbPanel extends PanelAbstract<IModel<Void>> {
         final BreadcrumbModelProvider session = (BreadcrumbModelProvider) getSession();
         final BreadcrumbModel breadcrumbModel = session.getBreadcrumbModel();
         
-        final IModel<EntityModel> entityModel = new Model<EntityModel>();
-        TextChoiceProvider<EntityModel> choiceProvider = new TextChoiceProvider<EntityModel>() {
+        final IModel<EntityModel> entityModel = new Model<>();
+        ChoiceProvider<EntityModel> choiceProvider = new ChoiceProvider<EntityModel>() {
 
             private static final long serialVersionUID = 1L;
 
             @Override
-            protected String getDisplayText(EntityModel choice) {
-                return breadcrumbModel.titleFor(choice);
+            public String getDisplayValue(EntityModel choice) {
+                return titleFor(choice);
             }
 
-            @Override
-            protected Object getId(EntityModel choice) {
-                return breadcrumbModel.getId(choice);
+            private String titleFor(final EntityModel model) {
+                return model.getObjectAdapterMemento().getObjectAdapter(AdapterManager.ConcurrencyChecking.NO_CHECK,
+                        model.getPersistenceSession(), model.getSpecificationLoader()).titleString(null);
             }
+
+
+            @Override
+            public String getIdValue(EntityModel choice) {
+                try {
+                    final PageParameters pageParameters = choice.getPageParametersWithoutUiHints();
+                    final String oidStr = PageParameterNames.OBJECT_OID.getStringFrom(pageParameters);
+                    final RootOid result = RootOid.deString(oidStr);
+                    return OidMarshaller.INSTANCE.marshal(result);
+                } catch (Exception ex) {
+                    breadcrumbModel.remove(choice);
+                    return null;
+                }
+            }
+
 
             @Override
             public void query(String term, int page, Response<EntityModel> response) {
@@ -77,7 +102,7 @@ public class BreadcrumbPanel extends PanelAbstract<IModel<Void>> {
                         Iterables.filter(breadCrumbList, new Predicate<EntityModel>() {
                             @Override
                             public boolean apply(final EntityModel input) {
-                                final Object id = getId(input);
+                                final Object id = getIdValue(input);
                                 return id != null;
                             }
                         })
@@ -111,7 +136,7 @@ public class BreadcrumbPanel extends PanelAbstract<IModel<Void>> {
                         breadcrumbModel.remove(oidStr);
                         return;
                     }
-                    setResponsePage(EntityPage.class, selectedModel.getPageParameters());
+                    setResponsePage(EntityPage.class, selectedModel.getPageParametersWithoutUiHints());
                 }
             });
         
@@ -122,5 +147,12 @@ public class BreadcrumbPanel extends PanelAbstract<IModel<Void>> {
         addOrReplace(breadcrumbChoice);
     }
 
-    
+    @Override
+    protected void onConfigure() {
+        super.onConfigure();
+
+        boolean shouldShow = getConfiguration().getBoolean(SHOW_BREADCRUMBS_KEY, SHOW_BREADCRUMBS_DEFAULT);
+        setVisible(shouldShow);
+    }
+
 }

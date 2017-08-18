@@ -41,6 +41,7 @@ public @interface PropertyLayout {
      */
     String describedAs() default "";
 
+
     /**
      * Indicates where in the UI the property should <i>not</i>not be visible.
      */
@@ -69,6 +70,11 @@ public @interface PropertyLayout {
      * A flag indicating whether the value of {@linkplain #named()} should be HTML escaped or not.
      */
     boolean namedEscaped() default true;
+
+    /**
+     * How the properties of this domain object are be edited, either {@link PromptStyle#DIALOG dialog} or {@link PromptStyle#INLINE inline}.
+     */
+    PromptStyle promptStyle() default PromptStyle.AS_CONFIGURED;
 
     /**
      * For date properties (and parameters) only, instructs the viewer that the date should be rendered as one day
@@ -102,5 +108,30 @@ public @interface PropertyLayout {
      * The typical entry length of a field, use to determine the optimum width for display
      */
     int typicalLength() default -1;
+
+    /**
+     * Indicates that the value held by the property never changes over time, even when other properties of the object
+     * do change.
+     *
+     * <p>
+     *     Setting this attribute to <tt>true</tt> is used as a hint to the viewer to not redraw the property
+     *     after an AJAX update of some other property/ies of the object have changed.
+     *     This is primarily for performance, eg can improve the user experience when rendering PDFs/blobs.
+     * </p>
+     *
+     * <p>
+     *     Note that for this to work, the viewer will also ensure that none of the property's parent component
+     *     (such as a tab group panel) are re-rendered.
+     * </p>
+     *
+     * <p>
+     *     Design note: we considered implementing this an "immutable" flag on the {@link Property } annotation
+     *     (because this flag is typically appropriate for immutable/unchanging properties of a domain object).
+     *     However, we decided not to do that, on the basis that it might be interpreted as having a deeper impact
+     *     within the framework than simply a hint for rendering.
+     * </p>
+     */
+    boolean unchanging() default false;
+
 }
 

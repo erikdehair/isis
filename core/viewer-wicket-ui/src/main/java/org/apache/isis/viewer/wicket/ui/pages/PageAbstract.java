@@ -21,6 +21,7 @@ package org.apache.isis.viewer.wicket.ui.pages;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
@@ -31,17 +32,22 @@ import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.Page;
 import org.apache.wicket.RestartResponseAtInterceptPageException;
 import org.apache.wicket.behavior.Behavior;
+import org.apache.wicket.devutils.debugbar.DebugBar;
+import org.apache.wicket.devutils.debugbar.IDebugBarContributor;
+import org.apache.wicket.devutils.debugbar.InspectorDebugPanel;
 import org.apache.wicket.event.Broadcast;
 import org.apache.wicket.markup.head.CssHeaderItem;
 import org.apache.wicket.markup.head.CssReferenceHeaderItem;
 import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.head.JavaScriptHeaderItem;
 import org.apache.wicket.markup.head.JavaScriptReferenceHeaderItem;
+import org.apache.wicket.markup.head.OnDomReadyHeaderItem;
 import org.apache.wicket.markup.head.PriorityHeaderItem;
 import org.apache.wicket.markup.head.filter.HeaderResponseContainer;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.protocol.http.ClientProperties;
 import org.apache.wicket.protocol.http.WebSession;
@@ -65,6 +71,7 @@ import org.apache.isis.core.runtime.system.session.IsisSessionFactory;
 import org.apache.isis.viewer.wicket.model.common.PageParametersUtils;
 import org.apache.isis.viewer.wicket.model.hints.IsisEnvelopeEvent;
 import org.apache.isis.viewer.wicket.model.hints.IsisEventLetterAbstract;
+import org.apache.isis.viewer.wicket.model.hints.UiHintContainer;
 import org.apache.isis.viewer.wicket.model.models.ActionPrompt;
 import org.apache.isis.viewer.wicket.model.models.ActionPromptProvider;
 import org.apache.isis.viewer.wicket.model.models.BookmarkableModel;
@@ -76,6 +83,8 @@ import org.apache.isis.viewer.wicket.ui.ComponentType;
 import org.apache.isis.viewer.wicket.ui.app.registry.ComponentFactoryRegistry;
 import org.apache.isis.viewer.wicket.ui.app.registry.ComponentFactoryRegistryAccessor;
 import org.apache.isis.viewer.wicket.ui.components.actionprompt.ActionPromptModalWindow;
+import org.apache.isis.viewer.wicket.ui.components.bookmarkedpages.BookmarkedPagesPanel;
+import org.apache.isis.viewer.wicket.ui.components.widgets.breadcrumbs.BreadcrumbPanel;
 import org.apache.isis.viewer.wicket.ui.components.widgets.favicon.Favicon;
 import org.apache.isis.viewer.wicket.ui.errors.ExceptionModel;
 import org.apache.isis.viewer.wicket.ui.errors.JGrowlBehaviour;
@@ -118,6 +127,8 @@ public abstract class PageAbstract extends WebPage implements ActionPromptProvid
     private static final String ID_FAVICON = "favicon";
 
     public static final String ID_MENU_LINK = "menuLink";
+
+    public static final String UIHINT_FOCUS = "focus";
 
     /**
      * This is a bit hacky, but best way I've found to pass an exception over to the WicketSignInPage
@@ -184,6 +195,12 @@ public abstract class PageAbstract extends WebPage implements ActionPromptProvid
                 themeDiv.add(new CssClassAppender(CssClassAppender.asCssStyle(applicationName)));
             }
 
+            boolean devUtilitiesEnabled = getApplication().getDebugSettings().isDevelopmentUtilitiesEnabled();
+            Component debugBar = devUtilitiesEnabled
+                                        ? newDebugBar("debugBar")
+                                        : new EmptyPanel("debugBar").setVisible(false);
+            add(debugBar);
+
             MarkupContainer header = createPageHeader("header");
             themeDiv.add(header);
 
@@ -215,6 +232,22 @@ public abstract class PageAbstract extends WebPage implements ActionPromptProvid
             throw new RestartResponseAtInterceptPageException(getSignInPage());
         }
     }
+
+    protected DebugBar newDebugBar(final String id) {
+        final DebugBar debugBar = new DebugBar(id);
+        final List<IDebugBarContributor> contributors = DebugBar.getContributors(getApplication());
+        for (Iterator<IDebugBarContributor> iterator = contributors.iterator(); iterator.hasNext(); ) {
+            final IDebugBarContributor contributor = iterator.next();
+            // the InspectorDebug invokes load on every model found.
+            // for ActionModels this has the rather unfortunate effect of invoking them!
+            // https://issues.apache.org/jira/browse/ISIS-1622 raised to refactor and then reinstate this
+            if(contributor == InspectorDebugPanel.DEBUG_BAR_CONTRIB) {
+                iterator.remove();
+            }
+        }
+        return debugBar;
+    }
+
 
     /**
      * Creates the component that should be used as a page header/navigation bar
@@ -279,10 +312,35 @@ public abstract class PageAbstract extends WebPage implements ActionPromptProvid
         if(isModernBrowser()) {
             addBootLint(response);
         }
+
+        String markupId = null;
+        UiHintContainer hintContainer = getUiHintContainerIfAny();
+        if(hintContainer != null) {
+            String path = hintContainer.getHint(getPage(), PageAbstract.UIHINT_FOCUS);
+            if(path != null) {
+                Component childComponent = get(path);
+                if(childComponent != null) {
+                    markupId = childComponent.getMarkupId();
+                }
+
+            }
+        }
+        String javaScript = markupId != null
+            ? String.format("Wicket.Event.publish(Isis.Topic.FOCUS_FIRST_PROPERTY, '%s')", markupId)
+            : "Wicket.Event.publish(Isis.Topic.FOCUS_FIRST_PROPERTY)";
+
+        response.render(OnDomReadyHeaderItem.forScript(javaScript));
+
+    }
+
+    protected UiHintContainer getUiHintContainerIfAny() {
+        return null;
     }
 
     private void addBootLint(final IHeaderResponse response) {
-        response.render(BootlintHeaderItem.INSTANCE);
+        // rather than using the default BootlintHeaderItem.INSTANCE;
+        // this allows us to assign 'form-control' class to an <a> (for x-editable styling)
+        response.render(new BootlintHeaderItem("bootlint.showLintReportForCurrentDocument(['E042'], {'problemFree': false});"));
     }
 
     private boolean isModernBrowser() {
@@ -355,8 +413,12 @@ public abstract class PageAbstract extends WebPage implements ActionPromptProvid
      * Convenience for subclasses
      */
     protected void addBookmarkedPages(final MarkupContainer container) {
-        Component bookmarks = getComponentFactoryRegistry().createComponent(ComponentType.BOOKMARKED_PAGES, ID_BOOKMARKED_PAGES, getBookmarkedPagesModel());
+        boolean showBookmarks = isShowBookmarks();
+        Component bookmarks = showBookmarks
+                ? getComponentFactoryRegistry().createComponent(ComponentType.BOOKMARKED_PAGES, ID_BOOKMARKED_PAGES, getBookmarkedPagesModel())
+                : new EmptyPanel(ID_BOOKMARKED_PAGES).setVisible(false);
         container.add(bookmarks);
+
         bookmarks.add(new Behavior() {
             @Override
             public void onConfigure(Component component) {
@@ -368,7 +430,21 @@ public abstract class PageAbstract extends WebPage implements ActionPromptProvid
         });
     }
 
-    protected void bookmarkPage(final BookmarkableModel<?> model) {
+    private boolean isShowBookmarks() {
+        return getConfiguration() .getBoolean(
+                        BookmarkedPagesPanel.SHOW_BOOKMARKS_KEY, BookmarkedPagesPanel.SHOW_BOOKMARKS_DEFAULT);
+    }
+
+    protected boolean isShowBreadcrumbs() {
+        return getConfiguration() .getBoolean(
+                        BreadcrumbPanel.SHOW_BREADCRUMBS_KEY, BreadcrumbPanel.SHOW_BREADCRUMBS_DEFAULT);
+    }
+
+    protected void bookmarkPageIfShown(final BookmarkableModel<?> model) {
+        if(!isShowBookmarks()) {
+            // no need...
+            return;
+        }
         getBookmarkedPagesModel().bookmarkPage(model);
     }
 

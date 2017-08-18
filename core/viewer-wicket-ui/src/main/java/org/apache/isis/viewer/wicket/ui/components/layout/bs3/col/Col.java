@@ -18,12 +18,19 @@
  */
 package org.apache.isis.viewer.wicket.ui.components.layout.bs3.col;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
-import org.apache.isis.applib.annotation.Where;
+
+import org.apache.wicket.Component;
+import org.apache.wicket.markup.html.WebMarkupContainer;
+
 import org.apache.isis.applib.layout.component.ActionLayoutData;
 import org.apache.isis.applib.layout.component.CollectionLayoutData;
 import org.apache.isis.applib.layout.component.DomainObjectLayoutData;
@@ -32,15 +39,13 @@ import org.apache.isis.applib.layout.grid.bootstrap3.BS3Col;
 import org.apache.isis.applib.layout.grid.bootstrap3.BS3Row;
 import org.apache.isis.applib.layout.grid.bootstrap3.BS3Tab;
 import org.apache.isis.applib.layout.grid.bootstrap3.BS3TabGroup;
-import org.apache.isis.core.metamodel.consent.Consent;
-import org.apache.isis.core.metamodel.consent.InteractionInitiatedBy;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
 import org.apache.isis.viewer.wicket.model.links.LinkAndLabel;
 import org.apache.isis.viewer.wicket.model.models.EntityModel;
 import org.apache.isis.viewer.wicket.ui.ComponentFactory;
 import org.apache.isis.viewer.wicket.ui.ComponentType;
 import org.apache.isis.viewer.wicket.ui.components.actionmenu.entityactions.AdditionalLinksPanel;
-import org.apache.isis.viewer.wicket.ui.components.actionmenu.entityactions.EntityActionUtil;
+import org.apache.isis.viewer.wicket.ui.components.actionmenu.entityactions.LinkAndLabelUtil;
 import org.apache.isis.viewer.wicket.ui.components.entity.fieldset.PropertyGroup;
 import org.apache.isis.viewer.wicket.ui.components.layout.bs3.Util;
 import org.apache.isis.viewer.wicket.ui.components.layout.bs3.row.Row;
@@ -49,11 +54,6 @@ import org.apache.isis.viewer.wicket.ui.panels.HasDynamicallyVisibleContent;
 import org.apache.isis.viewer.wicket.ui.panels.PanelAbstract;
 import org.apache.isis.viewer.wicket.ui.util.Components;
 import org.apache.isis.viewer.wicket.ui.util.CssClassAppender;
-import org.apache.wicket.Component;
-import org.apache.wicket.markup.html.WebMarkupContainer;
-
-import javax.annotation.Nullable;
-import java.util.List;
 
 public class Col extends PanelAbstract<EntityModel> implements HasDynamicallyVisibleContent {
 
@@ -70,11 +70,11 @@ public class Col extends PanelAbstract<EntityModel> implements HasDynamicallyVis
 
     public Col(
             final String id,
-            final EntityModel entityModel) {
+            final EntityModel entityModel, final BS3Col bs3Col) {
 
         super(id, entityModel);
 
-        bs3Col = (BS3Col) entityModel.getLayoutMetadata();
+        this.bs3Col = bs3Col;
 
         buildGui();
     }
@@ -136,18 +136,21 @@ public class Col extends PanelAbstract<EntityModel> implements HasDynamicallyVis
                         }
                     })
                     .filter(Predicates.<ObjectAction>notNull())
-                    .filter(new Predicate<ObjectAction>() {
-                        @Override public boolean apply(@Nullable final ObjectAction objectAction) {
-                            final Consent visibility = objectAction
-                                    .isVisible(getModel().getObject(), InteractionInitiatedBy.USER, Where.OBJECT_FORMS);
-                            return visibility.isAllowed();
-                        }
-                    })
+                    //
+                    // visibility needs to be determined at point of rendering, by ActionLink itself
+                    //
+                    //.filter(new Predicate<ObjectAction>() {
+                    //    @Override public boolean apply(@Nullable final ObjectAction objectAction) {
+                    //        final Consent visibility = objectAction
+                    //                .isVisible(getModel().getObject(), InteractionInitiatedBy.USER, Where.OBJECT_FORMS);
+                    //        return visibility.isAllowed();
+                    //    }
+                    //})
                     .toList();
         final List<LinkAndLabel> entityActionLinks =
-                EntityActionUtil.asLinkAndLabelsForAdditionalLinksPanel(getModel(), visibleActions);
+                LinkAndLabelUtil.asActionLinksForAdditionalLinksPanel(getModel(), visibleActions, null);
 
-        if(!entityActionLinks.isEmpty()) {
+        if (!entityActionLinks.isEmpty()) {
             AdditionalLinksPanel.addAdditionalLinks(actionOwner, actionIdToUse, entityActionLinks, AdditionalLinksPanel.Style.INLINE_LIST);
             visible = true;
         } else {
@@ -207,9 +210,7 @@ public class Col extends PanelAbstract<EntityModel> implements HasDynamicallyVis
                     tabGroupRv.add(rowsRv);
                     break;
                 default:
-                    final EntityModel entityModelWithHints = getModel().cloneWithLayoutMetadata(bs3TabGroup);
-
-                    final WebMarkupContainer tabGroup = new TabGroupPanel(id, entityModelWithHints);
+                    final WebMarkupContainer tabGroup = new TabGroupPanel(id, getModel(), bs3TabGroup);
 
                     tabGroupRv.add(tabGroup);
                     break;
@@ -238,9 +239,8 @@ public class Col extends PanelAbstract<EntityModel> implements HasDynamicallyVis
             for (FieldSet fieldSet : fieldSetsWithProperties) {
 
                 final String id = fieldSetRv.newChildId();
-                final EntityModel entityModelWithHints = getModel().cloneWithLayoutMetadata(fieldSet);
 
-                final PropertyGroup propertyGroup = new PropertyGroup(id, entityModelWithHints);
+                final PropertyGroup propertyGroup = new PropertyGroup(id, getModel(), fieldSet);
                 fieldSetRv.add(propertyGroup);
             }
             div.add(fieldSetRv);
@@ -266,13 +266,16 @@ public class Col extends PanelAbstract<EntityModel> implements HasDynamicallyVis
             for (CollectionLayoutData collection : collections) {
 
                 final String id = collectionRv.newChildId();
-                final EntityModel entityModelWithHints = getModel().cloneWithLayoutMetadata(collection);
+
+                // we successively trample over the layout data; but that's ok, this is synchronous code anyway...
+                final EntityModel entityModel = getModel();
+                entityModel.setCollectionLayoutData(collection);
 
                 // the entityModel's getLayoutData() provides the hint as to which collection of the entity to render.
                 final ComponentFactory componentFactory =
                         getComponentFactoryRegistry().findComponentFactory(
-                                ComponentType.ENTITY_COLLECTION, entityModelWithHints);
-                final Component collectionPanel = componentFactory.createComponent(id, entityModelWithHints);
+                                ComponentType.ENTITY_COLLECTION, entityModel);
+                final Component collectionPanel = componentFactory.createComponent(id, entityModel);
                 collectionRv.add(collectionPanel);
             }
             div.add(collectionRv);
@@ -296,12 +299,8 @@ public class Col extends PanelAbstract<EntityModel> implements HasDynamicallyVis
                 new RepeatingViewWithDynamicallyVisibleContent(owningId);
 
         for(final BS3Row bs3Row: rows) {
-
             final String id = rowRv.newChildId();
-            final EntityModel entityModelWithHints = getModel().cloneWithLayoutMetadata(bs3Row);
-
-            final Row row = new Row(id, entityModelWithHints);
-
+            final Row row = new Row(id, getModel(), bs3Row);
             rowRv.add(row);
         }
         return rowRv;

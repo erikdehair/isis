@@ -37,6 +37,9 @@
     <xs:attribute name="hidden" type="tns:where"/>
     <xs:attribute name="id" type="xs:string" use="required"/>
     <xs:attribute name="namedEscaped" type="xs:boolean"/>
+
+    <xs:attribute name="promptStyle" type="tns:promptStyle"/>
+
     <xs:attribute name="position" type="tns:position"/>
   </xs:complexType>
 
@@ -46,7 +49,7 @@
       <xs:element maxOccurs="unbounded" minOccurs="0" ref="tns:property"/>
       <xs:element minOccurs="0" name="metadataError" type="xs:string"/>
     </xs:sequence>
-    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
     <xs:attribute name="id" type="xs:string"/>
     <xs:attribute name="unreferencedActions" type="xs:boolean"/>
     <xs:attribute name="unreferencedProperties" type="xs:boolean"/>
@@ -65,8 +68,12 @@
     <xs:attribute name="labelPosition" type="tns:labelPosition"/>
     <xs:attribute name="multiLine" type="xs:int"/>
     <xs:attribute name="namedEscaped" type="xs:boolean"/>
+
+    <xs:attribute name="promptStyle" type="tns:promptStyle"/>
+
     <xs:attribute name="renderedAsDayBefore" type="xs:boolean"/>
     <xs:attribute name="typicalLength" type="xs:int"/>
+    <xs:attribute name="unchanging" type="xs:boolean"/>
   </xs:complexType>
 
   <xs:complexType name="collection">
@@ -97,6 +104,15 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="LEFT"/>
       <xs:enumeration value="RIGHT"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="promptStyle">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="DIALOG"/>
+      <xs:enumeration value="INLINE"/>
+      <xs:enumeration value="INLINE_AS_IF_EDIT"/>
+      <xs:enumeration value="AS_CONFIGURED"/>
     </xs:restriction>
   </xs:simpleType>
 

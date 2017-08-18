@@ -20,24 +20,21 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 
 import com.google.common.collect.Maps;
-import com.google.common.eventbus.Subscribe;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.isis.applib.AbstractSubscriber;
 import org.apache.isis.applib.annotation.DomainService;
 import org.apache.isis.applib.annotation.NatureOfService;
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.events.system.FixturesInstalledEvent;
 import org.apache.isis.applib.events.system.FixturesInstallingEvent;
 import org.apache.isis.applib.services.WithTransactionScope;
-import org.apache.isis.applib.services.eventbus.EventBusService;
 
 /**
  * This service (API and implementation) provides a mechanism by which idempotent query results can be cached for the duration of an interaction.
@@ -49,7 +46,10 @@ import org.apache.isis.applib.services.eventbus.EventBusService;
  * {@link org.apache.isis.applib.annotation.DomainService}.  This means that it is automatically registered and
  * available for use; no further configuration is required.
  */
-@DomainService(nature = NatureOfService.DOMAIN)
+@DomainService(
+        nature = NatureOfService.DOMAIN,
+        menuOrder = "" + Integer.MAX_VALUE
+)
 @RequestScoped
 public class QueryResultsCache implements WithTransactionScope {
 
@@ -237,39 +237,31 @@ public class QueryResultsCache implements WithTransactionScope {
     /**
      * In separate class because {@link QueryResultsCache} itself is request-scoped
      */
-    @DomainService(nature = NatureOfService.DOMAIN)
-    public static class Control {
+    @DomainService(
+            nature = NatureOfService.DOMAIN,
+            menuOrder = "" + Integer.MAX_VALUE
+    )
+    public static class Control extends AbstractSubscriber {
 
-        @PostConstruct
-        public void postConstruct() {
-            eventBusService.register(this);
-        }
-
-        @PreDestroy
-        public void preDestroy() {
-            eventBusService.unregister(this);
-        }
-
-        @Subscribe
+        @Programmatic
+        @com.google.common.eventbus.Subscribe
         @org.axonframework.eventhandling.annotation.EventHandler
         public void on(FixturesInstallingEvent ev) {
             fixturesInstalling = true;
         }
 
-        @Subscribe
+        @Programmatic
+        @com.google.common.eventbus.Subscribe
         @org.axonframework.eventhandling.annotation.EventHandler
         public void on(FixturesInstalledEvent ev) {
             fixturesInstalling = false;
         }
 
         private boolean fixturesInstalling;
-
+        @Programmatic
         public boolean isFixturesInstalling() {
             return fixturesInstalling;
         }
-
-        @Inject
-        EventBusService eventBusService;
     }
 
 

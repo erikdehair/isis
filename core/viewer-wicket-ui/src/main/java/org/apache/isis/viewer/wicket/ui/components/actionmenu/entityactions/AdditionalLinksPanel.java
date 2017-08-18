@@ -23,17 +23,19 @@ import java.util.List;
 
 import com.google.common.base.Strings;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
+import org.apache.wicket.model.Model;
 
 import org.apache.isis.applib.annotation.SemanticsOf;
 import org.apache.isis.core.commons.lang.StringExtensions;
 import org.apache.isis.core.metamodel.facets.members.cssclassfa.CssClassFaPosition;
+import org.apache.isis.viewer.wicket.ui.components.widgets.linkandlabel.ActionLink;
 import org.apache.isis.viewer.wicket.model.links.LinkAndLabel;
 import org.apache.isis.viewer.wicket.model.links.ListOfLinksModel;
 import org.apache.isis.viewer.wicket.ui.components.actionmenu.CssClassFaBehavior;
@@ -83,12 +85,23 @@ public class AdditionalLinksPanel extends PanelAbstract<ListOfLinksModel> {
     }
 
 
-    protected AdditionalLinksPanel(final String id, final List<LinkAndLabel> links) {
-        super(id, new ListOfLinksModel(links));
+    protected AdditionalLinksPanel(final String id, final List<LinkAndLabel> linksDoNotUseDirectlyInsteadUseOfListOfLinksModel) {
+        super(id, new ListOfLinksModel(linksDoNotUseDirectlyInsteadUseOfListOfLinksModel));
 
         final List<LinkAndLabel> linkAndLabels = getModel().getObject();
 
-        final WebMarkupContainer container = new WebMarkupContainer(ID_ADDITIONAL_LINK_LIST);
+        final WebMarkupContainer container = new WebMarkupContainer(ID_ADDITIONAL_LINK_LIST) {
+            @Override
+            public boolean isVisible() {
+                for (LinkAndLabel linkAndLabel : linkAndLabels) {
+                    final AbstractLink link = linkAndLabel.getLink();
+                    if(link.isVisible()) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
         addOrReplace(container);
 
         container.setOutputMarkupId(true);
@@ -104,11 +117,23 @@ public class AdditionalLinksPanel extends PanelAbstract<ListOfLinksModel> {
                 final LinkAndLabel linkAndLabel = item.getModelObject();
 
                 final AbstractLink link = linkAndLabel.getLink();
+                final AttributeModifier attributeModifier = link instanceof ActionLink
+                        ? new AttributeModifier("title", new Model<String>() {
+                            @Override
+                            public String getObject() {
+                                final ActionLink actionLink = (ActionLink) link;
+                                final String reasonDisabledIfAny = actionLink.getReasonDisabledIfAny();
+                                return first(reasonDisabledIfAny, linkAndLabel.getDescriptionIfAny());
+                            }
+                        })
+                        : new AttributeModifier("title",
+                        first(linkAndLabel.getReasonDisabledIfAny(), linkAndLabel.getDescriptionIfAny()));
 
-                final String itemTitle = first(linkAndLabel.getDisabledReasonIfAny(), linkAndLabel.getDescriptionIfAny());
-                if(itemTitle != null) {
-                    item.add(new AttributeAppender("title", itemTitle));
-                }
+                item.add(attributeModifier);
+
+                // ISIS-1615, prevent bootstrap from changing the HTML link's 'title' attribute on client-side;
+                // bootstrap will not touch the 'title' attribute once the HTML link has a 'data-original-title' attribute
+                link.add(new AttributeModifier("data-original-title", ""));
 
                 final Label viewTitleLabel = new Label(ID_ADDITIONAL_LINK_TITLE, linkAndLabel.getLabel());
                 if(linkAndLabel.isBlobOrClob()) {
@@ -120,10 +145,9 @@ public class AdditionalLinksPanel extends PanelAbstract<ListOfLinksModel> {
                 link.add(new CssClassAppender(linkAndLabel.getActionIdentifier()));
 
                 SemanticsOf semantics = linkAndLabel.getSemantics();
-                if (linkAndLabel.getParameters().isNoParameters() && linkAndLabel.getDisabledReasonIfAny() == null) {
+                if (linkAndLabel.getParameters().isNoParameters() && linkAndLabel.getReasonDisabledIfAny() == null) {
                     addConfirmationDialogIfAreYouSureSemantics(link, semantics);
                 }
-
 
                 final String cssClass = linkAndLabel.getCssClass();
                 CssClassAppender.appendCssClassTo(link, cssClass);
@@ -133,7 +157,9 @@ public class AdditionalLinksPanel extends PanelAbstract<ListOfLinksModel> {
                 link.addOrReplace(viewTitleLabel);
 
                 final String cssClassFa = linkAndLabel.getCssClassFa();
-                if(!Strings.isNullOrEmpty(cssClassFa)) {
+                if (Strings.isNullOrEmpty(cssClassFa)) {
+                    viewTitleLabel.add(new CssClassAppender("menuLinkSpacer"));
+                } else {
                     final CssClassFaPosition position = linkAndLabel.getCssClassFaPosition();
                     viewTitleLabel.add(new CssClassFaBehavior(cssClassFa, position));
                 }
@@ -141,6 +167,7 @@ public class AdditionalLinksPanel extends PanelAbstract<ListOfLinksModel> {
                 item.addOrReplace(link);
             }
         };
+
         container.addOrReplace(listView);
     }
 
