@@ -137,15 +137,15 @@
         <log4jdbc-remix.version>0.2.7</log4jdbc-remix.version>
         <resteasy-jaxrs.version>3.0.17.Final</resteasy-jaxrs.version>
 
-        <jetty.version>9.3.10.v20160621</jetty.version>
+        <jetty.version>9.4.3.v20170317</jetty.version>
 
-        <wicket.version>7.8.0</wicket.version>
+        <wicket.version>7.9.0</wicket.version>
+        <wicketstuff.version>7.8.1</wicketstuff.version>
 
         <wicket-webjars.version>0.5.4</wicket-webjars.version>
         <wicket-bootstrap.version>0.10.16</wicket-bootstrap.version>
         <wicket-source.version>7.0.0</wicket-source.version>
 
-        <wicketstuff.version>7.8.0</wicketstuff.version>
         <select2.version>4.0.3</select2.version>
 
         <jquery-ui.version>1.11.4</jquery-ui.version>
@@ -418,6 +418,7 @@
               <enabled>false</enabled>
             </snapshots>
         </repository>
+
     </repositories>
 
 
