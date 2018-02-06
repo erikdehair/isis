@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.HEAD;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -41,9 +43,9 @@ import org.apache.isis.core.metamodel.facetapi.Facet;
 import org.apache.isis.core.metamodel.facets.FacetFactory;
 import org.apache.isis.core.metamodel.facets.object.autocomplete.AutoCompleteFacet;
 import org.apache.isis.core.metamodel.facets.object.objectspecid.ObjectSpecIdFacet;
-import org.apache.isis.core.metamodel.layoutmetadata.LayoutMetadataReader;
 import org.apache.isis.core.metamodel.progmodel.ProgrammingModel;
 import org.apache.isis.core.metamodel.services.ServicesInjector;
+import org.apache.isis.core.metamodel.services.configinternal.ConfigurationServiceInternal;
 import org.apache.isis.core.metamodel.spec.FreeStandingList;
 import org.apache.isis.core.metamodel.spec.ObjectSpecId;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
@@ -94,12 +96,10 @@ public class SpecificationLoader implements ApplicationScopedComponent {
 
     private final MetaModelValidator metaModelValidator;
     private final SpecificationCacheDefault cache = new SpecificationCacheDefault();
-    private final List<LayoutMetadataReader> layoutMetadataReaders;
 
     public SpecificationLoader(
             final ProgrammingModel programmingModel,
             final MetaModelValidator metaModelValidator,
-            final List<LayoutMetadataReader> layoutMetadataReaders,
             final ServicesInjector servicesInjector) {
 
         this.servicesInjector = servicesInjector;
@@ -107,7 +107,6 @@ public class SpecificationLoader implements ApplicationScopedComponent {
         this.metaModelValidator = metaModelValidator;
 
         this.facetProcessor = new FacetProcessor(programmingModel);
-        this.layoutMetadataReaders = layoutMetadataReaders;
     }
 
     @Override
@@ -137,9 +136,6 @@ public class SpecificationLoader implements ApplicationScopedComponent {
 
         // wire subcomponents into each other
         facetProcessor.setServicesInjector(servicesInjector);
-        for (final LayoutMetadataReader layoutMetadataReader : layoutMetadataReaders) {
-            servicesInjector.injectInto(layoutMetadataReader);
-        }
 
         // initialize subcomponents
         programmingModel.init();
@@ -174,7 +170,7 @@ public class SpecificationLoader implements ApplicationScopedComponent {
 
     private void cacheBySpecId() {
         final Map<ObjectSpecId, ObjectSpecification> specById = Maps.newHashMap();
-        for (final ObjectSpecification objSpec : allSpecifications()) {
+        for (final ObjectSpecification objSpec : allCachedSpecifications()) {
             final ObjectSpecId objectSpecId = objSpec.getSpecId();
             if (objectSpecId == null) {
                 continue;
@@ -402,9 +398,11 @@ public class SpecificationLoader implements ApplicationScopedComponent {
             return new ObjectSpecificationOnStandaloneList(servicesInjector,
                     facetProcessor);
         } else {
+            final ConfigurationServiceInternal configService = servicesInjector.lookupService(
+                    ConfigurationServiceInternal.class);
             final FacetedMethodsBuilderContext facetedMethodsBuilderContext =
                     new FacetedMethodsBuilderContext(
-                            this, facetProcessor, layoutMetadataReaders);
+                            this, facetProcessor, configService);
             return new ObjectSpecificationDefault(cls, facetedMethodsBuilderContext,
                     servicesInjector, facetProcessor, natureOfServiceIfAny);
         }
@@ -457,10 +455,20 @@ public class SpecificationLoader implements ApplicationScopedComponent {
 
     //region > allSpecifications
     /**
-     * Return all the loaded specifications.
+     * Returns (a new list holding a copy of) all the loaded specifications.
+     *
+     * <p>
+     *     A new list is returned to avoid concurrent modification exceptions for if the caller then
+     *     iterates over all the specifications and performs an activity that might give rise to new
+     *     ObjectSpec's being discovered, eg performing metamodel validation.
+     * </p>
      */
     @Programmatic
     public Collection<ObjectSpecification> allSpecifications() {
+        return Lists.newArrayList(allCachedSpecifications());
+    }
+
+    private Collection<ObjectSpecification> allCachedSpecifications() {
         return cache.allSpecifications();
     }
 

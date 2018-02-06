@@ -25,7 +25,7 @@ Some examples:
 * the information within an OID could be converted into a barcode, and stamped onto a PDF form.
 When the PDF is scanned by the mail room, the barcode could be read to attach the correspondence to the relevant domain object.
 
-* as a handle to any object in an audit record, as used by xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditerService[`AuditerService`] or xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditingService[`AuditingService`] (the latter deprecated);
+* as a handle to any object in an audit record, as used by xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditerService[`AuditerService`];
 
 * similarly within implementations of xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_CommandService[`CommandService`] to persist `Command`
 objects
@@ -39,7 +39,7 @@ use the oid tuple to look up, render and allow the user to interact with domain 
 
 Although the exact content of an OID should be considered opaque by domain objects, it is possible for domain objects to obtain OIDs.
 These are represented as `Bookmark`s, obtained from the xref:../rgsvc/rgsvc.adoc#_rgsvc_integration-api_BookmarkService[`BookmarkService`].
-Deep links meanwhile can be obtained from the xref:../rgant/rgant.adoc#_rgant-DeepLinkService[`@DeepLinkService`].
+Deep links meanwhile can be obtained from the xref:../rgsvc/rgsvc.adoc#_rgsvc_presentation-api_DeepLinkService[`DeepLinkService`].
 
 OIDs can also be converted into XML format, useful for integration scenarios.
 The xref:../rgcms/rgcms.adoc#_rgcms_schema-common[common schema] XSD defines the `oidDto` complex type for precisely this purpose.

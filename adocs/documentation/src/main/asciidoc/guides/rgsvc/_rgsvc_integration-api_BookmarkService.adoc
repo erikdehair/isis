@@ -1,11 +1,11 @@
 [[_rgsvc_integration-api_BookmarkService]]
-= `BookmarkService2`
+= `BookmarkService`
 :Notice: Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE file distributed with this work for additional information regarding copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at. http://www.apache.org/licenses/LICENSE-2.0 . Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR  CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 :_basedir: ../../
 :_imagesdir: images/
 
 
-The `BookmarkService2` API provides the ability to obtain a serializable ``o.a.i.applib.bookmarks.Bookmark`` for any (persisted) domain object, and to lookup domain objects given a ``Bookmark``.  This can then in turn be converted to and from a string.
+The `BookmarkService2` domain service (and its various supertypes) provides the ability to obtain a serializable ``o.a.i.applib.bookmarks.Bookmark`` for any (persisted) domain object, and to lookup domain objects given a ``Bookmark``.  This can then in turn be converted to and from a string.
 
 For example, a `Customer` object with:
 
@@ -21,15 +21,13 @@ A `Bookmark` is little more than an API equivalent of Apache Isis' internal `Oid
 For example, a `Bookmark` could be converted into a barcode, and then this used for automated scanning of correspondence from a customer.
 ====
 
-``Bookmark``s are used by several other domain services as a means of storing areference to an arbitrary object
-(a polymorphic relationship).  For example, the (non-ASF)
-http://github.com/isisaddons/isis-module-audit[Isis addons' auditing] module's implementation of
-xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditerService[`AuditerService`] uses bookmarks to capture the object
-that is being audited.
+``Bookmark``s are used by several other domain services as a means of storing a reference to an arbitrary object
+(a polymorphic relationship).  For example, the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s auditing module's implementation of xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditerService[`AuditerService`] uses bookmarks to capture the object that is being audited.
 
 [TIP]
 ====
-One downside of using ``Bookmark``s is that there is no way for the JDO/DataNucleus objectstore to enforce any kind of referental integrity.  However, the (non-ASF) http://github.com/isisaddons/isis-module-poly[Isis addons' poly] module describes and supports a design pattern to address this requirement.
+One downside of using ``Bookmark``s is that there is no way for the JDO/DataNucleus objectstore to enforce any kind of referental integrity.
+However, the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s poly module describes and supports a design pattern to address this requirement.
 ====
 
 
@@ -37,11 +35,11 @@ One downside of using ``Bookmark``s is that there is no way for the JDO/DataNucl
 
 == API & Implementation
 
-The API defined by `BookmarkService2` is:
+The API defined by `BookmarkService` is:
 
 [source,java]
 ----
-public interface BookmarkService2 {
+public interface BookmarkService {
     enum FieldResetPolicy {                                                     // <1>
         RESET,
         DONT_RESET
@@ -58,6 +56,10 @@ public interface BookmarkService2 {
 
 
 The core framework provides a default implementation of this API, namely `o.a.i.core.metamodel.services.bookmarks.BookmarkServiceInternalDefault`
+
+To use an alternative implementation, implement `BookmarkService` interface and use xref:../rgant/rgant.adoc#_rgant-DomainServiceLayout_menuOrder[`@DomainServiceLayout#menuOrder()`] (as explained in the xref:../rgsvc/rgsvc.adoc#__rgsvc_intro_overriding-the-services[introduction] to this guide).
+
+
 
 
 == `BookmarkHolder`
@@ -99,27 +101,11 @@ A more sophisticated implementation could look inside the passed `ev` argument a
 
 == Usage by other services
 
-Bookmarks are used by the (non-ASF) http://github.com/isisaddons/isis-module-command[Isis addons' command] module's
-implementation of  xref:../rgsvc/rgsvc.adoc#_rgsvc_api_BackgroundCommandService[`BackgroundCommandService`], which uses a
-bookmark to capture the target object on which an action will be invoked subsequently.
+Bookmarks are used by the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s command module's implementation of  xref:../rgsvc/rgsvc.adoc#_rgsvc_api_BackgroundCommandService[`BackgroundCommandService`], which uses a bookmark to capture the target object on which an action will be invoked subsequently.
 
-Bookmarks are also used by the (non-ASF) http://github.com/isisaddons/isis-module-publishing[Isis addons' publishing]
-module's implementation of xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_PublishingService[`PublishingService`], and by the
-(non-ASF) http://github.com/isisaddons/isis-module-audit[Isis addons' auditing] module's implementation of
+Bookmarks are also used by the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s auditing module's implementation of
 xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditerService[`AuditerService`].
 
 
-
-
-== Registering the Service
-
-Assuming that the `configuration-and-annotation` services installer is configured (implicit if using the
-`AppManifest` to xref:../rgcms/rgcms.adoc#_rgcms_classes_AppManifest-bootstrapping[bootstrap the app]) then Apache Isis' core
-implementation of `BookmarkService` is automatically registered (it is annotated with `@DomainService`) so no further
-configuration is required.
-
-To use an alternative implementation, use
-xref:../rgant/rgant.adoc#_rgant-DomainServiceLayout_menuOrder[`@DomainServiceLayout#menuOrder()`] (as explained
-in the xref:../rgsvc/rgsvc.adoc#__rgsvc_intro_overriding-the-services[introduction] to this guide).
 
 

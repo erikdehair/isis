@@ -24,15 +24,17 @@ import javax.annotation.PostConstruct;
 
 import org.apache.isis.applib.annotation.Action;
 import org.apache.isis.applib.annotation.ActionLayout;
+import org.apache.isis.applib.annotation.DomainService;
 import org.apache.isis.applib.annotation.DomainServiceLayout;
 import org.apache.isis.applib.annotation.MemberOrder;
 import org.apache.isis.applib.annotation.MinLength;
+import org.apache.isis.applib.annotation.NatureOfService;
 import org.apache.isis.applib.annotation.Optionality;
 import org.apache.isis.applib.annotation.Parameter;
 import org.apache.isis.applib.annotation.ParameterLayout;
 import org.apache.isis.applib.annotation.RestrictTo;
-import org.apache.isis.applib.events.system.FixturesInstalledEvent;
-import org.apache.isis.applib.events.system.FixturesInstallingEvent;
+import org.apache.isis.applib.fixturescripts.events.FixturesInstalledEvent;
+import org.apache.isis.applib.fixturescripts.events.FixturesInstallingEvent;
 import org.apache.isis.applib.fixturescripts.FixtureResult;
 import org.apache.isis.applib.fixturescripts.FixtureScript;
 import org.apache.isis.applib.fixturescripts.FixtureScripts;
@@ -59,6 +61,10 @@ import org.apache.isis.applib.services.eventbus.EventBusService;
  *     automatically registered programmatically if no other instance of {@link FixtureScripts} is found.
  * </p>
  */
+@DomainService(
+        nature = NatureOfService.VIEW_MENU_ONLY,
+        objectType = "isisApplib.FixtureScriptsDefault"
+)
 @DomainServiceLayout(
         named="Prototyping",
         menuBar = DomainServiceLayout.MenuBar.SECONDARY,
@@ -74,7 +80,8 @@ public class FixtureScriptsDefault extends FixtureScripts {
     public static final String PACKAGE_PREFIX = FixtureScriptsDefault.class.getPackage().getName();
 
     public FixtureScriptsDefault() {
-        super(PACKAGE_PREFIX);
+        super(FixtureScriptsSpecification.builder(PACKAGE_PREFIX)
+                .build());
     }
 
 
@@ -203,12 +210,13 @@ public class FixtureScriptsDefault extends FixtureScripts {
         if(recreateScript == null) {
             return null;
         }
-        final List<FixtureResult> results = recreateScript.run(null);
+        final List<FixtureResult> results = runScript(recreateScript, null);
         if(results.isEmpty()) {
             return null;
         }
         return results.get(0).getObject();
     }
+
     public boolean hideRecreateObjectsAndReturnFirst() {
         return getSpecification().getRecreateScriptClass() == null;
     }

@@ -12,7 +12,7 @@ The release process consists of:
 * Members of the Apache Isis PMC xref:../cgcom/cgcom.adoc#_cgcom_verifying-releases[verifying] and voting on the release
 * the release manager performing post-release tasks, for either a xref:../cgcom/cgcom.adoc#_cgcom_post-release-successful[successful] or an xref:../cgcom/cgcom.adoc#_cgcom_post-release-unsuccessful[unsuccessful] vote.
 
-Apache Isis itself consists of three separately releasable modules; relative to the link:https://git-wip-us.apache.org/repos/asf/isis/repo?p=isis.git;a=tree[source code root] there are:
+Apache Isis itself consists of three separately releasable modules; relative to the link:https://github.com/apache/isis[source code root] there are:
 
 * `core`
 * `component/example/archetypes/helloworld`
@@ -55,8 +55,8 @@ For example:
 ----
 cd core
 export ISISTMP=/c/tmp                               # <1>
-export ISISDEV=1.17.0-SNAPSHOT
-export ISISREL=1.16.0
+export ISISDEV=2.1.0-SNAPSHOT
+export ISISREL=2.0.0
 export ISISRC=RC1
 export ISISBRANCH=release-$ISISREL-$ISISRC
 export ISISJIRA=ISIS-9999                           # <2>
@@ -73,7 +73,7 @@ Obviously, alter `$ISISDEV` and `$ISISREL` as required, and bump `$ISISRC` for r
 
 [IMPORTANT]
 ====
-Note that the branch name is *not* the same any of the eventual tag names (eg `isis-1.16.0` or `simpleapp-archetype-1.16.0`).
+Note that the branch name is *not* the same any of the eventual tag names (eg `isis-2.0.0` or `simpleapp-archetype-2.0.0`).
 
 If they did have the same name, then what would happen is that the `maven-release-plugin` would checkout the (HEAD of the) branch and thus upload a SNAPSHOT to the snapshot repository.
 What it should of course do is checkout the tag and then upload that to the release staging repository.
@@ -103,13 +103,13 @@ his will normally have been done already during earlier development; but confirm
 If it has not, make the change.
 
 Double check that the version number of the core POM (`core/pom.xml`) should reflect the branch name that you are now on.
-For example, if releasing version `1.16.0`, the POM should read:
+For example, if releasing version `2.0.0`, the POM should read:
 
 [source,xml]
 ----
 <groupId>org.apache.isis.core</groupId>
 <artifactId>isis</artifactId>
-<version>1.16.0-SNAPSHOT</version>
+<version>2.0.0-SNAPSHOT</version>
 ----
 
 Also, check that there are no snapshot dependencies:
@@ -311,7 +311,7 @@ If there are any snags at this stage, then explicitly delete the generated `rele
 [[__cgcom_cutting-a-release_releasing-core_post-prepare-sanity-check]]
 === Post-prepare sanity check
 
-You should end up with artifacts in your local repo with the new version (eg `1.16.0`).  This is a good time to do some quick sanity checks; nothing has yet been uploaded:
+You should end up with artifacts in your local repo with the new version (eg `2.0.0-M1`).  This is a good time to do some quick sanity checks; nothing has yet been uploaded:
 
 * unzip the source-release ZIP and check it builds.
 * Inspect the `DEPENDENCIES` file, and check it looks correct.
@@ -371,17 +371,17 @@ The command checks out the codebase from the tag, then builds the artifacts, the
 [INFO] Performing a LOCAL checkout from scm:git:file:///C:\APACHE\isis-git-rw\co
 re
 [INFO] Checking out the project to perform the release ...
-[INFO] Executing: cmd.exe /X /C "git clone --branch release-1.16.0 file:///C:\APACHE\isis-git-rw\core C:\APACHE\isis-git-rw\core\target\checkout"
+[INFO] Executing: cmd.exe /X /C "git clone --branch release-2.0.0-M1 file:///C:\APACHE\isis-git-rw\core C:\APACHE\isis-git-rw\core\target\checkout"
 [INFO] Working directory: C:\APACHE\isis-git-rw\core\target
 [INFO] Performing a LOCAL checkout from scm:git:file:///C:\APACHE\isis-git-rw
 [INFO] Checking out the project to perform the release ...
-[INFO] Executing: cmd.exe /X /C "git clone --branch release-1.16.0 file:///C:\APACHE\isis-git-rw C:\APACHE\isis-git-rw\core\target\checkout"
+[INFO] Executing: cmd.exe /X /C "git clone --branch release-2.0.0-M1 file:///C:\APACHE\isis-git-rw C:\APACHE\isis-git-rw\core\target\checkout"
 [INFO] Working directory: C:\APACHE\isis-git-rw\core\target
 [INFO] Executing: cmd.exe /X /C "git ls-remote file:///C:\APACHE\isis-git-rw"
 [INFO] Working directory: C:\Users\ADMINI~1\AppData\Local\Temp
 [INFO] Executing: cmd.exe /X /C "git fetch file:///C:\APACHE\isis-git-rw"
 [INFO] Working directory: C:\APACHE\isis-git-rw\core\target\checkout
-[INFO] Executing: cmd.exe /X /C "git checkout release-1.16.0"
+[INFO] Executing: cmd.exe /X /C "git checkout release-2.0.0-M1"
 [INFO] Working directory: C:\APACHE\isis-git-rw\core\target\checkout
 [INFO] Executing: cmd.exe /X /C "git ls-files"
 [INFO] Working directory: C:\APACHE\isis-git-rw\core\target\checkout
@@ -412,7 +412,7 @@ If releasing using Windows and Maven >= 3.3.3, then there is an issue that requi
 
 In Maven 3.3.3 the `mvn.bat` file was removed, replaced instead with `mvn.cmd`.
 However, `maven-archetype-plugin:2.4` only uses `mvn.bat`; this causes the `archetype:create-from-project` goal to fail.
-The fix is to simple: just copy `mvn.cmd` to `mvn.bat`.
+The fix is simple: just copy `mvn.cmd` to `mvn.bat`.
 ====
 
 
@@ -453,7 +453,7 @@ Update the parent `pom.xml` to reference the _released_ version of Apache Isis c
 [source,xml]
 ----
 <properties>
-    <isis.version>1.16.0</isis.version>
+    <isis.version>2.0.0-M1</isis.version>
     ...
 </properties>
 ----
@@ -523,10 +523,19 @@ docker container run -p 8080:8080 -d test/simpleapp
 +
 [NOTE]
 ====
-On Windows, you may need to enable the Docker daemon first, otherwise the "mvn install" command above will fail:
+On Windows, make sure that Docker is first switched to using linux containers, not Windows containers (because the `Dockerfile` in the application references a linux base image).
 
-image::{_imagesdir}docker-daemon.png[width="600px",link="{_imagesdir}docker-daemon.png"]
+You may also need to enable the Docker daemon first, otherwise the "mvn install" command above will fail:
+
+image::{_imagesdir}docker/docker-daemon.png[width="600px",link="{_imagesdir}docker/docker-daemon.png"]
+
+You might also need to ensure that the "Unidentified networks" are configured to be private:
+
+image::{_imagesdir}docker/026-docker-nat-private.png[width="600px",link="{_imagesdir}docker/026-docker-nat-private.png"]
+
+This can be done using the "Local Security Policy" application.
 ====
+
 
 This too should be accessed at link:http://localhost:8080[localhost:8080].
 
@@ -674,7 +683,7 @@ Update the parent `pom.xml` to reference the _released_ version of Apache Isis c
 [source,xml]
 ----
 <properties>
-    <isis.version>1.16.0</isis.version>
+    <isis.version>2.0.0-M1</isis.version>
     ...
 </properties>
 ----
@@ -891,7 +900,7 @@ git fetch
 
 [NOTE]
 ====
-The remote tags aren't visible locally but can be seen https://git-wip-us.apache.org/repos/asf/isis/repo?p=isis.git;a=summary[online].
+The remote tags aren't visible locally but can be seen link:https://github.com/apache/isis/tags[online].
 ====
 
 
@@ -912,7 +921,7 @@ Use the following subject, eg:
 
 [source,bash]
 ----
-[VOTE] Apache Isis Core release 1.16.0 RC1
+[VOTE] Apache Isis Core release 2.0.0-M1 RC1
 ----
 
 And use the following body:
@@ -921,21 +930,21 @@ And use the following body:
 ----
 I've cut a release for Apache Isis Core and the two archetypes:
 
-* Core 1.16.0
-* HelloWorld Archetype 1.16.0
-* SimpleApp Archetype 1.16.0
+* Core 2.0.0-M1
+* HelloWorld Archetype 2.0.0-M1
+* SimpleApp Archetype 2.0.0-M1
 
 The source code artifacts have been uploaded to staging repositories on repository.apache.org:
 
-* http://repository.apache.org/content/repositories/orgapacheisis-10xx/org/apache/isis/core/isis/1.16.0/isis-1.16.0-source-release.zip
-* http://repository.apache.org/content/repositories/orgapacheisis-10xx/org/apache/isis/archetype/helloworld-archetype/1.16.0/helloworld-archetype-1.16.0-source-release.zip
-* http://repository.apache.org/content/repositories/orgapacheisis-10xx/org/apache/isis/archetype/simpleapp-archetype/1.16.0/simpleapp-archetype-1.16.0-source-release.zip
+* http://repository.apache.org/content/repositories/orgapacheisis-10xx/org/apache/isis/core/isis/2.0.0-M1/isis-2.0.0-M1-source-release.zip
+* http://repository.apache.org/content/repositories/orgapacheisis-10xx/org/apache/isis/archetype/helloworld-archetype/2.0.0-M1/helloworld-archetype-2.0.0-M1-source-release.zip
+* http://repository.apache.org/content/repositories/orgapacheisis-10xx/org/apache/isis/archetype/simpleapp-archetype/2.0.0-M1/simpleapp-archetype-2.0.0-M1-source-release.zip
 
 For each zip there is a corresponding signature file (append .asc to the zip's url).
 
-In the source code repo the code has been tagged as isis-1.16.0-RC1, helloworld-archetype-1.16.0-RC1 and simpleapp-archetype-1.16.0-RC1; see https://git-wip-us.apache.org/repos/asf?p=isis.git
+In the source code repo the code has been tagged as isis-2.0.0-M1-RC1, helloworld-archetype-2.0.0-M1-RC1 and simpleapp-archetype-2.0.0-M1-RC1; see https://github.com/apache/isis/tags
 
-For instructions on how to verify the release (build from binaries and/or use in Maven directly), see http://isis.apache.org/guides/cgcom.html#_cgcom_verifying-releases
+For instructions on how to verify the release (build from binaries and/or use in Maven directly), see https://isis.apache.org/guides/cgcom/cgcom.html#_cgcom_verifying-releases
 
 Please verify the release and cast your vote.  The vote will be open for a minimum of 72 hours.
 
@@ -946,7 +955,7 @@ Please verify the release and cast your vote.  The vote will be open for a minim
 
 Remember to update:
 
-* the version number (1.16.0 or whatever)
+* the version number (`2.0.0-M1` or whatever)
 * the release candidate number (`RC1` or whatever)
 * the repository id, as provided by Nexus earlier (`orgapacheisis-10xx` or whatever)
 

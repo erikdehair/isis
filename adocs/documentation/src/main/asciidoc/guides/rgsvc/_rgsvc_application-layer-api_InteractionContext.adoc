@@ -19,15 +19,13 @@ xref:../rgant/rgant.adoc#_rgant-Action_invokeOn[`@Action#invokeOn()`]), then thi
 per selected object (not one `Interaction` with multiple top-level ``Execution``s).
 
 
-It is possible for ``Interaction.Execution``s to be persisted; this is supported by the (non-ASF)
-http://github.com/isisaddons/isis-module-publishmq[Isis addons' publishmq] module, for example.  Persistent
+It is possible for ``Interaction.Execution``s to be persisted; this is supported by the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s publishmq module, for example.  Persistent
 ``Interaction``s support several use cases:
 
 * they enable profiling of the running application (which actions are invoked then most often, what is their response
 time)
 
-* if auditing is configured (using either xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditingService[auditing] or
-xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditerService[`AuditerService`]), they provide better audit information, since the
+* if auditing is configured (using xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditerService[`AuditerService`]), they provide better audit information, since the
 `Interaction.Execution` captures the 'cause' of an interaction and can be correlated to the audit records (the "effect"
 of the interaction) by way of the xref:../rgcms/rgcms.adoc#_rgcms_classes_mixins_HasTransactionId[`transactionId`]
 
@@ -58,7 +56,7 @@ public class InteractionContext {
 ----
 <1> Returns the currently active {@link Interaction} for this thread.
 
-This class is concrete (is also the implementation).
+This class is concrete (that is, it is also the implementation).
 
 
 === `Interaction`
@@ -133,6 +131,17 @@ execution of this action invocation/property edit.
 
 
 
+[NOTE]
+====
+
+Unlike the similar xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_CommandContext[`CommandContext`] domain service (discussed xref:../rgsvc/rgsvc.adoc#__rgsvc_application-layer-api_InteractionContext_Related-Classes[below]) there is no domain service to different implementations of `Interaction` to be used.
+That said, the framework simply instantiates the `Interaction` using the
+xref:../rgsvc/rgsvc.adoc#_rgsvc_core-domain-api_FactoryService[`FactoryService`].
+If a different implementation of `Interaction` was required, then a custom implementation of
+ xref:../rgsvc/rgsvc.adoc#_rgsvc_core-domain-api_FactoryService[`FactoryService`] could always be supplied.
+====
+
+
 There are two concrete subclasses of `Execution`.
 
 The first is `ActionInvocation`, representing the execution of an action being invoked:
@@ -157,6 +166,14 @@ public class PropertyEdit extends Execution {
 <1> The object used as the new value of the property.  Could be `null` if the property is being cleared.
 
 
+=== Alternate Implementations
+
+Apache Isis' default
+implementation of `InteractionContext` class is automatically registered (it is annotated with `@DomainService`).
+
+
+
+
 
 == Interacting with the services
 
@@ -166,24 +183,6 @@ xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_PublisherService[`Publishe
 xref:../rgsvc/rgsvc.adoc#_rgsvc_core-domain-api_EventBusService[`EventBusService`].
 
 
-
-== Registering the Service
-
-Assuming that the `configuration-and-annotation` services installer is configured (implicit if using the
-`AppManifest` to xref:../rgcms/rgcms.adoc#_rgcms_classes_AppManifest-bootstrapping[bootstrap the app]) then Apache Isis' default
-implementation of `InteractionContext` class is automatically registered (it is annotated with `@DomainService`)
-so no further configuration is required.
-
-The framework also takes responsibility for instantiating the `Interaction`, using the
-xref:../rgsvc/rgsvc.adoc#_rgsvc_core-domain-api_FactoryService[`FactoryService`].
-
-[NOTE]
-====
-Unlike the similar xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_CommandContext[`CommandContext`] (discussed
-xref:../rgsvc/rgsvc.adoc#__rgsvc_application-layer-api_InteractionContext_Related-Classes[below]) there is no domain service to different
-implementations of `Interaction` to be used.  If this were to be needed, then a custom implementation of
- xref:../rgsvc/rgsvc.adoc#_rgsvc_core-domain-api_FactoryService[`FactoryService`] could always used).
-====
 
 
 

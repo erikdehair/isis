@@ -19,18 +19,31 @@
 
 package org.apache.isis.viewer.wicket.ui.errors;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.MarkupContainer;
+import org.apache.wicket.Page;
+import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.head.JavaScriptReferenceHeaderItem;
+import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.basic.MultiLineLabel;
+import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.JavaScriptResourceReference;
 
 import org.apache.isis.applib.services.error.Ticket;
+import org.apache.isis.viewer.wicket.model.models.EntityModel;
+import org.apache.isis.viewer.wicket.model.models.PageType;
+import org.apache.isis.viewer.wicket.ui.components.widgets.breadcrumbs.BreadcrumbModel;
+import org.apache.isis.viewer.wicket.ui.components.widgets.breadcrumbs.BreadcrumbModelProvider;
+import org.apache.isis.viewer.wicket.ui.pages.PageClassRegistry;
+import org.apache.isis.viewer.wicket.ui.pages.home.HomePage;
 import org.apache.isis.viewer.wicket.ui.util.Components;
+import org.apache.isis.viewer.wicket.ui.util.Links;
 
 public class ExceptionStackTracePanel extends Panel {
 
@@ -50,6 +63,22 @@ public class ExceptionStackTracePanel extends Panel {
     private static final String ID_LINE = "stackTraceElementLine";
 
     private static final JavaScriptResourceReference DIV_TOGGLE_JS = new JavaScriptResourceReference(ExceptionStackTracePanel.class, "div-toggle.js");
+
+    private static final String ID_KITTENS_IMAGE = "kittens";
+
+    public class ExternalImageUrl extends WebComponent {
+
+        public ExternalImageUrl(String id, String imageUrl) {
+            super(id);
+            add(new AttributeModifier("src", new Model<>(imageUrl)));
+            setVisible(!(imageUrl==null || imageUrl.equals("")));
+        }
+
+        protected void onComponentTag(ComponentTag tag) {
+            super.onComponentTag(tag);
+            checkComponentTag(tag, "img");
+        }
+    }
 
     public ExceptionStackTracePanel(String id, ExceptionModel exceptionModel) {
         super(id, exceptionModel);
@@ -74,6 +103,7 @@ public class ExceptionStackTracePanel extends Panel {
             final WebMarkupContainer panel = new WebMarkupContainer(ID_TICKET_DETAILS_DIV);
             final MultiLineLabel details = new MultiLineLabel(ID_TICKET_DETAILS, Model.of(ticketDetail));
             panel.add(details);
+            panel.add(new ExternalImageUrl(ID_KITTENS_IMAGE, ticket.getKittenUrl()));
             add(panel);
         }
 
@@ -87,11 +117,13 @@ public class ExceptionStackTracePanel extends Panel {
             add(panel);
         }
 
-        final boolean suppressExceptionDetail = exceptionModel.isAuthorizationException() || exceptionModel.isRecognized();
+        final boolean suppressExceptionDetail =
+                exceptionModel.isAuthorizationException() ||
+                exceptionModel.isRecognized() ||
+                (ticket != null && ticket.getStackTracePolicy() == Ticket.StackTracePolicy.HIDE);
         if(suppressExceptionDetail) {
             Components.permanentlyHide(this, ID_EXCEPTION_DETAIL_DIV);
         } else {
-
                 MarkupContainer container = new WebMarkupContainer(ID_EXCEPTION_DETAIL_DIV) {
                 private static final long serialVersionUID = 1L;
                 @Override
@@ -102,6 +134,26 @@ public class ExceptionStackTracePanel extends Panel {
             container.add(new StackTraceListView(ID_STACK_TRACE_ELEMENT, ExceptionStackTracePanel.ID_LINE, exceptionModel.getStackTrace()));
             add(container);
         }
+
+        final BreadcrumbModelProvider session = (BreadcrumbModelProvider) getSession();
+        final BreadcrumbModel breadcrumbModel = session.getBreadcrumbModel();
+        final EntityModel entityModel = breadcrumbModel.getMostRecentlyVisited();
+
+        final Class<? extends Page> pageClass;
+        final PageParameters pageParameters;
+        if (entityModel != null) {
+            pageClass = pageClassRegistry.getPageClass(PageType.ENTITY);
+            pageParameters = entityModel.getPageParameters();
+        } else {
+            pageParameters = null;
+            pageClass = HomePage.class;
+        }
+        final AbstractLink link = Links.newBookmarkablePageLink("continueButton", pageParameters, pageClass);
+        add(link);
+
     }
+
+    @com.google.inject.Inject
+    PageClassRegistry pageClassRegistry;
 
 }

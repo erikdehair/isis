@@ -7,11 +7,6 @@
 
 The `TitleService` provides methods to programmatically obtain the title and icon of a domain object.
 
-[NOTE]
-====
-The methods in this service replace similar methods (now deprecated) in xref:../rgsvc/rgsvc.adoc#_rgsvc_core-domain-api_DomainObjectContainer[`DomainObjectContainer`].
-====
-
 
 
 == API
@@ -20,7 +15,7 @@ The API of `TitleService` is:
 
 [source,java]
 ----
-public interface PresentationService {
+public interface TitleService {
     String titleOf(Object domainObject);                // <1>
     String iconNameOf(Object domainObject);             // <2>
 }
@@ -58,17 +53,5 @@ In this example, whatever the title of a `Customer`, it is reused within the tit
 
 The core framework provides a default implementation of this service (`o.a.i.core.metamodel.services.title.TitleServiceDefault`).
 
-
-
-== Registering the Service
-
-Assuming that the `configuration-and-annotation` services installer is configured (implicit if using the
-`AppManifest` to xref:../rgcms/rgcms.adoc#_rgcms_classes_AppManifest-bootstrapping[bootstrap the app]) then Apache Isis' core
-implementation of `TitleService` service is automatically registered and injected (it is annotated with
-`@DomainService`) so no further configuration is required.
-
-To use an alternative implementation, use
-xref:../rgant/rgant.adoc#_rgant-DomainServiceLayout_menuOrder[`@DomainServiceLayout#menuOrder()`] (as explained
-in the xref:../rgsvc/rgsvc.adoc#__rgsvc_intro_overriding-the-services[introduction] to this guide).
 
 

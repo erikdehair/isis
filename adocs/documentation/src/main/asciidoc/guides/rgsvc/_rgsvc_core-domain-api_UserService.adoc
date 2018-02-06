@@ -10,12 +10,6 @@ The `UserService` allows the domain object to obtain the identity of the user in
 If xref:../rgsvc/rgsvc.adoc#_rgsvc_testing_SudoService[`SudoService`] has been used to temporarily override the user and/or roles, then this service will report the overridden values instead.
 
 
-[NOTE]
-====
-The methods in this service replace similar methods (now deprecated) in xref:../rgsvc/rgsvc.adoc#_rgsvc_core-domain-api_DomainObjectContainer[`DomainObjectContainer`].
-====
-
-
 
 
 == API and Usage
@@ -67,19 +61,6 @@ In addition, when using the xref:../ugvw/ugvw.adoc#[Wicket viewer] there will be
 
 The core framework provides a default implementation of this service (`o.a.i.core.runtime.services.user.UserServiceDefault`).
 
-
-
-
-== Registering the Service
-
-Assuming that the `configuration-and-annotation` services installer is configured (implicit if using the
-`AppManifest` to xref:../rgcms/rgcms.adoc#_rgcms_classes_AppManifest-bootstrapping[bootstrap the app]) then Apache Isis' core
-implementation of `UserService` service is automatically registered and injected (it is annotated with
-`@DomainService`) so no further configuration is required.
-
-To use an alternative implementation, use
-xref:../rgant/rgant.adoc#_rgant-DomainServiceLayout_menuOrder[`@DomainServiceLayout#menuOrder()`] (as explained
-in the xref:../rgsvc/rgsvc.adoc#__rgsvc_intro_overriding-the-services[introduction] to this guide).
 
 
 

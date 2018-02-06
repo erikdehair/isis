@@ -28,14 +28,17 @@ import org.datanucleus.enhancement.Persistable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.isis.applib.AppManifest;
+import org.apache.isis.applib.AppManifest2;
 import org.apache.isis.applib.annotation.DomainService;
 import org.apache.isis.applib.annotation.NatureOfService;
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.services.bookmark.Bookmark;
 import org.apache.isis.applib.services.grid.GridService;
 import org.apache.isis.applib.services.metamodel.DomainMember;
-import org.apache.isis.applib.services.metamodel.MetaModelService3;
+import org.apache.isis.applib.services.metamodel.MetaModelService;
 import org.apache.isis.core.metamodel.facets.object.objectspecid.ObjectSpecIdFacet;
+import org.apache.isis.core.metamodel.services.appmanifest.AppManifestProvider;
 import org.apache.isis.core.metamodel.spec.ObjectSpecId;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.spec.feature.Contributed;
@@ -49,7 +52,7 @@ import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
         nature = NatureOfService.DOMAIN,
         menuOrder = "" + Integer.MAX_VALUE
 )
-public class MetaModelServiceDefault implements MetaModelService3 {
+public class MetaModelServiceDefault implements MetaModelService {
 
     @SuppressWarnings("unused")
     private final static Logger LOG = LoggerFactory.getLogger(MetaModelServiceDefault.class);
@@ -100,7 +103,7 @@ public class MetaModelServiceDefault implements MetaModelService3 {
             if (exclude(spec)) {
                 continue;
             }
-            final List<ObjectAssociation> properties = spec.getAssociations(Contributed.EXCLUDED, ObjectAssociation.Filters.PROPERTIES);
+            final List<ObjectAssociation> properties = spec.getAssociations(Contributed.EXCLUDED, ObjectAssociation.Predicates.PROPERTIES);
             for (final ObjectAssociation property : properties) {
                 final OneToOneAssociation otoa = (OneToOneAssociation) property;
                 if (exclude(otoa)) {
@@ -108,7 +111,7 @@ public class MetaModelServiceDefault implements MetaModelService3 {
                 }
                 rows.add(new DomainMemberDefault(spec, otoa));
             }
-            final List<ObjectAssociation> associations = spec.getAssociations(Contributed.EXCLUDED, ObjectAssociation.Filters.COLLECTIONS);
+            final List<ObjectAssociation> associations = spec.getAssociations(Contributed.EXCLUDED, ObjectAssociation.Predicates.COLLECTIONS);
             for (final ObjectAssociation collection : associations) {
                 final OneToManyAssociation otma = (OneToManyAssociation) collection;
                 if (exclude(otma)) {
@@ -226,12 +229,24 @@ public class MetaModelServiceDefault implements MetaModelService3 {
         return sortOf(domainType, mode);
     }
 
+    @Override
+    public AppManifest2 getAppManifest2() {
+        AppManifest appManifest = getAppManifest();
+        return appManifest instanceof AppManifest2 ? (AppManifest2) appManifest : null;
+    }
 
+    @Override
+    public AppManifest getAppManifest() {
+        return appManifestProvider.getAppManifest();
+    }
 
     @javax.inject.Inject
     SpecificationLoader specificationLookup;
 
     @javax.inject.Inject
     GridService gridService;
+
+    @javax.inject.Inject
+    AppManifestProvider appManifestProvider;
 
 }

@@ -18,6 +18,7 @@
  */
 package org.apache.isis.applib.fixturescripts;
 
+import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,6 +32,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 
 import org.apache.isis.applib.AbstractService;
+import org.apache.isis.applib.DomainObjectContainer;
 import org.apache.isis.applib.ViewModel;
 import org.apache.isis.applib.annotation.Action;
 import org.apache.isis.applib.annotation.MemberOrder;
@@ -42,12 +44,16 @@ import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.annotation.RestrictTo;
 import org.apache.isis.applib.services.bookmark.BookmarkService;
 import org.apache.isis.applib.services.classdiscovery.ClassDiscoveryService;
-import org.apache.isis.applib.services.classdiscovery.ClassDiscoveryService2;
 import org.apache.isis.applib.services.fixturespec.FixtureScriptsDefault;
 import org.apache.isis.applib.services.fixturespec.FixtureScriptsSpecification;
 import org.apache.isis.applib.services.memento.MementoService;
 import org.apache.isis.applib.services.memento.MementoService.Memento;
+import org.apache.isis.applib.services.registry.ServiceRegistry;
+import org.apache.isis.applib.services.repository.RepositoryService;
+import org.apache.isis.applib.services.title.TitleService;
+import org.apache.isis.applib.services.xactn.TransactionService;
 import org.apache.isis.applib.util.ObjectContracts;
+
 
 /**
  * Rather than subclassing, instead implement
@@ -55,7 +61,6 @@ import org.apache.isis.applib.util.ObjectContracts;
  * automatically provide a default implementation configured using that provider service.
  */
 public abstract class FixtureScripts extends AbstractService {
-
 
     //region > Specification, nonPersistedObjectsStrategy, multipleExecutionStrategy enums
 
@@ -81,11 +86,6 @@ public abstract class FixtureScripts extends AbstractService {
      * </p>
      */
     public enum MultipleExecutionStrategy {
-        /**
-         * @deprecated - renamed to {@link #EXECUTE_ONCE_BY_CLASS}.
-         */
-        @Deprecated
-        IGNORE,
         /**
          * Any given fixture script (or more precisely, any fixture script instance for a particular fixture script
          * class) can only be run once.
@@ -125,8 +125,6 @@ public abstract class FixtureScripts extends AbstractService {
          *     loaded more than once (so the {@link #EXECUTE} strategy doesn't apply either).  The solution is for
          *     <tt>ExcelFixture</tt> to have value semantics (a digest of the spreadsheet argument).
          * </p>
-         *
-         * @see #IGNORE
          */
         EXECUTE_ONCE_BY_VALUE,
         /**
@@ -146,14 +144,6 @@ public abstract class FixtureScripts extends AbstractService {
          */
         EXECUTE;
 
-        /**
-         * @deprecated - use {@link #isExecuteOnceByClass()}.
-         * @return
-         */
-        @Deprecated
-        public boolean isIgnore() {
-            return this == IGNORE;
-        }
         public boolean isExecuteOnceByClass() {
             return this == EXECUTE_ONCE_BY_CLASS;
         }
@@ -167,77 +157,7 @@ public abstract class FixtureScripts extends AbstractService {
 
     //endregion
 
-
     //region > constructors
-
-    /**
-     * Defaults to {@link FixtureScripts.NonPersistedObjectsStrategy#PERSIST persist}
-     * strategy (if non-persisted objects are {@link FixtureScripts#newFixtureResult(FixtureScript, String, Object, boolean) added} to a {@link FixtureResultList}),
-     * defaults {@link #getMultipleExecutionStrategy()} to {@link FixtureScripts.MultipleExecutionStrategy#IGNORE ignore}
-     * if multiple instances of the same fixture script class are encountered.
-     *
-     * @param packagePrefix - to search for fixture script implementations, eg "com.mycompany".  Note that this is ignored if an {@link org.apache.isis.applib.AppManifest} is in use.
-     *
-     * @deprecated - use {@link #FixtureScripts(FixtureScriptsSpecification)} instead.
-     */
-    @Deprecated
-    public FixtureScripts(final String packagePrefix) {
-        this(FixtureScriptsSpecification.builder(packagePrefix)
-                                        .build());
-    }
-
-    /**
-     * Defaults to {@link FixtureScripts.NonPersistedObjectsStrategy#PERSIST persist}
-     * strategy (if non-persisted objects are {@link FixtureScripts#newFixtureResult(FixtureScript, String, Object, boolean) added} to a {@link FixtureResultList}).
-     *
-     * @param packagePrefix - to search for fixture script implementations, eg "com.mycompany".    Note that this is ignored if an {@link org.apache.isis.applib.AppManifest} is in use.
-     * @param multipleExecutionStrategy - whether more than one instance of the same fixture script class can be run multiple times.  See {@link MultipleExecutionStrategy} for more details.
-     *
-     * @deprecated - use {@link #FixtureScripts(FixtureScriptsSpecification)} instead.
-     */
-    @Deprecated
-    public FixtureScripts(
-            final String packagePrefix,
-            final MultipleExecutionStrategy multipleExecutionStrategy) {
-        this(FixtureScriptsSpecification.builder(packagePrefix)
-                                        .with(multipleExecutionStrategy)
-                .build());
-    }
-
-    /**
-     * Defaults {@link #getMultipleExecutionStrategy()} to {@link FixtureScripts.MultipleExecutionStrategy#IGNORE ignore}
-     * if multiple instances of the same fixture script class are encountered.
-     *
-     * @param packagePrefix  - to search for fixture script implementations, eg "com.mycompany".    Note that this is ignored if an {@link org.apache.isis.applib.AppManifest} is in use.
-     * @param nonPersistedObjectsStrategy - how to handle any non-persisted objects that are {@link #newFixtureResult(FixtureScript, String, Object, boolean) added} to a {@link org.apache.isis.applib.fixturescripts.FixtureResultList}.
-     *
-     * @deprecated - use {@link #FixtureScripts(FixtureScriptsSpecification)} instead.
-     */
-    @Deprecated
-    public FixtureScripts(
-            final String packagePrefix, final NonPersistedObjectsStrategy nonPersistedObjectsStrategy) {
-        this(FixtureScriptsSpecification.builder(packagePrefix)
-                                        .with(nonPersistedObjectsStrategy)
-                                        .build());
-    }
-
-    /**
-     * @param packagePrefix  - to search for fixture script implementations, eg "com.mycompany".    Note that this is ignored if an {@link org.apache.isis.applib.AppManifest} is in use.
-     * @param nonPersistedObjectsStrategy - how to handle any non-persisted objects that are {@link #newFixtureResult(FixtureScript, String, Object, boolean) added} to a {@link org.apache.isis.applib.fixturescripts.FixtureResultList}.
-     * @param multipleExecutionStrategy - whether more than one instance of the same fixture script class can be run multiple times
-     *
-     * @deprecated - use {@link #FixtureScripts(FixtureScriptsSpecification)} instead.
-     */
-    @Deprecated
-    public FixtureScripts(
-            final String packagePrefix,
-            final NonPersistedObjectsStrategy nonPersistedObjectsStrategy,
-            final MultipleExecutionStrategy multipleExecutionStrategy) {
-        this(FixtureScriptsSpecification.builder(packagePrefix)
-                                        .with(nonPersistedObjectsStrategy)
-                                        .with(multipleExecutionStrategy)
-                                        .build());
-    }
 
     /**
      * @param specification - specifies how the service will find instances and execute them.
@@ -247,7 +167,6 @@ public abstract class FixtureScripts extends AbstractService {
     }
 
     //endregion
-
 
     //region > packagePrefix, nonPersistedObjectsStrategy, multipleExecutionStrategy
 
@@ -339,12 +258,7 @@ public abstract class FixtureScripts extends AbstractService {
     }
 
     private <T> Set<Class<? extends T>> findSubTypesOfClasses(Class<T> cls, final String packagePrefix) {
-        if(classDiscoveryService instanceof ClassDiscoveryService2) {
-            final ClassDiscoveryService2 classDiscoveryService2 = (ClassDiscoveryService2) classDiscoveryService;
-            return classDiscoveryService2.findSubTypesOfClasses(cls, packagePrefix);
-        } else {
-            return classDiscoveryService.findSubTypesOfClasses(cls);
-        }
+        return classDiscoveryService.findSubTypesOfClasses(cls, packagePrefix);
     }
 
     private FixtureScript newFixtureScript(final Class<? extends FixtureScript> fixtureScriptCls) {
@@ -354,11 +268,30 @@ public abstract class FixtureScripts extends AbstractService {
             if(!template.isDiscoverable()) {
                 return null;
             }
-            return getContainer().newViewModelInstance(fixtureScriptCls, mementoFor(template));
+            return container.newViewModelInstance(fixtureScriptCls, mementoFor(template));
         } catch(final Exception ex) {
             // ignore if does not have a no-arg constructor or cannot be instantiated
             return null;
         }
+    }
+
+
+    //endregion
+
+    //region > fixtureTracing (thread-local)
+
+    private final ThreadLocal<PrintStream> fixtureTracing = new ThreadLocal<PrintStream>(){{
+        set(System.out);
+    }};
+
+    @Programmatic
+    public PrintStream getFixtureTracing() {
+        return fixtureTracing.get();
+    }
+
+    @Programmatic
+    public void setFixtureTracing(PrintStream fixtureTracing) {
+        this.fixtureTracing.set(fixtureTracing);
     }
 
     //endregion
@@ -386,9 +319,9 @@ public abstract class FixtureScripts extends AbstractService {
         // if this method is called programmatically, the caller may have simply new'd up the fixture script
         // (rather than use container.newTransientInstance(...).  To allow this use case, we need to ensure that
         // domain services are injected into the fixture script.
-        getContainer().injectServicesInto(fixtureScript);
+        serviceRegistry.injectServicesInto(fixtureScript);
 
-        return fixtureScript.run(parameters);
+        return fixtureScript.withTracing(fixtureTracing.get()).run(parameters);
     }
     public FixtureScript default0RunFixtureScript() {
         return getFixtureScriptList().isEmpty() ? null: getFixtureScriptList().get(0);
@@ -416,9 +349,46 @@ public abstract class FixtureScripts extends AbstractService {
         return fixtureScript.validateRun(parameters);
     }
 
+    protected List<FixtureResult> runScript(final FixtureScript fixtureScript, final String parameters) {
+        return fixtureScript.run(parameters);
+    }
+
+
     //endregion
 
     //region > programmatic API
+
+    @Programmatic
+    public void runFixtureScript(final FixtureScript... fixtureScriptList) {
+        if (fixtureScriptList.length == 1) {
+            runFixtureScript(fixtureScriptList[0], null);
+        } else {
+            runFixtureScript(new FixtureScript() {
+                protected void execute(ExecutionContext executionContext) {
+                    FixtureScript[] fixtureScripts = fixtureScriptList;
+                    for (FixtureScript fixtureScript : fixtureScripts) {
+                        executionContext.executeChild(this, fixtureScript);
+                    }
+                }
+            }, null);
+        }
+
+        transactionService.nextTransaction();
+    }
+
+    @Programmatic
+    public <T,F extends BuilderScriptAbstract<T,F>> T runBuilderScript(final F fixtureScript) {
+
+        serviceRegistry.injectServicesInto(fixtureScript);
+
+        fixtureScript.run(null);
+
+        final T object = fixtureScript.getObject();
+        transactionService.nextTransaction();
+
+        return object;
+    }
+
     @Programmatic
     public FixtureScript findFixtureScriptFor(final Class<? extends FixtureScript> fixtureScriptClass) {
         final List<FixtureScript> fixtureScripts = getFixtureScriptList();
@@ -482,12 +452,12 @@ public abstract class FixtureScripts extends AbstractService {
         if(object == null) {
             return null;
         }
-        if (object instanceof ViewModel || getContainer().isPersistent(object)) {
+        if (object instanceof ViewModel || repositoryService.isPersistent(object)) {
             // continue
         } else {
             switch(getNonPersistedObjectsStrategy()) {
                 case PERSIST:
-                    getContainer().flush();
+                    transactionService.flushTransaction();
                     break;
                 case IGNORE:
                     return null;
@@ -504,7 +474,7 @@ public abstract class FixtureScripts extends AbstractService {
     @Programmatic
     String titleOf(final FixtureResult fixtureResult) {
         final Object object = fixtureResult.getObject();
-        return object != null? getContainer().titleOf(object): "(null)";
+        return object != null? titleService.titleOf(object): "(null)";
     }
 
     //endregion
@@ -512,17 +482,31 @@ public abstract class FixtureScripts extends AbstractService {
     //region > injected services
 
     @javax.inject.Inject
-    private MementoService mementoService;
+    DomainObjectContainer container;
     
     @javax.inject.Inject
-    private BookmarkService bookmarkService;
+    TitleService titleService;
 
     @javax.inject.Inject
-    private ClassDiscoveryService classDiscoveryService;
+    MementoService mementoService;
 
     @javax.inject.Inject
-    private ExecutionParametersService executionParametersService;
+    BookmarkService bookmarkService;
 
+    @javax.inject.Inject
+    ServiceRegistry serviceRegistry;
+
+    @javax.inject.Inject
+    RepositoryService repositoryService;
+
+    @javax.inject.Inject
+    TransactionService transactionService;
+
+    @javax.inject.Inject
+    ClassDiscoveryService classDiscoveryService;
+
+    @javax.inject.Inject
+    ExecutionParametersService executionParametersService;
     //endregion
 
 }

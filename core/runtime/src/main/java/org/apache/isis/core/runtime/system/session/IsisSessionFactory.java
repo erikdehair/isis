@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.isis.applib.AppManifest;
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.fixtures.LogonFixture;
 import org.apache.isis.applib.services.i18n.TranslationService;
@@ -37,6 +38,7 @@ import org.apache.isis.core.commons.components.ApplicationScopedComponent;
 import org.apache.isis.core.commons.config.IsisConfiguration;
 import org.apache.isis.core.metamodel.deployment.DeploymentCategory;
 import org.apache.isis.core.metamodel.services.ServicesInjector;
+import org.apache.isis.core.metamodel.services.appmanifest.AppManifestProvider;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.specloader.ServiceInitializer;
 import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
@@ -66,12 +68,13 @@ import org.apache.isis.core.runtime.system.transaction.IsisTransactionManagerExc
  *     it can be {@link Inject}'d into other domain services.
  * </p>
  */
-public class IsisSessionFactory implements ApplicationScopedComponent {
+public class IsisSessionFactory
+        implements ApplicationScopedComponent, AppManifestProvider {
 
     @SuppressWarnings("unused")
     private final static Logger LOG = LoggerFactory.getLogger(IsisSessionFactory.class);
 
-    //region > constructor, fields
+    //region > constructor, fields, accessors
 
     private final DeploymentCategory deploymentCategory;
     private final IsisConfiguration configuration;
@@ -80,10 +83,12 @@ public class IsisSessionFactory implements ApplicationScopedComponent {
     private final AuthenticationManager authenticationManager;
     private final AuthorizationManager authorizationManager;
     private final PersistenceSessionFactory persistenceSessionFactory;
+    private final AppManifest appManifest;
 
     public IsisSessionFactory(
             final DeploymentCategory deploymentCategory,
-            final ServicesInjector servicesInjector) {
+            final ServicesInjector servicesInjector,
+            final AppManifest appManifest) {
 
         this.servicesInjector = servicesInjector;
         this.deploymentCategory = deploymentCategory;
@@ -93,8 +98,13 @@ public class IsisSessionFactory implements ApplicationScopedComponent {
         this.authenticationManager = servicesInjector.getAuthenticationManager();
         this.authorizationManager = servicesInjector.getAuthorizationManager();
         this.persistenceSessionFactory = servicesInjector.lookupServiceElseFail(PersistenceSessionFactory.class);
+        this.appManifest = appManifest;
     }
 
+    @Programmatic
+    public AppManifest getAppManifest() {
+        return appManifest;
+    }
 
     //endregion
 
@@ -145,16 +155,17 @@ public class IsisSessionFactory implements ApplicationScopedComponent {
             //
 
             final List<Object> services = servicesInjector.getRegisteredServices();
-            // take a copy of all services to avoid occasionall concurrent modification exceptions
+            // take a copy of all services to avoid occasional concurrent modification exceptions
             // that can sometimes occur in the loop
             final List<Object> copyOfServices = Lists.newArrayList(services);
             final TitleService titleService = servicesInjector.lookupServiceElseFail(TitleService.class);
             for (Object service : copyOfServices) {
                 final String unused = titleService.titleOf(service);
             }
-            final List<ObjectSpecification> objectSpecsCopy =
-                    Lists.newArrayList(servicesInjector.getSpecificationLoader().allSpecifications());
-            for (final ObjectSpecification objSpec : objectSpecsCopy) {
+
+            // (previously we took a protective copy to avoid a concurrent modification exception,
+            // but this is now done by SpecificationLoader itself)
+            for (final ObjectSpecification objSpec : servicesInjector.getSpecificationLoader().allSpecifications()) {
                 final Class<?> correspondingClass = objSpec.getCorrespondingClass();
                 if(correspondingClass.isEnum()) {
                     final Object[] enumConstants = correspondingClass.getEnumConstants();

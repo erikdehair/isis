@@ -26,7 +26,7 @@ Post the results to the `dev@isis.a.o` mailing list:
 
 [source,bash]
 ----
-[RESULT] [VOTE] Apache Isis Core release 1.16.0
+[RESULT] [VOTE] Apache Isis Core release 2.0.0-M1
 ----
 
 using the body (alter last line as appropriate):
@@ -56,9 +56,9 @@ You can do this using the `scripts/promoterctag.sh` script; for example:
 
 [source,bash]
 ----
-sh scripts/promoterctag.sh isis-1.16.0 RC1
-sh scripts/promoterctag.sh helloworld-archetype-1.16.0 RC1
-sh scripts/promoterctag.sh simpleapp-archetype-1.16.0 RC1
+sh scripts/promoterctag.sh isis-2.0.0-M1 RC1
+sh scripts/promoterctag.sh helloworld-archetype-2.0.0-M1 RC1
+sh scripts/promoterctag.sh simpleapp-archetype-2.0.0-M1 RC1
 ----
 
 This script pushes the tag under `refs/tags/rel`.  As per Apache policy (communicated on 10th Jan 2016 to Apache PMCs),
@@ -189,7 +189,7 @@ popd
 
 [source,bash]
 ----
-sh upd.sh 1.16.0 1.17.0
+sh upd.sh 1.16.0 2.0.0-M1
 ----
 
 The script downloads the artifacts from the Nexus release repository, adds the artifacts to subversion and deletes the previous version.
@@ -223,7 +223,7 @@ From the root directory, generate the release notes for the current release, in 
 
 [source,bash]
 ----
-sh scripts/jira-release-notes.sh ISIS 1.16.0 > /tmp/1
+sh scripts/jira-release-notes.sh ISIS 2.0.0-M1 > /tmp/1
 ----
 
 
@@ -254,7 +254,7 @@ Log the new release in the link:https://reporter.apache.org/addrelease.html?isis
 
 == Update website
 
-Update the Apache Isis (asciidoc) website:
+In the main `isis` repo (ie containing the asciidoc source):
 
 * Paste in the JIRA-generated release notes generated above, adding to top of `adocs/documentation/src/main/asciidoc/release-notes.adoc`.
 Also add a summary line for the release.
@@ -276,9 +276,67 @@ For more information on DOAP files, see these http://projects.apache.org/doap.ht
 
 * Update the https://git-wip-us.apache.org/repos/asf/isis/repo?p=isis.git;a=blob_plain;f=STATUS;hb=HEAD[STATUS] file (in root of Apache Isis' source) should be updated with details of the new release.
 
+* commit the `.adoc` changes and publish to the `isis-site` repo.
 
-Don't forget to commit the `.adoc` changes and publish to the isis-site repo.
+This will have published to the `SNAPSHOT` directory of the `isis-site` repo.
+Now, in the `isis-site` repo itself:
 
+* double check that a copy of `current` exists as a named directory under `content/versions`
+
++
+If for any reason it isn't there, then create a copy before it gets deleted in the step below.
+Also, take a copy of the `index.html` with one that redirects up to the home page (see a few steps below for an example).
+
+* delete the `current` version and then rename the just-published `SNAPSHOT` as `current`:
+
++
+[source,bash]
+----
+rm -rf content/versions/current
+mv content/versions/SNAPSHOT content/versions/current
+----
+
+* take a copy of the new `current` version as its appropriately named version:
+
++
+For example:
++
+[source,bash]
+----
+cp -rf content/versions/current content/versions/2.0.0-M1
+----
+
+* update the new named version's `index.html` with one that will redirect back to the home page.
+
++
+You can take a copy from one of the older named versions, or just use this text:
++
+[source,html]
+----
+<html>
+    <head>
+        <title>Redirecting to index.html</title>
+        <meta http-equiv="refresh" content="1; URL=../../index.html">
+        <meta name="keywords" content="automatic redirection">
+        </head>
+    <body>
+        Redirecting to <a href="../../index.html">index.html</a>...
+    </body>
+</html>
+----
+
+* In the home page's index page (`content/index.html`):
+
+** update the menu to reference the new version
+
+** update the version in the archetype.
+
+At this point the files in the root (directly under `content`) will still be out of date; the publish process simply preserves whatever is in `content/versions/current`.
+Also, the `SNAPSHOT` will be missing (above it was renamed to `current`).
+To fix both of these issues, simply publish the website one more time (from the `isis` main repo).
+
+Finally, preview the changes (in the `isis-site`).
+If everything looks ok, then push the changes to make live.
 
 
 
@@ -290,14 +348,14 @@ For example, for a release of Apache Isis Core, use the following subject:
 
 [source,bash]
 ----
-[ANN] Apache Isis version 1.16.0 Released
+[ANN] Apache Isis version 2.0.0-M1 Released
 ----
 
 And use the following body (summarizing the main points as required):
 
 [source]
 ----
-The Apache Isis team is pleased to announce the release of Apache Isis v1.16.0.
+The Apache Isis team is pleased to announce the release of Apache Isis v2.0.0-M1.
 
 New features in this release include:
 * ...
@@ -312,8 +370,8 @@ Enjoy!
 
 --The Apache Isis team
 
-[1] http://isis.apache.org/release-notes/release-notes.html#_release-notes_1.16.0
-[2] http://isis.apache.org/migration-notes/migration-notes.html#_migration-notes_1.15.0-to-1.16.0
+[1] http://isis.apache.org/release-notes/release-notes.html#_release-notes_2.0.0-M1
+[2] http://isis.apache.org/migration-notes/migration-notes.html#_migration-notes_1.16.0-to-2.0.0-M1
 [3] http://search.maven.org
 [4] http://isis.apache.org/downloads.html
 ----
@@ -338,9 +396,9 @@ Because we release from a branch, the changes made in the branch (changes to `po
 ----
 git checkout master                           # update master with latest
 git pull
-git merge release-1.16.0-RC1                  # merge branch onto master
-git push origin --delete release-1.16.0-RC1   # remote branch no longer needed
-git branch -d release-1.16.0-RC1              # branch no longer needed
+git merge release-2.0.0-M1-RC1                  # merge branch onto master
+git push origin --delete release-2.0.0-M1-RC1   # remote branch no longer needed
+git branch -d release-2.0.0-M1-RC1              # branch no longer needed
 ----
 
 
@@ -449,230 +507,5 @@ git push
 [[__cgcom_post-release-successful_release-non-asf-modules]]
 == Release (non-ASF) Modules
 
-There are two libraries of modules, both non-ASF but open source, that should be released.
-
-* link:http://www.isisaddons.org[Isis Addons] - modules addressing technical concerns
-* link:http://catalog.incode.org[Incode Catalog] - modules for various generic business subdomains
-
-These each use a common parent, `org.incode:incode-parent`.
-This must be released first, then both set of modules afterwards.
-
-
-[[__cgcom_post-release-successful_release-non-asf-modules_prereqs]]
-=== Prereqs
-
-Save this link:https://gist.github.com/danhaywood/e80daf6d25f5c1fb1093effba85d088a[gist] as `last_modified.sh` in an appropriate parent directory of both sets of repos.
-
-For example, if the isisaddons modules are cloned to `/c/github/isisaddons/isis-module-xxx` and the incode catalog modules are cloned to `/c/github/incodehq/incode-module-xxx`, then save in `/c/github`.
-
-
-
-[[__cgcom_post-release-successful_release-non-asf-modules_incode-parent]]
-=== Release `incode-parent`
-
-[NOTE]
-====
-TODO: need to rework this and the following two sections to instead just release the incode-catalog (`1.16.0-SNAPSHOT`).
-
-This incorporates all of `incode-parent`, isisaddons.org` and `catalog.incode.org`.
-====
-
-
-The `org.incode:incode-parent` Maven module is used as a parent for both sets of modules:
-
-* update its dependency on Apache Isis to reference the newly released version: +
-+
-[source,bash]
-----
-sh bumpver_isis.sh 1.16.0
-----
-
-* update the README
-
-** replace each version with next (ie the "How to Configure/Use" section, and the "Release to Maven Central" section at the end):
-
-*** replace 1.16.0-SNAPSHOT with 1.17.0-SNAPSHOT
-*** replace 1.15.0          with 1.16.0
-
-** update the "Change Log" section
-
-* Release using: +
-+
-[source,bash]
-----
-sh release.sh "1.16.0" "1.17.0-SNAPSHOT" "dan@haywood-associates.co.uk" "this is not really my password"
-----
-
-
-
-[[__cgcom_post-release-successful_release-non-asf-modules_isisaddons]]
-=== Release Isis Addons
-
-Once the Apache Isis release is available, all of the (non-ASF) link:http://www.isisaddons.org[Isis Addons] should also be released.
-
-Using this link:https://gist.github.com/danhaywood/21b5b885433fd8bc440da3fab88c91cb[gist] to invoke operations across all (or selected) addons:
-
-* update its dependency on Apache Isis to reference the newly released version: +
-+
-[source,bash]
-----
-foreach -g isisaddons sh bumpver_isis.sh 1.16.0
-----
-+
-and use: +
-+
-[source,bash]
-----
-foreach -g isisaddons git diff HEAD^ HEAD
-----
-+
-and: +
-+
-[source,bash]
-----
-foreach -g isisaddons git status --branch --porcelain
-----
-+
-to review changes made.
-
-* update the README for each repository.
-
-** if using Windows, then: +
-+
-[source,bash]
-----
-"C:\Program Files (x86)\Notepad++\notepad++.exe" isisaddons/isis-m*/README.adoc  isisaddons/isis-w*/README.adoc
-----
-
-** replace each version with next (ie the "How to Configure/Use" section, and the "Release to Maven Central" section at the end):
-
-*** replace `1.16.0` with `1.17.0`
-*** replace `1.15.0` with `1.16.0` as necessary (pretty much everywhere apart from the "Change Log")
-
-** update the "Change Log" section
-
-* release the metamodel/module/wicket modules to mvn central (contains a sanity check before hand that everything compiles): +
-+
-[source,bash]
-----
-foreach -g isisaddons/isis-[mw] sh release.sh "1.16.0" "1.17.0-SNAPSHOT" "dan@haywood-associates.co.uk" \"this is not really my password\"
-----
-
-* In the parent directory where the `last_modified.sh` script has been saved (see xref:../cgcom/cgcom.adoc#__cgcom_post-release-successful_release-non-asf-modules_prereqs[above]), use to check that all modules were released successfully: +
-+
-[source,bash]
-----
-foreach -g isisaddons/isis-[mw] sh ../../last-modified.sh 1.16.0
-----
-+
-[IMPORTANT]
-====
-Wait at least 10 minutes to check; sync'ing to Maven central from the Sonatype OSS repository isn't instaneous.
-====
-
-* Assuming everything did get published ok, then push branch and tag: +
-+
-[source,bash]
-----
-foreach -g isisaddons/isis-[mw] "git push origin master && git push origin 1.16.0"
-----
-
-
-[[__cgcom_post-release-successful_release-non-asf-modules_incode-catalog]]
-=== Release Incode Catalog Modules
-
-Similarly, all of the (non-ASF) link:http://catalog.incode.org[Incode Catalog] modules should also be released.
-
-Using this link:https://gist.github.com/danhaywood/21b5b885433fd8bc440da3fab88c91cb[gist] to invoke operations across all (or selected) addons:
-
-* update its dependency on Apache Isis to reference the newly released version: +
-+
-[source,bash]
-----
-foreach -g incodehq/incode-module sh bumpver_isis.sh 1.16.0
-----
-
-* update the README for each repository. +
-+
-eg if using Windows, then:
-+
-[source,bash]
-----
-"C:\Program Files (x86)\Notepad++\notepad++.exe" incodehq/incode-*/README.adoc
-----
-
-** Replace each version with next (ie the "How to Configure/Use" section, and the "Release to Maven Central" section at the end):
-
-*** replace `1.16.0` with `1.17.0`
-*** replace `1.15.0` with `1.16.0` as necessary (pretty much everywhere apart from the "Change Log")
-
-** update the "Change Log" section
-
-* update cross-module dependencies +
-+
-Some of the incode catalog modules depend on isisaddons modules, and also on each other. +
-+
-eg if using Windows, then: +
-+
-[source,bash]
-----
-"C:\Program Files (x86)\Notepad++\notepad++.exe" incodehq/incode-module*/pom.xml  incodehq/incode-module-*/dom/pom.xml incodehq/incode-module-*/module/pom.xml
-----
-+
-[TIP]
-====
-See xref:../cgcom/cgcom.adoc#__cgcom_post-release-successful_release-non-asf-modules_incode-catalog_cross-module-dependencies[below] for a list of the dependencies to update.
-====
-
-* If necessary, adjust the `_repos.txt` file (used by `foreach` function) so that repositories are released in the correct sequence (with respect to their mutual dependencies).
-For example, `incode-module-base` must be released prior to `incode-module-alias`.
-
-* release the `incode-module-???` modules to mvn central (contains a sanity check before hand that everything compiles): +
-+
-[source,bash]
-----
-foreach -g incodehq/incode-module-[a-w] sh release.sh "1.16.0" "1.17.0-SNAPSHOT" "dan@haywood-associates.co.uk" \"this is not really my password\"
-----
-
-* In the parent directory where the `last_modified.sh` script has been saved (see xref:../cgcom/cgcom.adoc#__cgcom_post-release-successful_release-non-asf-modules_prereqs[above]), use to check that all modules were released successfully: +
-+
-[source,bash]
-----
-foreach -g incodehq/incode-module-[a-w] sh ../../last-modified.sh 1.16.0
-----
-+
-[IMPORTANT]
-====
-Wait at least 10 minutes to check; sync'ing to Maven central from the Sonatype OSS repository isn't instaneous.
-====
-
-* Assuming everything did get published ok, then push branch and tag: +
-+
-[source,bash]
-----
-foreach -g incodehq/incode-module-[a-w] "git push origin master && git push origin 1.16.0"
-----
-
-
-[[__cgcom_post-release-successful_release-non-asf-modules_incode-catalog_cross-module-dependencies]]
-==== Cross-module dependencies
-
-As of v1.16.0, the list of dependencies that needed to be updated (across all modules) were:
-
-** `<isis-module-fakedata.version>1.16.0</isis-module-fakedata.version>`
-** `<isis-module-freemarker.version>1.16.0</isis-module-freemarker.version>`
-** `<isis-wicket-fullcalendar2-cpt.version>1.16.0</isis-wicket-fullcalendar2-cpt.version>`
-** `<isis-wicket-gmap3-cpt.version>1.16.0</isis-wicket-gmap3-cpt.version>`
-** `<isis-module-poly.version>1.16.0</isis-module-poly.version>`
-** `<isis-module-security.version>1.16.0</isis-module-security.version>`
-** `<incode-module-base.version>1.16.0</incode-module-base.version>`
-** `<incode-module-fixturesupport.version>1.16.0</incode-module-fixturesupport.version>`
-** `<incode-module-unittestsupport.version>1.16.0</incode-module-unittestsupport.version>`
-** `<incode-module-integtestsupport.version>1.16.0</incode-module-integtestsupport.version>`
-** `<incode-module-country.version>1.16.0</incode-module-country.version>`
-** `<incode-module-document.version>1.16.0</incode-module-document.version>`
-** `<incode-module-docrendering-freemarker.version>1.16.0</incode-module-docrendering-freemarker.version>`
-** `<incode-module-docrendering-stringinterpolator.version>1.16.0</incode-module-docrendering-stringinterpolator.version>`
-** `<incode-module-docrendering-xdocreport.version>1.16.0</incode-module-docrendering-xdocreport.version>`
-
+The (non-ASF) link:http://platform.incode.org[Incode Platform^] should also be released, as per their link:http://platform.incode.org/pages/committers-guide/committers-guide.html#_release_to_maven_central[release guide].
 

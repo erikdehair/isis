@@ -35,7 +35,6 @@ import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 
 import org.apache.isis.applib.AbstractViewModel;
-import org.apache.isis.applib.DomainObjectContainer;
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.annotation.PropertyLayout;
 import org.apache.isis.applib.annotation.Title;
@@ -44,12 +43,13 @@ import org.apache.isis.applib.annotation.Where;
 import org.apache.isis.applib.fixtures.FixtureType;
 import org.apache.isis.applib.fixtures.InstallableFixture;
 import org.apache.isis.applib.services.factory.FactoryService;
-import org.apache.isis.applib.services.registry.ServiceRegistry2;
+import org.apache.isis.applib.services.registry.ServiceRegistry;
 import org.apache.isis.applib.services.repository.RepositoryService;
 import org.apache.isis.applib.services.sessmgmt.SessionManagementService;
 import org.apache.isis.applib.services.user.UserService;
 import org.apache.isis.applib.services.wrapper.WrapperFactory;
 import org.apache.isis.applib.services.xactn.TransactionService;
+import org.apache.isis.applib.util.Casts;
 
 @ViewModelLayout(named="Script")
 public abstract class FixtureScript 
@@ -83,6 +83,9 @@ public abstract class FixtureScript
     public FixtureScript(final String friendlyName, final String localName) {
         this(friendlyName, localName, Discoverability.NON_DISCOVERABLE);
     }
+    public FixtureScript(final String friendlyName, final String localName, final PrintStream printStream) {
+        this(friendlyName, localName, Discoverability.NON_DISCOVERABLE, printStream);
+    }
 
     /**
      * @param friendlyName - if null, will be derived from class name
@@ -93,13 +96,24 @@ public abstract class FixtureScript
             final String friendlyName, 
             final String localName, 
             final Discoverability discoverability) {
+        this(friendlyName, localName, discoverability, /* no tracing */ null);
+    }
+    /**
+     * @param friendlyName - if null, will be derived from class name
+     * @param localName - if null, will be derived from class name
+     * @param discoverability - whether this fixture script can be rendered as a choice to execute through {@link org.apache.isis.applib.fixturescripts.FixtureScripts#runFixtureScript(FixtureScript, String)}}.
+     */
+    public FixtureScript(
+            final String friendlyName,
+            final String localName,
+            final Discoverability discoverability,
+            final PrintStream printStream) {
         this.localName = localNameElseDerived(localName);
         this.friendlyName = friendlyNameElseDerived(friendlyName);
         this.parentPath = "";
         this.discoverability = discoverability;
 
-        // enable tracing by default, to stdout
-        withTracing();
+        withTracing(printStream);
     }
     protected String localNameElseDerived(final String str) {
         return str != null ? str : StringUtil.asLowerDashed(friendlyNameElseDerived(str));
@@ -262,18 +276,10 @@ public abstract class FixtureScript
          */
         public static final ExecutionContext NOOP = new ExecutionContext((String)null, null) {
             @Override
-            public <T> T add(final FixtureScript script, final T object) {
-                return object;
-            }
-            @Override
             public <T> T addResult(final FixtureScript script, final T object) {
                 return object;
             }
 
-            @Override
-            public <T> T add(final FixtureScript script, final String key, final T object) {
-                return object;
-            }
             @Override
             public <T> T addResult(final FixtureScript script, final String key, final T object) {
                 return object;
@@ -302,14 +308,6 @@ public abstract class FixtureScript
             this.fixtureScripts = fixtureScripts;
             fixtureResultList = new FixtureResultList(fixtureScripts, this);
             this.executionParameters = executionParameters;
-        }
-
-        /**
-         * @deprecated - this shouldn't have public visibility.
-         */
-        @Deprecated
-        public static Map<String, String> asKeyValueMap(final String parameters) {
-            return ExecutionParameters.asKeyValueMap(parameters);
         }
 
         @Programmatic
@@ -492,28 +490,10 @@ public abstract class FixtureScript
             return fixtureResultList.getResults();
         }
 
-        /**
-         * @deprecated - use {@link #addResult(FixtureScript, Object)} instead.
-         */
-        @Deprecated
-        @Programmatic
-        public <T> T add(final FixtureScript script, final T object) {
-            return addResult(script, object);
-        }
-
         @Programmatic
         public <T> T addResult(final FixtureScript script, final T object) {
             fixtureResultList.add(script, object);
             return object;
-        }
-
-        /**
-         * @deprecated - use {@link #addResult(FixtureScript, String, Object)} instead.
-         */
-        @Programmatic
-        @Deprecated
-        public <T> T add(final FixtureScript script, final String key, final T object) {
-            return addResult(script, key, object);
         }
 
         @Programmatic
@@ -527,6 +507,13 @@ public abstract class FixtureScript
             return fixtureResultList.lookup(key, cls);
         }
 
+        @Programmatic
+        public void executeChild(
+                final FixtureScript callingFixtureScript,
+                final PersonaWithBuilderScript<?, ?> personaWithBuilderScript) {
+            executeChildren(callingFixtureScript, personaWithBuilderScript);
+        }
+
         /**
          * Executes a child {@link FixtureScript fixture script}, injecting services into it first, and (for any results
          * that are {@link org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext#addResult(FixtureScript, Object)} added),
@@ -535,6 +522,31 @@ public abstract class FixtureScript
         @Programmatic
         public void executeChild(final FixtureScript callingFixtureScript, final FixtureScript childFixtureScript) {
             executeChildT(callingFixtureScript, childFixtureScript);
+        }
+
+        @Programmatic
+        public void executeChildren(
+                final FixtureScript callingFixtureScript,
+                final PersonaWithBuilderScript<?, ?>... personaWithBuilderScripts) {
+            for (PersonaWithBuilderScript<?, ?> builder : personaWithBuilderScripts) {
+                executeChild(callingFixtureScript, builder.builder());
+            }
+        }
+
+        @Programmatic
+        public <T extends Enum<?> & PersonaWithBuilderScript<?, ?>> void executeChildren(
+                final FixtureScript callingFixtureScript,
+                final Class<T> personaClass) {
+            executeChildren(callingFixtureScript, personaClass.getEnumConstants());
+        }
+
+        @Programmatic
+        public void executeChildren(
+                final FixtureScript callingFixtureScript,
+                final FixtureScript... fixtureScripts) {
+            for (FixtureScript fixtureScript : fixtureScripts) {
+                executeChild(callingFixtureScript, fixtureScript);
+            }
         }
 
         /**
@@ -557,6 +569,9 @@ public abstract class FixtureScript
         @Programmatic
         public void executeChild(final FixtureScript callingFixtureScript, final String localNameOverride, final FixtureScript childFixtureScript) {
 
+            if(childFixtureScript == null) {
+                return;
+            }
             executeChildT(callingFixtureScript, localNameOverride, childFixtureScript);
         }
 
@@ -576,33 +591,92 @@ public abstract class FixtureScript
             if(localNameOverride != null) {
                 childFixtureScript.setLocalName(localNameOverride);
             }
-            callingFixtureScript.getContainer().injectServicesInto(childFixtureScript);
+            callingFixtureScript.serviceRegistry.injectServicesInto(childFixtureScript);
 
-            executeChildIfNotAlready(childFixtureScript);
+            final T childOrPreviouslyExecuted = executeChildIfNotAlready(childFixtureScript);
 
-            return childFixtureScript;
+            return childOrPreviouslyExecuted;
         }
 
 
         static enum As { EXEC, SKIP }
 
-        /**
-         * DO <i>NOT</i> CALL DIRECTLY; instead use {@link org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext#executeChild(org.apache.isis.applib.fixturescripts.FixtureScript, String, org.apache.isis.applib.fixturescripts.FixtureScript)} or {@link org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext#executeChild(FixtureScript, FixtureScript)}.
-         *
-         * @deprecated - should not be called directly, but has <code>public</code> visibility so there is scope for confusion.  Replaced by method with private visibility.
-         */
-        @Deprecated
-        @Programmatic
-        public void executeIfNotAlready(final FixtureScript fixtureScript) {
-            executeChildIfNotAlready(fixtureScript);
+
+        private <T extends FixtureScript> T executeChildIfNotAlready(final T childFixtureScript) {
+
+            final FixtureScripts.MultipleExecutionStrategy executionStrategy =
+                    determineExecutionStrategy(childFixtureScript);
+
+            FixtureScript previouslyExecutedScript;
+            switch (executionStrategy) {
+
+            case EXECUTE_ONCE_BY_CLASS:
+                previouslyExecutedScript = fixtureScriptByClass.get(childFixtureScript.getClass());
+                if (previouslyExecutedScript == null) {
+                    if (childFixtureScript instanceof WithPrereqs) {
+                        final WithPrereqs<?,?> withPrereqs = (WithPrereqs<?,?>) childFixtureScript;
+                        withPrereqs.execPrereqs(this);
+                    }
+                }
+                // the prereqs might now result in a match, so we check again.
+                previouslyExecutedScript = fixtureScriptByClass.get(childFixtureScript.getClass());
+                if (previouslyExecutedScript == null) {
+                    trace(childFixtureScript, As.EXEC);
+                    childFixtureScript.execute(this);
+                    this.previouslyExecuted.add(childFixtureScript);
+                    fixtureScriptByClass.put(childFixtureScript.getClass(), childFixtureScript);
+                    return childFixtureScript;
+                } else {
+                    trace(childFixtureScript, As.SKIP);
+                    return Casts.uncheckedCast(previouslyExecutedScript);
+                }
+
+            case EXECUTE_ONCE_BY_VALUE:
+                return executeChildIfNotAlreadyWithValueSemantics(childFixtureScript);
+
+            case EXECUTE:
+                trace(childFixtureScript, As.EXEC);
+                childFixtureScript.execute(this);
+                this.previouslyExecuted.add(childFixtureScript);
+                return childFixtureScript;
+
+            default:
+                throw new IllegalArgumentException("Execution strategy: '" + executionStrategy + "' not recognized");
+            }
         }
 
-        private void executeChildIfNotAlready(final FixtureScript fixtureScript) {
-            if(shouldExecute(fixtureScript)) {
-                trace(fixtureScript, As.EXEC);
-                fixtureScript.execute(this);
+        private <T extends FixtureScript> FixtureScripts.MultipleExecutionStrategy determineExecutionStrategy(final T childFixtureScript) {
+            final FixtureScripts.MultipleExecutionStrategy executionStrategy;
+
+            if(childFixtureScript instanceof FixtureScriptWithExecutionStrategy) {
+                final FixtureScriptWithExecutionStrategy fixtureScriptWithExecutionStrategy =
+                        (FixtureScriptWithExecutionStrategy) childFixtureScript;
+                executionStrategy = fixtureScriptWithExecutionStrategy.getMultipleExecutionStrategy();
             } else {
-                trace(fixtureScript, As.SKIP);
+                executionStrategy = fixtureScripts.getMultipleExecutionStrategy();
+            }
+            return executionStrategy;
+        }
+
+        private <T extends FixtureScript> T executeChildIfNotAlreadyWithValueSemantics(final T childFixtureScript) {
+            FixtureScript previouslyExecutedScript = fixtureScriptByValue.get(childFixtureScript);
+            if (previouslyExecutedScript == null) {
+                if (childFixtureScript instanceof WithPrereqs) {
+                    final WithPrereqs<?,?> withPrereqs = (WithPrereqs<?,?>) childFixtureScript;
+                    withPrereqs.execPrereqs(this);
+                }
+            }
+            // the prereqs might now result in a match, so we check again.
+            previouslyExecutedScript = fixtureScriptByValue.get(childFixtureScript);
+            if (previouslyExecutedScript == null) {
+                trace(childFixtureScript, As.EXEC);
+                childFixtureScript.execute(this);
+                this.previouslyExecuted.add(childFixtureScript);
+                fixtureScriptByValue.put(childFixtureScript, childFixtureScript);
+                return childFixtureScript;
+            } else {
+                trace(childFixtureScript, As.SKIP);
+                return Casts.uncheckedCast(previouslyExecutedScript);
             }
         }
 
@@ -631,48 +705,18 @@ public abstract class FixtureScript
 
         //endregion
 
-        //region > shouldExecute
-        private boolean shouldExecute(final FixtureScript fixtureScript) {
-
-            final boolean previouslyExecuted = this.previouslyExecuted.contains(fixtureScript);
-            if(!previouslyExecuted) {
-                this.previouslyExecuted.add(fixtureScript);
-            }
-
-            final FixtureScripts.MultipleExecutionStrategy executionStrategy =
-                    fixtureScripts.getMultipleExecutionStrategy();
-
-            switch (executionStrategy) {
-
-                case IGNORE:
-                case EXECUTE_ONCE_BY_CLASS:
-                    return shouldExecuteForExecuteOnceByClassStrategy(fixtureScript);
-
-                case EXECUTE_ONCE_BY_VALUE:
-                    return !previouslyExecuted;
-
-                case EXECUTE:
-                    return true;
-
-                default:
-                    throw new IllegalArgumentException("Execution strategy: '" + executionStrategy + "' not recognized");
-            }
-
-        }
-
         /**
          * used and populated only if the {@link FixtureScripts.MultipleExecutionStrategy#EXECUTE_ONCE_BY_CLASS}
          * strategy is in use.
          */
-        private final Map<String,Class> fixtureScriptClasses = Maps.newLinkedHashMap();
+        private final Map<Class<? extends FixtureScript>, FixtureScript> fixtureScriptByClass = Maps.newLinkedHashMap();
 
-        private boolean shouldExecuteForExecuteOnceByClassStrategy(final FixtureScript fixtureScript) {
-            final boolean alreadyExecuted = fixtureScriptClasses.values().contains(fixtureScript.getClass());
-            if(!alreadyExecuted) {
-                fixtureScriptClasses.put(fixtureScript.getQualifiedName(), fixtureScript.getClass());
-            }
-            return !alreadyExecuted;
-        }
+        /**
+         * used and populated only if the {@link FixtureScripts.MultipleExecutionStrategy#EXECUTE_ONCE_BY_VALUE}
+         * strategy is in use.
+         */
+        private final Map<FixtureScript, FixtureScript> fixtureScriptByValue = Maps.newLinkedHashMap();
+
         //endregion
 
         //region > tracing
@@ -721,18 +765,18 @@ public abstract class FixtureScript
         }
 
 
-        private Map<Class, Object> userData = Maps.newHashMap();
+        private Map<Class<?>, Object> userData = Maps.newHashMap();
         @Programmatic
         public void setUserData(final Object object) {
             userData.put(object.getClass(), object);
         }
         @Programmatic
         public <T> T getUserData(final Class<T> cls) {
-            return (T) userData.get(cls);
+            return Casts.uncheckedCast(userData.get(cls));
         }
         @Programmatic
         public <T> T clearUserData(final Class<T> cls) {
-            return (T) userData.remove(cls);
+            return Casts.uncheckedCast(userData.remove(cls));
         }
 
     }
@@ -747,7 +791,7 @@ public abstract class FixtureScript
     }
 
     private <T> T valueFor(final String parameterName, final ExecutionContext ec, final T defaultValue) {
-        final Class<T> cls = (Class<T>) defaultValue.getClass();
+        final Class<T> cls = Casts.uncheckedCast(defaultValue.getClass());
 
         final T value = readParam(parameterName, ec, cls);
         if(value != null) { return (T) value; }
@@ -775,7 +819,7 @@ public abstract class FixtureScript
         Method method;
         try {
             method = this.getClass().getMethod("get" + uppercase(parameterName));
-            value = (T)method.invoke(this);
+            value = Casts.uncheckedCast(method.invoke(this));
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
 
         }
@@ -784,7 +828,7 @@ public abstract class FixtureScript
         if (cls == Boolean.class || cls == boolean.class) {
             try {
                 method = this.getClass().getMethod("is" + uppercase(parameterName));
-                value = (T)method.invoke(this);
+                value = Casts.uncheckedCast(method.invoke(this));
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
 
             }
@@ -824,27 +868,15 @@ public abstract class FixtureScript
      * Entry point for {@link org.apache.isis.applib.fixturescripts.FixtureScripts} service to call.
      *
      * <p>
-     *     DO <i>NOT</i> CALL DIRECTLY.
+     *     Package-visibility only, not public API.
      * </p>
      */
-    @Programmatic
-    public final List<FixtureResult> run(final String parameters) {
+    final List<FixtureResult> run(final String parameters) {
         executionContext = fixtureScripts.newExecutionContext(parameters).withTracing(this.tracePrintStream);
         executionContext.executeChildIfNotAlready(this);
         return executionContext.getResults();
     }
 
-    /**
-     * Use instead {@link org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext#lookup(String, Class)} directly.
-     */
-    @Programmatic
-    @Deprecated
-    public <T> T lookup(final String key, final Class<T> cls) {
-        if(executionContext == null) {
-            throw new IllegalStateException("This fixture has not yet been run.");
-        }
-        return executionContext.lookup(key, cls);
-    }
 
 
     /**
@@ -857,51 +889,6 @@ public abstract class FixtureScript
 
     //endregion
 
-    //region > executeChild (API for subclasses to call); deprecated execute(FixtureScript, ExecutionContext)
-
-    /**
-     * @deprecated - use instead {@link org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext#executeChild(FixtureScript, String, FixtureScript)}.
-     */
-    @Deprecated
-    protected void execute(
-            final String localNameOverride,
-            final FixtureScript childFixtureScript,
-            final ExecutionContext executionContext) {
-        executionContext.executeChild(this, localNameOverride, childFixtureScript);
-    }
-
-    /**
-     * @deprecated - use instead {@link org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext#executeChild(FixtureScript, String, FixtureScript)}.
-     */
-    @Deprecated
-    protected void executeChild(
-            final String localNameOverride,
-            final FixtureScript childFixtureScript,
-            final ExecutionContext executionContext) {
-        executionContext.executeChild(this, localNameOverride, childFixtureScript);
-    }
-
-    /**
-     * @deprecated - use instead {@link org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext#executeChild(org.apache.isis.applib.fixturescripts.FixtureScript, org.apache.isis.applib.fixturescripts.FixtureScript)}
-     */
-    @Deprecated
-    protected void execute(
-            final FixtureScript childFixtureScript,
-            final ExecutionContext executionContext) {
-        executionContext.executeChild(this, childFixtureScript);
-    }
-
-    /**
-     * @deprecated - use instead {@link org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext#executeChild(org.apache.isis.applib.fixturescripts.FixtureScript, org.apache.isis.applib.fixturescripts.FixtureScript)}
-     */
-    @Deprecated
-    protected void executeChild(
-            final FixtureScript childFixtureScript,
-            final ExecutionContext executionContext) {
-        executionContext.executeChild(this, childFixtureScript);
-    }
-
-    //endregion
 
     //region > execute (API for subclasses to implement)
 
@@ -935,7 +922,7 @@ public abstract class FixtureScript
     //region > helpers (for subclasses)
 
     /**
-     * Returns the first non-null vaulue; for convenience of subclass implementations
+     * Returns the first non-null value; for convenience of subclass implementations
      */
     protected static <T> T coalesce(final T... ts) {
         for (final T t : ts) {
@@ -966,7 +953,7 @@ public abstract class FixtureScript
      * Convenience method
      */
     protected <T> T mixin(final Class<T> mixinClass, final Object mixedIn) {
-        return container.mixin(mixinClass, mixedIn);
+        return factoryService.mixin(mixinClass, mixedIn);
     }
 
     /**
@@ -993,13 +980,10 @@ public abstract class FixtureScript
     protected FixtureScripts fixtureScripts;
 
     @javax.inject.Inject
-    protected DomainObjectContainer container;
-
-    @javax.inject.Inject
     protected FactoryService factoryService;
 
     @javax.inject.Inject
-    protected ServiceRegistry2 serviceRegistry;
+    protected ServiceRegistry serviceRegistry;
 
     @javax.inject.Inject
     protected RepositoryService repositoryService;

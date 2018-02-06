@@ -70,7 +70,8 @@ These "Q..." classes mirror the structure of domain entity, but expose propertie
 
 [NOTE]
 ====
-Most IDEs (including IntelliJ and Eclipse) enable annotation processing by default, as does Maven.
+The IntelliJ IDE automatically enables annotation processing by default, as does Maven.
+Using Eclipse IDE you may need to configure annotation processing manually; see the xref:../dg/dg.adoc#__dg_ide_eclipse_enable-annotation-processing[Developers' Guide].
 The DataNucleus' link:http://www.datanucleus.org/products/accessplatform_4_0/jdo/jdoql_typesafe.html[documentation] offers some guidance on confirming that APT is enabled.
 ====
 
@@ -118,7 +119,7 @@ public List<ToDoItem> findByAtPathAndCategory(final String atPath, final Categor
 
 [NOTE]
 ====
-You can find the full example of the JDOQL equivalent in the xref:../rgsvc/rgsvc.adoc#_rgsvc_core-domain-api_DomainObjectContainer_generic-repository-api[`DomainObjectContainer`]
+You can find the full example of the JDOQL equivalent in the xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-api_RepositoryService[`RepositoryService`]
 ====
 
 
@@ -279,8 +280,3 @@ public List<Order> findOrders(...) {
 
 
 
-== Registering the Services
-
-Assuming that the `configuration-and-annotation` services installer is configured (implicit if using the `AppManifest` to xref:../rgcms/rgcms.adoc#_rgcms_classes_AppManifest-bootstrapping[bootstrap the app]) then Apache Isis' core implementation of `IsisJdoSupport` service is automatically registered and injected (it is annotated with `@DomainService`) so no further configuration is required.
-
-To use an alternative implementation, use xref:../rgant/rgant.adoc#_rgant-DomainServiceLayout_menuOrder[`@DomainServiceLayout#menuOrder()`] (as explained in the xref:../rgsvc/rgsvc.adoc#__rgsvc_intro_overriding-the-services[introduction] to this guide).

@@ -46,11 +46,12 @@ import org.apache.isis.applib.services.eventbus.AbstractDomainEvent;
 import org.apache.isis.applib.services.eventbus.ActionDomainEvent;
 import org.apache.isis.applib.services.iactn.Interaction;
 import org.apache.isis.applib.services.iactn.InteractionContext;
-import org.apache.isis.applib.services.metamodel.MetaModelService2;
+import org.apache.isis.applib.services.metamodel.MetaModelService;
 import org.apache.isis.applib.services.queryresultscache.QueryResultsCache;
 import org.apache.isis.applib.services.repository.RepositoryService;
 import org.apache.isis.applib.services.xactn.TransactionService;
 import org.apache.isis.applib.services.xactn.TransactionState;
+import org.apache.isis.applib.util.Casts;
 import org.apache.isis.core.commons.authentication.AuthenticationSession;
 import org.apache.isis.core.commons.authentication.AuthenticationSessionProvider;
 import org.apache.isis.core.commons.config.IsisConfiguration;
@@ -188,7 +189,7 @@ public abstract class ActionInvocationFacetForDomainEventAbstract
 
         final ObjectAdapter returnedAdapter;
         if( command.getExecutor() == Command.Executor.USER &&
-            command.getExecuteIn() == org.apache.isis.applib.annotation.Command.ExecuteIn.BACKGROUND) {
+            command.getExecuteIn() == org.apache.isis.applib.annotation.CommandExecuteIn.BACKGROUND) {
 
             // deal with background commands
 
@@ -310,7 +311,8 @@ public abstract class ActionInvocationFacetForDomainEventAbstract
             interaction.execute(callable, execution);
 
             // handle any exceptions
-            final Interaction.Execution<ActionInvocationDto, ?> priorExecution = interaction.getPriorExecution();
+            final Interaction.Execution<ActionInvocationDto, ?> priorExecution = 
+            		Casts.uncheckedCast(interaction.getPriorExecution());
 
             final Exception executionExceptionIfAny = priorExecution.getThrew();
 
@@ -341,10 +343,8 @@ public abstract class ActionInvocationFacetForDomainEventAbstract
                 final List<ObjectAdapter> parameterAdapters = Arrays.asList(argumentAdapters);
 
                 getPublishingServiceInternal().publishAction(
-                        priorExecution,
-                        owningAction, identifiedHolder,
-                        targetAdapter, parameterAdapters,
-                        returnedAdapter);
+                        priorExecution
+                );
             }
         }
 
@@ -452,7 +452,7 @@ public abstract class ActionInvocationFacetForDomainEventAbstract
         }
 
         final Class<?> domainType = resultAdapter.getSpecification().getCorrespondingClass();
-        final MetaModelService2.Sort sort = getMetaModelService().sortOf(domainType);
+        final MetaModelService.Sort sort = getMetaModelService().sortOf(domainType);
         switch (sort) {
         case JDO_ENTITY:
             final Object domainObject = resultAdapter.getObject();
@@ -472,8 +472,8 @@ public abstract class ActionInvocationFacetForDomainEventAbstract
         }
     }
 
-    private MetaModelService2 getMetaModelService() {
-        return servicesInjector.lookupServiceElseFail(MetaModelService2.class);
+    private MetaModelService getMetaModelService() {
+        return servicesInjector.lookupServiceElseFail(MetaModelService.class);
     }
 
     private TransactionService getTransactionService() {
@@ -532,9 +532,8 @@ public abstract class ActionInvocationFacetForDomainEventAbstract
 
 
     /**
-     * Optional hook to allow the facet implementation for the deprecated {@link org.apache.isis.applib.annotation.PostsActionInvokedEvent} annotation
-     * to discard the event if the domain event is of a different type (specifically if was installed by virtue of a no
-     * @{@link org.apache.isis.applib.annotation.Action} or @{@link org.apache.isis.applib.annotation.ActionInteraction} annotations.
+     * Optional hook, previously to allow facet implementations of (now removed) annotations to to discard the event if the domain event
+     * was incompatible.  Now a no-op I think.
      */
     protected ActionDomainEvent<?> verify(final ActionDomainEvent<?> event) {
         return event;

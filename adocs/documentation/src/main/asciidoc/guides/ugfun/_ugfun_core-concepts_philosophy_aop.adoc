@@ -40,9 +40,9 @@ That's a rather more interesting cross-cutting concern than boring old logging!
 Apache Isis also draws heavily on the AOP concept of interceptors.
 Whenever an object is rendered in the UI, it is filtered with respect to the user's permissions.
 That is, if a user is not authorized to either view or perhaps modify an object, then this is applied transparently by the framework.
-The link:http://github.com/isisaddons/isis-module-security[Isis addons' security] module, mentioned previously, provides a rich user/role/permissions subdomain to use out of the box; but you can integrate with a different security mechanism if you have one already.
+The (non-ASF) link:http://platform.incode.org[Incode Platform^]'s security module, mentioned previously, provides a rich user/role/permissions subdomain to use out of the box; but you can integrate with a different security mechanism if you have one already.
 
-Another example of interceptors are the http://github.com/isisaddons/isis-module-command[Isis addons' command] and http://github.com/isisaddons/isis-module-audit[Isis addons' audit] modules.
+Another example of interceptors are the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s command and audit modules.
 The command module captures every user interaction that modifies the state of the system (the "cause" of a change) while the audit module captures every change to every object (the "effect" of a change).
 Again, this is all transparent to the user.
 
@@ -61,5 +61,5 @@ The link:http://en.wikipedia.org/wiki/Single_responsibility_principle[single res
 Apache Isis' support for contributions (not only contributed actions, but also contributed properties and contributed collections) enables this.
 And again, to loop back to the topic of this section, it's an AOP concept that being implemented by the framework.
 
-The nice thing about aspect orientation is that for the most part you can ignore these cross-cutting concerns and - at least initially at least - just focus on implementing your domain object.
+The nice thing about aspect orientation is that for the most part you can ignore these cross-cutting concerns and - at least initially - just focus on implementing your domain object.
 Later when your app starts to grow and you start to break it out into smaller modules, you can leverage Apache Isis' AOP support for (xref:../ugfun/ugfun.adoc#_ugfun_building-blocks_types-of-domain-objects_mixins[mixins]), (xref:../ugfun/ugfun.adoc#_ugfun_programming-model_domain-services_contributions[contributed services]) and interceptors (the xref:../ugfun/ugfun.adoc#_ugfun_building-blocks_events_domain-events[event bus]) to ensure that your codebase remains maintainable.

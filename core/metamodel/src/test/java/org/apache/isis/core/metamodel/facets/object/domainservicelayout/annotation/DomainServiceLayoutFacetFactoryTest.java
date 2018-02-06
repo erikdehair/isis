@@ -48,13 +48,11 @@ public class DomainServiceLayoutFacetFactoryTest extends AbstractFacetFactoryTes
     }
 
     public void testAnnotationPickedUpOnClass() {
-        class Customer {
-        }
         @DomainServiceLayout(menuOrder = "123" ,menuBar = DomainServiceLayout.MenuBar.SECONDARY)
         class Customers {
         }
 
-        facetFactory.process(new ProcessClassContext(Customers.class, null, methodRemover, facetHolder));
+        facetFactory.process(new ProcessClassContext(Customers.class, methodRemover, facetHolder));
 
         final Facet facet = facetHolder.getFacet(DomainServiceLayoutFacet.class);
         assertNotNull(facet);
@@ -68,13 +66,11 @@ public class DomainServiceLayoutFacetFactoryTest extends AbstractFacetFactoryTes
 
 
     public void testDomainServiceMenuOrderAnnotationPickedUpOnClass() {
-        class Customer {
-        }
         @DomainService(menuOrder = "123")
         class Customers {
         }
 
-        facetFactory.process(new ProcessClassContext(Customers.class, null, methodRemover, facetHolder));
+        facetFactory.process(new ProcessClassContext(Customers.class, methodRemover, facetHolder));
 
         final Facet facet = facetHolder.getFacet(DomainServiceLayoutFacet.class);
         assertNotNull(facet);
@@ -86,14 +82,12 @@ public class DomainServiceLayoutFacetFactoryTest extends AbstractFacetFactoryTes
     }
 
     public void testDomainServiceAndDomainServiceLayoutAnnotationWhenCompatiblePickedUpOnClass() {
-        class Customer {
-        }
         @DomainService(menuOrder = "123")
         @DomainServiceLayout(menuBar = DomainServiceLayout.MenuBar.SECONDARY)
         class Customers {
         }
 
-        facetFactory.process(new ProcessClassContext(Customers.class, null, methodRemover, facetHolder));
+        facetFactory.process(new ProcessClassContext(Customers.class, methodRemover, facetHolder));
 
         final Facet facet = facetHolder.getFacet(DomainServiceLayoutFacet.class);
         assertNotNull(facet);
@@ -105,21 +99,19 @@ public class DomainServiceLayoutFacetFactoryTest extends AbstractFacetFactoryTes
         assertNoMethodsRemoved();
     }
 
-    public void testDomainServiceAndDomainServiceLayoutAnnotationWhenIncompatiblePickedUpOnClass() {
-        class Customer {
-        }
+    public void testDomainServiceAndDomainServiceLayoutAnnotation_takes_the_minimum() {
         @DomainService(menuOrder = "1")
         @DomainServiceLayout(menuOrder = "123", menuBar = DomainServiceLayout.MenuBar.SECONDARY)
         class Customers {
         }
 
-        facetFactory.process(new ProcessClassContext(Customers.class, null, methodRemover, facetHolder));
+        facetFactory.process(new ProcessClassContext(Customers.class, methodRemover, facetHolder));
 
         final Facet facet = facetHolder.getFacet(DomainServiceLayoutFacet.class);
         assertNotNull(facet);
         assertTrue(facet instanceof DomainServiceLayoutFacetAnnotation);
         DomainServiceLayoutFacetAnnotation domainServiceLayoutFacet = (DomainServiceLayoutFacetAnnotation) facet;
-        Assert.assertThat(domainServiceLayoutFacet.getMenuOrder(), is("123"));
+        Assert.assertThat(domainServiceLayoutFacet.getMenuOrder(), is("1"));
         Assert.assertThat(domainServiceLayoutFacet.getMenuBar(), is(DomainServiceLayout.MenuBar.SECONDARY));
 
         assertNoMethodsRemoved();

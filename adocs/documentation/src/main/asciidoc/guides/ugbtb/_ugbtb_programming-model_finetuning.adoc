@@ -40,11 +40,13 @@ Let's see how this is done.
 
 === Including or excluding facets
 
-Suppose that you wanted to completely remove support for the (already deprecated) `@ActionOrder` annotation. This would be done using:
+Suppose that you wanted to completely remove support for some existing facet, eg to support the "persisting()" and "persisted()" callback methods.
+This would be done using:
 
 [source,ini]
 ----
-isis.reflector.facets.exclude=org.apache.isis.core.metamodel.facets.object.actionorder.annotation.ActionOrderFacetAnnotationFactory
+isis.reflector.facets.exclude=\
+    org.apache.isis.core.metamodel.facets.object.callbacks.PersistCallbackFacetFactory
 ----
 
 Or, suppose you wanted to use add some custom facet factory of your own, use:
@@ -65,11 +67,4 @@ This http://isis.markmail.org/thread/472c3mrvcgnripst[thread] from the users mai
 
 
 
-[NOTE]
-====
-Previously (prior to `1.13.0`) the framework also supported the "isis.reflector.facets" configuration property, to
-specify a completely new implementation of the (internal API) `ProgrammingModel`.  This is no longer supported; use
-"isis.reflector.facets.include" and "isis.reflector.facet.exclude" to adjust the framework's default implementation
-(called `ProgrammingModelFacetsJava5`).
-====
 

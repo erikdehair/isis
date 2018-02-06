@@ -32,11 +32,9 @@ Commands/Interactions/Background/Auditing/Publishing/Profiling:
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_CommandContext[`CommandContext`] (SPI)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_CommandService[`CommandService`] (SPI)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_InteractionContext[`InteractionContext`] (SPI)
-* xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditingService[`AuditingService`] (SPI) (deprecated)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_AuditerService[`AuditerService`] (SPI)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_BackgroundService[`BackgroundService`]
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_BackgroundCommandService[`BackgroundCommandService`] (SPI)
-* xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_PublishingService[`PublishingService`] (SPI) (deprecated)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_PublisherService[`PublishererService`] (SPI)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-api_MetricsService[`MetricsService`]
 
@@ -57,7 +55,7 @@ Bookmarks and Mementos:
 
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_integration-api_BookmarkService[`BookmarkService`]
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_integration-api_MementoService[`MementoService`]
-* xref:../rgsvc/rgsvc.adoc#_rgsvc_integration-api_DeepLinkService[`DeepLinkService`]
+* xref:../rgsvc/rgsvc.adoc#_rgsvc_presentation-api_DeepLinkService[`DeepLinkService`]
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_integration-api_JaxbService[`JaxbService`]
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_integration-api_XmlSnapshotService[`XmlSnapshotService`]
 
@@ -74,7 +72,7 @@ Layout and UI Management:
 
 REST Support:
 
-* xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_AcceptHeaderService[`AcceptHeaderService`]
+* xref:../rgsvc/rgsvc.adoc#_rgsvc_presentation-layer-api_AcceptHeaderService[`AcceptHeaderService`]
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_metadata-api_SwaggerService[`SwaggerService`]
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_presentation-layer-spi_ContentMappingService[`ContentMappingService`] (SPI)
 
@@ -85,8 +83,8 @@ Metamodel:
 
 Other API:
 
-* xref:../rgsvc/rgsvc.adoc#_rgsvc_testing_FixtureScriptsDefault[`FixtureScriptsDefault`]
-* xref:../rgsvc/rgsvc.adoc#_rgsvc_integration-api_GuiceBeanProvider[`GuiceBeanProvider`]
+* xref:../rgsvc/rgsvc.adoc#_rgsvc_testing_FixtureScripts[`FixtureScripts`]
+* xref:../rgsvc/rgsvc.adoc#_rgsvc_presentation-api_GuiceBeanProvider[`GuiceBeanProvider`]
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_testing_SudoService[`SudoService`]
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_TransactionService[`TransactionService`]
 
@@ -94,7 +92,6 @@ Other SPI:
 
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_bootstrapping-spi_ClassDiscoveryService[`ClassDiscoveryService`] (SPI)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_presentation-layer-spi_ErrorReportingService[`ErrorReportingService`] (SPI)
-* xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_EventSerializer[`EventSerializer`] (SPI)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_presentation-layer-spi_ExceptionRecognizer[`ExceptionRecognizer`] (SPI)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_testing_FixtureScriptsSpecificationProvider[`FixtureScriptsSpecificationProvider`] (SPI)
 * xref:../rgsvc/rgsvc.adoc#_rgsvc_presentation-layer-spi_LocaleProvider[`LocaleProvider`] (SPI)

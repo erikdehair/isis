@@ -8,7 +8,8 @@
 
 Domain service SPIs for the presentation layer influence how the Apache Isis viewers behave.
 
-The table below summarizes the presentation layer SPIs defined by Apache Isis.  It also lists their corresponding implementation, either a default implementation provided by Apache Isis itself, or provided by one of the in (non-ASF) link:http://www.isisaddons.org[Isis Addons] modules.
+The table below summarizes the presentation layer SPIs defined by Apache Isis.
+It also lists their corresponding implementation, either a default implementation provided by Apache Isis itself, or provided by one of the (non-ASF) link:http://platform.incode.org[Incode Platform^] modules.
 
 
 .Presentation Layer SPI
@@ -55,7 +56,7 @@ a configured `EmailService`
 
 |xref:../rgsvc/rgsvc.adoc#_rgsvc_presentation-layer-spi_ExceptionRecognizer[`o.a.i.applib.` +
 `services.exceprecog` +
-`ExceptionRecognizer2`]
+`ExceptionRecognizer`]
 |Convert certain exceptions (eg foreign or unique key violation in the database) into a format that can be rendered to the end-user.
 |`ExceptionRecognizer-` +
 `CompositeFor-` +
@@ -206,6 +207,8 @@ include::_rgsvc_presentation-layer-spi_GridService.adoc[leveloffset=+1]
 include::_rgsvc_presentation-layer-spi_GridSystemService.adoc[leveloffset=+1]
 include::_rgsvc_presentation-layer-spi_HintStore.adoc[leveloffset=+1]
 include::_rgsvc_presentation-layer-spi_LocaleProvider.adoc[leveloffset=+1]
+include::_rgsvc_presentation-layer-spi_MenuBarsLoaderService.adoc[leveloffset=+1]
+include::_rgsvc_presentation-layer-spi_MenuBarsService.adoc[leveloffset=+1]
 include::_rgsvc_presentation-layer-spi_RoutingService.adoc[leveloffset=+1]
 include::_rgsvc_presentation-layer-spi_SessionLoggingService.adoc[leveloffset=+1]
 include::_rgsvc_presentation-layer-spi_TableColumnOrderService.adoc[leveloffset=+1]

@@ -7,7 +7,8 @@
 
 
 
-The `AuditingService3` auditing service provides a simple mechanism to capture changes to data. It is called for each property that has changed on any domain object, as a set of pre- and post-values.
+The `AuditingService3` auditing service (and its various supertypes)provides a simple mechanism to capture changes to data.
+It is called for each property that has changed on any domain object, as a set of pre- and post-values.
 
 [NOTE]
 ====
@@ -38,15 +39,18 @@ The framework will call this for each and every domain object property that is m
 
 == Implementation
 
-The most full-featured available implementation is the (non-ASF) http://github.com/isisaddons/isis-module-audit[Isis addons' Audit module].  This creates an audit records for each changed property (ie every time that `AuditingService3#audit(...)` is called.  The implementation is `org.isisaddons.module.audit.dom.AuditingService`.
+The most full-featured available implementation is the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s audit module.  This creates an audit records for each changed property (ie every time that `AuditingService3#audit(...)` is called.
+The implementation is `org.isisaddons.module.audit.dom.AuditingService`.
 
 The module also provides:
 
 * `AuditingServiceMenu` service which provides actions to search for ``AuditEntry``s, underneath an 'Activity' menu on the secondary menu bar.
 
-* `AuditingServiceRepository` service to to search for persisted `AuditEntry``s.  None of its actions are visible in the user interface (they are all `@Programmatic`).
+* `AuditingServiceRepository` service to to search for persisted `AuditEntry``s.
+None of its actions are visible in the user interface (they are all `@Programmatic`).
 
-* `AuditingServiceContributions` which contrbutes collections to the xref:../rgcms/rgcms.adoc#_rgcms_classes_mixins_HasTransactionId[ `HasTransactionId`] interface. This will therefore display all audit entries that occurred in a given transaction, in other words whenever a command, a published event or another audit entry is displayed.
+* `AuditingServiceContributions` which contrbutes collections to the xref:../rgcms/rgcms.adoc#_rgcms_classes_mixins_HasTransactionId[ `HasTransactionId`] interface.
+This will therefore display all audit entries that occurred in a given transaction, in other words whenever a command, a published event or another audit entry is displayed.
 
 
 
@@ -61,17 +65,12 @@ The typical way to indicate that an object should be audited is to annotate it w
 
 
 
-== Registering the Services
+== Alternative Implementations
 
-The (non-ASF) http://github.com/isisaddons/isis-module-audit[Isis addons' audit] module provides an implementation of
-this service (`AuditingService`), and also provides a number of related domain services (`AuditingServiceMenu`,
+The (non-ASF) http://platform.incode.org/modules/spi/audit/spi-audit.html[Incode Platform's audit module] provides an implementation of this service (`AuditingService`), and also provides a number of related domain services (`AuditingServiceMenu`,
 `AuditingServiceRepository` and `AuditingServiceContributions`).
 
-Assuming that an `AppManifest` is being used to xref:../rgcms/rgcms.adoc#_rgcms_classes_AppManifest-bootstrapping[bootstrap the app])
-then this can be activated by updating the `pom.xml` and updating the `AppManifest#getModules()` method.
-
-If menu items or contributions are not required in the UI, these can be suppressed either using security or by
-implementing a xref:../ugbtb/ugbtb.adoc#_ugbtb_hints-and-tips_vetoing-visibility[vetoing subscriber].
+If menu items or contributions are not required in the UI, these can be suppressed either using security or by implementing a xref:../ugbtb/ugbtb.adoc#_ugbtb_hints-and-tips_vetoing-visibility[vetoing subscriber].
 
 
 

@@ -9,22 +9,20 @@
 The `CommandContext` service is a xref:../rgant/rgant.adoc#_rgant-RequestScoped[request-scoped] service that reifies the invocation of an action on a domain object into an object itself. This reified information is encapsulated within the `Command` object.
 
 By default, the `Command` is held in-memory only; once the action invocation has completed, the `Command` object is gone. The optional
- supporting xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_CommandService[`CommandService`] enables the implementation of `Command` to be pluggable. With an appropriate implementation (eg as provided by the (non-ASF) http://github.com/isisaddons/isis-module-command[Isis addons' command] module's xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_CommandService[`CommandService`]) the `Command` may then be persisted.
+ supporting xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_CommandService[`CommandService`] enables the implementation of `Command` to be pluggable. With an appropriate implementation (eg as provided by the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s command module's xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_CommandService[`CommandService`]) the `Command` may then be persisted.
 
-As of `1.13.0`, the primary use case for persistent ``Command``s is in support of background commands; they
-act as a parent to any background commands that can be persisted either explicitly using the
-xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_BackgroundService[`BackgroundService`], or implicitly by way of the
-xref:../rgant/rgant.adoc#_rgant-Action_command[`@Action#command()`] annotation.
+The primary use case for persistent ``Command``s is in support of background commands; they act as a parent to any background commands that can be persisted either explicitly using the xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_BackgroundService[`BackgroundService`], or implicitly by way of the xref:../rgant/rgant.adoc#_rgant-Action_command[`@Action#command()`] annotation.
 
-In previous versions of the framework, persistent ``Command``s also supported a number of other use cases:
+There are a number of related use cases:
 
-* they enable profiling of the running application (which actions are invoked then most often, what is their response time)
+* to enable profiling of the running application (which actions are invoked then most often, what is their response time)
 * if a xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_PublisherService[`PublisherService`] or xref:../rgsvc/rgsvc.adoc#_rgsvc_persistence-layer-spi_PublishingService[`PublishingService`] (the latter now deprecated) is configured, they provide better traceability as the `Command` is also correlated with any published events, again through the unique `transactionId` GUID
 * if a xref:../rgsvc/rgsvc.adoc#_rgsvc_spi_AuderService[`AuditerService`] or xref:../rgsvc/rgsvc.adoc#_rgsvc_spi_AuditService[`AuditingService`] (the latter now deprecated) is configured, they provide better audit information, since the `Command` (the 'cause' of an action) can be correlated to the audit records (the "effect" of the action) through the `transactionId` GUID
 
-As of `1.13.0`, these other uses cases are now more fully supported through the
-xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_InteractionContext[`InteractionContext`] service and persistent implementations of the ``Interaction`` object, eg as provided by the (non-ASF)
-http://github.com/isisaddons/isis-module-publishmq[Isis addons' publishmq] module.
+However, while persistent ``Command``s _can_ be used for these use cases, it is recommended instead to use the
+xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_InteractionContext[`InteractionContext`] service and persistent implementations of the
+``Interaction`` object, eg as provided by the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s publishmq module.
+
 
 
 
@@ -57,7 +55,11 @@ public class CommandContext {
 }
 ----
 
-This class (`o.a.i.applib.services.CommandContext`) is also the default implementation.  Under normal circumstances there shouldn't be any need to replace this implementation with another.
+This class (`o.a.i.applib.services.CommandContext`) is also the default implementation.
+
+Under normal circumstances there shouldn't be any need to replace this implementation with another.
+But if you do need to for some reason, then subclass and use xref:../rgant/rgant.adoc#_rgant-DomainServiceLayout_menuOrder[`@DomainServiceLayout#menuOrder()`] (as explained in the xref:../rgsvc/rgsvc.adoc#__rgsvc_intro_overriding-the-services[introduction] to this guide).
+
 
 The `Command` type referenced above is in fact an interface, defined as:
 
@@ -141,7 +143,7 @@ The xref:../rgant/rgant.adoc#_rgant-Action_command[`@Action#command()`] annotati
 [source,java]
 ----
 public class ToDoItem ... {
-    @Command(executeIn=ExecuteIn.BACKGROUND)
+    @Action(commandExecuteIn=CommandExecuteIn.BACKGROUND)
     public ToDoItem scheduleImplicitly() {
         completeSlowly(3000);
         return this;
@@ -151,7 +153,7 @@ public class ToDoItem ... {
 
 When a background command is invoked, the user is returned the command object itself (to provide a handle to the command being invoked).
 
-This requires that an implementation of xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_CommandService[`CommandService`] that persists the commands (such as the (non-ASF) http://github.com/isisaddons/isis-module-command[Isis addons' command] module's `CommandService`) is configured. It also requires that a scheduler is configured to execute the background commands, see xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_BackgroundCommandService[`BackgroundCommandService`]).
+This requires that an implementation of xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_CommandService[`CommandService`] that persists the commands (such as the (non-ASF) link:http://platform.incode.org[Incode Platform^]'s command module's `CommandService`) is configured. It also requires that a scheduler is configured to execute the background commands, see xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-spi_BackgroundCommandService[`BackgroundCommandService`]).
 
 
 
@@ -201,21 +203,6 @@ The domain object can still obtain the original ("effective") user that caused t
 ----
 String user = commandContext.getCommand().getUser();
 ----
-
-
-
-
-
-== Registering the Services
-
-Assuming that the `configuration-and-annotation` services installer is configured (implicit if using the
-`AppManifest` to xref:../rgcms/rgcms.adoc#_rgcms_classes_AppManifest-bootstrapping[bootstrap the app]) then Apache Isis' core
-implementation of `CommandContext` service is automatically registered and injected (it is annotated with
-`@DomainService`) so no further configuration is required.
-
-To use an alternative implementation, use
-xref:../rgant/rgant.adoc#_rgant-DomainServiceLayout_menuOrder[`@DomainServiceLayout#menuOrder()`] (as explained
-in the xref:../rgsvc/rgsvc.adoc#__rgsvc_intro_overriding-the-services[introduction] to this guide).
 
 
 

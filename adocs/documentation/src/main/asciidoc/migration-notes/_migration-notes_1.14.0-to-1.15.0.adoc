@@ -111,7 +111,7 @@ log4j.additivity.org.apache.wicket.page.XmlPartialPageUpdate=false
 
 
 [[_migration-notes_1.14.0-to-1.15.0_ISIS-1686]]
-== Less boilerplate when bootstrapping (link:https://issues.apache.org/jira/browse/ISIS-1686[ISIS-1686]
+== Less boilerplate when bootstrapping (link:https://issues.apache.org/jira/browse/ISIS-1686[ISIS-1686])
 
 Bootstrapping the application can now be accomplished with less boilerplate, both for the regular webapp and in integration tests.
 
@@ -120,7 +120,7 @@ For more information, see the xref:../ugtst/ugtst.adoc#_ugtst_integ-test-support
 
 
 [[_migration-notes_1.14.0-to-1.15.0_ISIS-1630]]
-== Fix for view models optionality (link:https://issues.apache.org/jira/browse/ISIS-1630[ISIS-1630]
+== Fix for view models optionality (link:https://issues.apache.org/jira/browse/ISIS-1630[ISIS-1630])
 
 This ticket fixed a bug whereby - in the absence of an explicit `@Property(optionality=...)` or `@Nullable` annotation, a view model's properties would be defaulted as optional rather than mandatory.
 
@@ -134,7 +134,7 @@ You should therefore inspect all properties of your view models and ensure that 
 [[_migration-notes_1.14.0-to-1.15.0_ISIS-1595]]
 == Fix to config variable (link:https://issues.apache.org/jira/browse/ISIS-1595[ISIS-1595])
 
-The configuration property xref:../guides/rgcfg/rgcfg.adoc#__rgcfg_configuring-core_metamodel-validation[] `isis.reflector.validator.jdoqlVariablesClause` was incorrectly named `variablesClause`.
+The configuration property xref:../guides/rgcfg/rgcfg.adoc#__rgcfg_configuring-core_metamodel-validation[ `isis.reflector.validator.jdoqlVariablesClause`] was incorrectly named `variablesClause`.
 This has now been corrected.
 
 Any applications that used this configuration property should be updated.
@@ -154,7 +154,7 @@ The first exception encountered is then re-thrown (to preserve similar behaviour
 [[_migration-notes_1.14.0-to-1.15.0_incode-platform]]
 == (non-ASF) Incode Platform
 
-(*work in progress*) The supporting (non-ASF) link:http://isisaddons.org[Isis Addons] and link:http://catalog.incode.org[Incode Catalog] have also been reorganised into a single link:http://platform.incode.org["Incode Platform"].
+The various (non-ASF) link:http://isisaddons.org[Isis Addons] and link:http://catalog.incode.org[Incode Catalog] have also been combined into a single link:http://platform.incode.org["Incode Platform"].
 
 While each module can still be consumed individually, the new platform versions consistently (a change in any one module will result in a re-release of all).
 This should make these modules easier to consume, and easier to maintain/develop.

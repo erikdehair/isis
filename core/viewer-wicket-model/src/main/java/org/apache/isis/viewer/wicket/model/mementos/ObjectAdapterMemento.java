@@ -43,13 +43,10 @@ import org.apache.isis.core.metamodel.spec.ObjectSpecId;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
 import org.apache.isis.core.metamodel.spec.feature.ObjectActionParameter;
-import org.apache.isis.core.metamodel.spec.feature.OneToManyAssociation;
-import org.apache.isis.core.metamodel.spec.feature.OneToOneAssociation;
 import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
 import org.apache.isis.core.runtime.memento.Memento;
 import org.apache.isis.core.runtime.persistence.ObjectNotFoundException;
 import org.apache.isis.core.runtime.system.persistence.PersistenceSession;
-import org.apache.isis.core.runtime.system.session.IsisSessionFactory;
 
 public class ObjectAdapterMemento implements Serializable {
 
@@ -574,36 +571,6 @@ public class ObjectAdapterMemento implements Serializable {
         private Functions() {
         }
 
-        public static Function<ObjectSpecification, ObjectSpecId> fromSpec() {
-            return new Function<ObjectSpecification, ObjectSpecId>() {
-
-                @Override
-                public ObjectSpecId apply(final ObjectSpecification from) {
-                    return from.getSpecId();
-                }
-            };
-        }
-
-        public static Function<OneToOneAssociation, PropertyMemento> fromProperty(
-                final IsisSessionFactory isisSessionFactory) {
-            return new Function<OneToOneAssociation, PropertyMemento>() {
-                @Override
-                public PropertyMemento apply(final OneToOneAssociation from) {
-                    return new PropertyMemento(from, isisSessionFactory);
-                }
-            };
-        }
-
-        public static Function<OneToManyAssociation, CollectionMemento> fromCollection(
-                final IsisSessionFactory isisSessionFactory) {
-            return new Function<OneToManyAssociation, CollectionMemento>() {
-                @Override
-                public CollectionMemento apply(final OneToManyAssociation from) {
-                    return new CollectionMemento(from, isisSessionFactory);
-                }
-            };
-        }
-
         public static Function<ObjectAction, ActionMemento> fromAction() {
             return new Function<ObjectAction, ActionMemento>() {
                 @Override
@@ -648,9 +615,9 @@ public class ObjectAdapterMemento implements Serializable {
                 final SpecificationLoader specificationLoader) {
             return new Function<ObjectAdapterMemento, ObjectAdapter>() {
                 @Override
-                public ObjectAdapter apply(final ObjectAdapterMemento from) {
+                public ObjectAdapter apply(final ObjectAdapterMemento memento) {
                     try {
-                        return from.getObjectAdapter(concurrencyChecking, persistenceSession, specificationLoader);
+                        return memento.getObjectAdapter(concurrencyChecking, persistenceSession, specificationLoader);
                     } catch (ObjectNotFoundException e) {
                         // this can happen if for example the object is not visible (due to the security tenanted facet)
                         return null;
@@ -686,6 +653,15 @@ public class ObjectAdapterMemento implements Serializable {
                     return objectAdapter.getObject();
                 }
             };
+        }
+
+        public static Function<ObjectAdapterMemento, RootOid> toOid() {
+            return new Function<ObjectAdapterMemento, RootOid>() {
+                                @Override
+                                public RootOid apply(final ObjectAdapterMemento objectAdapterMemento) {
+                                    return RootOid.create(objectAdapterMemento.asBookmark());
+                                }
+                            };
         }
     }
 

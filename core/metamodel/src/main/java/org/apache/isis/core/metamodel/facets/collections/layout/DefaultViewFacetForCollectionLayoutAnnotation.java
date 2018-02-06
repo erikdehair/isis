@@ -19,12 +19,17 @@
 
 package org.apache.isis.core.metamodel.facets.collections.layout;
 
+import java.util.List;
+import java.util.Objects;
+
 import com.google.common.base.Strings;
 
 import org.apache.isis.applib.annotation.CollectionLayout;
+import org.apache.isis.core.commons.config.IsisConfiguration;
 import org.apache.isis.core.metamodel.facetapi.FacetHolder;
 import org.apache.isis.core.metamodel.facets.collections.collection.defaultview.DefaultViewFacet;
 import org.apache.isis.core.metamodel.facets.collections.collection.defaultview.DefaultViewFacetAbstract;
+import org.apache.isis.core.metamodel.facets.object.domainobject.auditing.DefaultViewConfiguration;
 
 public class DefaultViewFacetForCollectionLayoutAnnotation extends DefaultViewFacetAbstract {
 
@@ -32,12 +37,17 @@ public class DefaultViewFacetForCollectionLayoutAnnotation extends DefaultViewFa
         super(value, holder);
     }
 
-    public static DefaultViewFacet create(CollectionLayout collectionLayout, FacetHolder holder) {
-        if (collectionLayout == null) {
-            return null;
-        }
+    public static DefaultViewFacet create(
+            final List<CollectionLayout> collectionLayouts,
+            final IsisConfiguration configuration,
+            final FacetHolder holder) {
 
-        final String defaultView = Strings.emptyToNull(collectionLayout.defaultView());
-        return defaultView != null ? new DefaultViewFacetForCollectionLayoutAnnotation(defaultView, holder) : null;
+        final String defaultView = collectionLayouts.stream()
+                .map(CollectionLayout::defaultView)
+                .map(Strings::emptyToNull)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseGet(() -> DefaultViewConfiguration.parse(configuration).getDefaultView());
+        return new DefaultViewFacetForCollectionLayoutAnnotation(defaultView, holder);
     }
 }

@@ -8,7 +8,8 @@
 The core/domain APIs provide general-purpose services to the domain objects, for example obtaining the current time or user, or instantiating domain objects.
 
 
-The table below summarizes the core/domain APIs defined by Apache Isis.  It also lists their corresponding implementation, either a default implementation provided by Apache Isis itself, or provided by one of the in (non-ASF) link:http://www.isisaddons.org[Isis Addons] modules.
+The table below summarizes the core/domain APIs defined by Apache Isis.
+It also lists their corresponding implementation, either a default implementation provided by Apache Isis itself, or provided by one of the (non-ASF) link:http://platform.incode.org[Incode Platform^] modules.
 
 
 .Core/Domain Layer API
@@ -115,40 +116,6 @@ Key:
 * `o.a.i.c.m.s` is an abbreviation for `org.apache.isis.core.metamodel.services`
 * `o.a.i.c.r.s` is an abbreviation for `org.apache.isis.core.runtime.services`
 
-
-
-There is also a number of deprecated domain services.
-
-.Deprecated Domain Services
-[cols="3,3a,3a,3a", options="header"]
-|===
-
-|API
-|Description
-|Implementation
-|Notes
-
-|`o.a.i.applib.` +
-`annotation`
-`Bulk.InteractionContext`
-|Request-scoped access to whether action is invoked on object and/or on collection of objects
-|`Bulk.InteractionContext` +
-``o.a.i.core`` +
-``isis-core-applib``
-|Replaced by xref:../rgsvc/rgsvc.adoc#_rgsvc_application-layer-api_ActionInvocationContext[`ActionInvocationContext`]
-
-
-
-|===
-
-Key:
-
-Key:
-
-* `o.a.i` is an abbreviation for `org.apache.isis`
-* `o.ia.m` is an abbreviation for `org.isisaddons.module`
-* `o.a.i.c.m.s` is an abbreviation for `org.apache.isis.core.metamodel.services`
-* `o.a.i.c.r.s` is an abbreviation for `org.apache.isis.core.runtime.services`
 
 
 

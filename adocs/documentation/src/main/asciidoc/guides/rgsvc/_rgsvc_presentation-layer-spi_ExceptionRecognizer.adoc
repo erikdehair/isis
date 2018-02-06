@@ -20,7 +20,7 @@ The SPI defined by this service is:
 
 [source,java]
 ----
-public interface ExceptionRecognizer2 ... {
+public interface ExceptionRecognizer ... {
     public enum Category {                          // <1>
         ...
     }
@@ -48,7 +48,7 @@ The categories are:
 
 [source,java]
 ----
-public interface ExceptionRecognizer2 ... {
+public interface ExceptionRecognizer ... {
     public enum Category {
         CONSTRAINT_VIOLATION,           // <1>
         NOT_FOUND,                      // <2>
@@ -81,39 +81,55 @@ If the implementation recognizes the exception then it returns a user-friendly m
 
 The framework provides two default implementations:
 
-* `o.a.i.core.metamodel.services.container.DomainObjectContainerDefault` provided by Apache Isis core is itself an `ExceptionRecognizer`, and will handle ``ConcurrencyException``s.  It will also handle any application exceptions raised by the system (subclasses of `o.a.i.applib.RecoverableException`).
+* `o.a.i.core.metamodel.services.exceprecog.ExceptionRecognizerDocDefault` provided by Apache Isis core is itself an `ExceptionRecognizer`, and will handle ``ConcurrencyException``s.  It will also handle any application exceptions raised by the system (subclasses of `o.a.i.applib.RecoverableException`).
 
-* `o.a.i.objectstore.jdo.applib.service.exceprecog.ExceptionRecognizerCompositeForJdoObjectStore` bundles up a number of more fine-grained implementations:
+* `o.a.i.applib.services.exceprecog.jdo.ExceptionRecognizerCompositeForJdoObjectStore` bundles up a number of more fine-grained implementations:
 ** `ExceptionRecognizerForSQLIntegrityConstraintViolationUniqueOrIndexException`
 ** `ExceptionRecognizerForJDOObjectNotFoundException`
 ** `ExceptionRecognizerForJDODataStoreException`
 
 
-If you want to recognize and handle additional exceptions (for example to capture error messages specific to the JDBC driver you might be using), then create a fine-grained implementation of `ExceptionRecognizer2` for the particular error message (there are some convenience implementations of the interface that you can subclass from if required) and register in `isis.properties`.
+If you want to recognize and handle additional exceptions (for example to capture error messages specific to the JDBC driver you might be using), then create a fine-grained implementation of `ExceptionRecognizer` for the particular error message (there are some convenience implementations of the interface that you can subclass from if required) and annotated with `@DomainService` in the usual way.
+Make sure that the service resides under a module registered in `AppManifest`.
 
 
 
+=== Configuration Properties
 
-== Registering the Services
+The following configuration properties are relevant:
 
-Assuming that the `configuration-and-annotation` services installer is configured (implicit if using the
-`AppManifest` to xref:../rgcms/rgcms.adoc#_rgcms_classes_AppManifest-bootstrapping[bootstrap the app]) then the default
-implementations provided by the framework (`DomainObjectContainerDefault` and
-`ExceptionRecognizerCompositeForJdoObjectStore`) will be registered.
+[cols="2a,1,3a", options="header"]
+|===
+|Property
+|Value +
+(default value)
+|Description
 
-In addition, you can register any further exception recognizers in `isis.properties`:
+| `isis.services.` +
+`exceprecog.` +
+`logRecognized` +
+`Exceptions` +
+|`true`,`false` +
+(`false`)
+|whether recognized exceptions should also be logged. +
 
-[source,ini]
-----
-isis.services=...,\
-              com.mycompany.myapp.MyExceptionRecognizer,\
-              ...
-----
+Generally a recognized exception is one that is expected (for example a uniqueness constraint violated in the database) and which does not represent an error condition.
+This property logs the exception anyway, useful for debugging.
 
-[NOTE]
-====
-Prior to 1.9.0, the `ExceptionRecognizerCompositeForJdoObjectStore` also required manual registration.
-====
+This is recognised by all implementations that subclass `ExceptionRecognizerAbstract`.
 
-If the JDO exception recognizers are not required (rather unlikely), then they can be disabled en-masse using the xref:../rgcfg/rgcfg.adoc#_rgcfg_configuring-core[configuration property] `isis.services.ExceptionRecognizerCompositeForJdoObjectStore.disable`.
+| `isis.services.` +
+`ExceptionRecognizer` +
+`CompositeFor` +
+`JdoObjectStore.` +
+`disable` +
+|`true`,`false` +
+(`false`)
+|whether to disable the default recognizers registered by `ExceptionRecognizerCompositeForJdoObjectStore`. +
+
+This implementation provides a default set of recognizers to convert RDBMS constraints into user-friendly messages.
+In the (probably remote) chance that this functionality isn't required, they can be disabled through this flag.
+
+
+|===
 

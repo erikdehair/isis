@@ -34,6 +34,7 @@ import org.apache.isis.applib.RecoverableException;
 import org.apache.isis.applib.fixtures.FixtureClock;
 import org.apache.isis.applib.fixturescripts.FixtureScript;
 import org.apache.isis.applib.services.clock.ClockService;
+import org.apache.isis.applib.services.factory.FactoryService;
 import org.apache.isis.applib.services.registry.ServiceRegistry;
 import org.apache.isis.applib.services.scratchpad.Scratchpad;
 import org.apache.isis.applib.services.sessmgmt.SessionManagementService;
@@ -59,7 +60,10 @@ import org.apache.isis.core.unittestsupport.jmocking.JUnitRuleMockery2.Mode;
  * uses JUnit rules to automatically perform {@link IsisTransactionRule transaction management} and
  * uses JUnit rules for {@link ExpectedException exception handling}.  In {@link CukeGlueAbstract} these
  * are required (by Cucumber-JVM) to be explicitly handled in the step definitions.
+ *
+ * @deprecated - to be replaced by {@link IntegrationTestAbstract3}
  */
+@Deprecated
 public abstract class IntegrationTestAbstract {
 
     /**
@@ -186,7 +190,7 @@ public abstract class IntegrationTestAbstract {
      * Convenience method
      */
     protected <T> T mixin(final Class<T> mixinClass, final Object mixedIn) {
-        return container().mixin(mixinClass, mixedIn);
+        return service(FactoryService.class).mixin(mixinClass, mixedIn);
     }
 
     
@@ -208,7 +212,7 @@ public abstract class IntegrationTestAbstract {
             return new Statement() {
                 @Override
                 public void evaluate() throws Throwable {
-                    isft.getContainer().injectServicesInto(target);
+                    isft.getIsisSessionFactory().getServicesInjector().injectServicesInto(target);
                     isft.beginTran();
                     try {
                         base.evaluate();

@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * </p>
  */
 @Inherited
-@Target({ ElementType.TYPE })
+@Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DomainServiceLayout {
 
@@ -45,13 +45,14 @@ public @interface DomainServiceLayout {
     public enum MenuBar {
         PRIMARY,
         SECONDARY,
-        TERTIARY
+        TERTIARY,
+        NOT_SPECIFIED
     }
 
     /**
      * The menubar in which the menu that holds this service's actions should reside.
      */
-    MenuBar menuBar() default MenuBar.PRIMARY;
+    MenuBar menuBar() default MenuBar.NOT_SPECIFIED;
 
     /**
      * Number in Dewey Decimal format representing the order.
@@ -75,5 +76,5 @@ public @interface DomainServiceLayout {
      *     default order greater than Integer.MAX_VALUE - 50).
      * </p>
      */
-    String menuOrder() default "" + (Integer.MAX_VALUE - 100);
+    String menuOrder() default Constants.MENU_ORDER_DEFAULT;
 }
