@@ -1,4 +1,4 @@
-/**
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -17,25 +17,7 @@
 package org.apache.isis.applib.services.queryresultscache;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.Callable;
-
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-
-import com.google.common.collect.Maps;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.isis.applib.AbstractSubscriber;
-import org.apache.isis.applib.annotation.DomainService;
-import org.apache.isis.applib.annotation.NatureOfService;
-import org.apache.isis.applib.annotation.Programmatic;
-import org.apache.isis.applib.fixturescripts.events.FixturesInstalledEvent;
-import org.apache.isis.applib.fixturescripts.events.FixturesInstallingEvent;
-import org.apache.isis.applib.services.WithTransactionScope;
-import org.apache.isis.applib.util.Casts;
 
 /**
  * This service (API and implementation) provides a mechanism by which idempotent query results can be cached for the duration of an interaction.
@@ -47,17 +29,11 @@ import org.apache.isis.applib.util.Casts;
  * {@link org.apache.isis.applib.annotation.DomainService}.  This means that it is automatically registered and
  * available for use; no further configuration is required.
  */
-@DomainService(
-        nature = NatureOfService.DOMAIN,
-        menuOrder = "" + Integer.MAX_VALUE
-)
-@RequestScoped
-public class QueryResultsCache implements WithTransactionScope {
+public interface QueryResultsCache {
+	
+	// -- KEY
 
-    private static final Logger LOG = LoggerFactory.getLogger(QueryResultsCache.class);
-
-
-    public static class Key {
+	public static class Key {
         private final Class<?> callingClass;
         private final String methodName;
         private final Object[] keys;
@@ -125,6 +101,8 @@ public class QueryResultsCache implements WithTransactionScope {
             return callingClass.getName() + "#" + methodName  + Arrays.toString(keys);
         }
     }
+	
+	// -- VALUE
     
     public static class Value<T> {
         private T result;
@@ -136,137 +114,10 @@ public class QueryResultsCache implements WithTransactionScope {
         }
     }
     
-    // //////////////////////////////////////
+    // -- INTERFACE
 
-    
-    private final Map<Key, Value<?>> cache = Maps.newHashMap();
+	public <T> T execute(Callable<T> callable, Class<?> callingClass, String methodName, Object... keys);
 
-    @Programmatic
-    public <T> T execute(final Callable<T> callable, final Class<?> callingClass, final String methodName, final Object... keys) {
-        if(control.isFixturesInstalling()) {
-            try {
-                return callable.call();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        final Key cacheKey = new Key(callingClass, methodName, keys);
-        return executeWithCaching(callable, cacheKey);
-    }
-
-    @Programmatic
-    public <T> T execute(final Callable<T> callable, final Key cacheKey) {
-        if(control.isFixturesInstalling()) {
-            try {
-                return callable.call();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return executeWithCaching(callable, cacheKey);
-    }
-
-    protected <T> T executeWithCaching(final Callable<T> callable, final Key cacheKey) {
-        try {
-            final Value<?> cacheValue = cache.get(cacheKey);
-            logHitOrMiss(cacheKey, cacheValue);
-            if(cacheValue != null) {
-                return Casts.uncheckedCast(cacheValue.getResult());
-            }
-
-            // cache miss, so get the result...
-            T result = callable.call();
-
-            // ... and cache
-            //
-            // (it is possible that the callable just invoked might also have updated the cache, eg if there was
-            // some sort of recursion.  However, Map#put(...) is idempotent, so valid to call more than once.
-            //
-            // note: there's no need for thread-safety synchronization... remember that QueryResultsCache is @RequestScoped
-            put(cacheKey, result);
-
-            return result;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Programmatic
-    public <T> Value<T> get(final Class<?> callingClass, final String methodName, final Object... keys) {
-        return get(new Key(callingClass, methodName, keys));
-    }
-    
-    @Programmatic
-    @SuppressWarnings("unchecked")
-    public <T> Value<T> get(final Key cacheKey) {
-        Value<T> value = (Value<T>) cache.get(cacheKey);
-        logHitOrMiss(cacheKey, value);
-        return value;
-    }
-
-    @Programmatic
-    public <T> void put(final Key cacheKey, final T result) {
-        if(LOG.isDebugEnabled()) {
-            LOG.debug("PUT: " + cacheKey);
-        }
-        cache.put(cacheKey, new Value<T>(result));
-    }
-
-    private static void logHitOrMiss(final Key cacheKey, final Value<?> cacheValue) {
-        if(!LOG.isDebugEnabled()) { 
-            return; 
-        } 
-        String hitOrMiss = cacheValue != null ? "HIT" : "MISS";
-        LOG.debug( hitOrMiss + ": " + cacheKey.toString());
-    }
-
-    /**
-     * Not API: for framework to call at end of transaction, to clear out the cache.
-     *
-     * <p>
-     * (This service really ought to be considered
-     * a transaction-scoped service; since that isn't yet supported by the framework, we have to manually reset).
-     * </p>
-     */
-    @Programmatic
-    @Override
-    public void resetForNextTransaction() {
-        cache.clear();
-    }
-
-    /**
-     * In separate class because {@link QueryResultsCache} itself is request-scoped
-     */
-    @DomainService(
-            nature = NatureOfService.DOMAIN,
-            menuOrder = "" + Integer.MAX_VALUE
-    )
-    public static class Control extends AbstractSubscriber {
-
-        @Programmatic
-        @com.google.common.eventbus.Subscribe
-        @org.axonframework.eventhandling.annotation.EventHandler
-        public void on(FixturesInstallingEvent ev) {
-            fixturesInstalling = true;
-        }
-
-        @Programmatic
-        @com.google.common.eventbus.Subscribe
-        @org.axonframework.eventhandling.annotation.EventHandler
-        public void on(FixturesInstalledEvent ev) {
-            fixturesInstalling = false;
-        }
-
-        private boolean fixturesInstalling;
-        @Programmatic
-        public boolean isFixturesInstalling() {
-            return fixturesInstalling;
-        }
-    }
-
-
-    @Inject
-    protected Control control;
-
-
+	public void resetForNextTransaction();
+	
 }

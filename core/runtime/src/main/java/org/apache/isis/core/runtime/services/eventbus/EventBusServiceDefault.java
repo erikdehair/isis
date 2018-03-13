@@ -21,8 +21,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.RequestScoped;
 
-import com.google.common.base.Strings;
-
 import org.apache.isis.applib.NonRecoverableException;
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.services.eventbus.EventBusImplementation;
@@ -31,8 +29,8 @@ import org.apache.isis.applib.services.registry.ServiceRegistry;
 import org.apache.isis.core.commons.lang.ClassUtil;
 import org.apache.isis.core.metamodel.facets.Annotations;
 import org.apache.isis.core.runtime.services.RequestScopedService;
-import org.apache.isis.core.runtime.services.eventbus.adapter.EventBusImplementationForAxonSimple;
-import org.apache.isis.core.runtime.services.eventbus.adapter.EventBusImplementationForGuava;
+
+import com.google.common.base.Strings;
 
 /**
  * Holds common runtime logic for EventBusService implementations.
@@ -41,8 +39,11 @@ public abstract class EventBusServiceDefault extends EventBusService {
 
     public static final String KEY_ALLOW_LATE_REGISTRATION = "isis.services.eventbus.allowLateRegistration";
     public static final String KEY_EVENT_BUS_IMPLEMENTATION = "isis.services.eventbus.implementation";
+    
+    private static final String EVENT_BUS_IMPLEMENTATION_DEFAULT = "plugin";
+    private static final String[] KEYWORDS = {"auto", "plugin", "guava", "axon"};
 
-    //region > register
+    // -- register
     /**
      * {@inheritDoc}
      *
@@ -73,9 +74,9 @@ public abstract class EventBusServiceDefault extends EventBusService {
         super.register(domainService);
     }
 
-    //endregion
+    
 
-    //region > init, shutdown
+    // -- init, shutdown
     @Programmatic
     @PostConstruct
     public void init(final Map<String, String> properties) {
@@ -85,16 +86,18 @@ public abstract class EventBusServiceDefault extends EventBusService {
 
     private static String getNormalized(final String implementation) {
         if(Strings.isNullOrEmpty(implementation)) {
-            return "guava";
+            return EVENT_BUS_IMPLEMENTATION_DEFAULT;
         } else {
             final String implementationTrimmed = implementation.trim();
-            if("guava".equalsIgnoreCase(implementationTrimmed)) {
-                return "guava";
-            } else if("axon".equalsIgnoreCase(implementationTrimmed)) {
-                return "axon";
-            } else {
-                return implementationTrimmed;
+            
+            for(String keyword : KEYWORDS) {
+            	if(keyword.equalsIgnoreCase(implementationTrimmed)) {
+            		return keyword;
+            	}
             }
+            
+            return implementationTrimmed;
+            
         }
     }
 
@@ -102,7 +105,7 @@ public abstract class EventBusServiceDefault extends EventBusService {
         final String value = properties.get(key);
         return !Strings.isNullOrEmpty(value) && Boolean.parseBoolean(value);
     }
-    //endregion
+    
 
     private boolean allowLateRegistration;
     boolean isAllowLateRegistration() {
@@ -126,14 +129,22 @@ public abstract class EventBusServiceDefault extends EventBusService {
     }
 
     private EventBusImplementation instantiateEventBus() {
-        if("guava".equals(implementation)) {
-            return new EventBusImplementationForGuava();
-        }
-        if("axon".equals(implementation)) {
-            return new EventBusImplementationForAxonSimple();
+    	
+    	String fqImplementationName = implementation;
+    	
+    	if( "plugin".equals(implementation) || "auto".equals(implementation) ) {
+    		
+    		return EventBusImplementation.get();
+    		
+    	} else if("guava".equals(implementation)) {
+            // legacy of return new EventBusImplementationForGuava();
+        	fqImplementationName = "org.apache.isis.core.runtime.services.eventbus.adapter.EventBusImplementationForGuava";
+        } else if("axon".equals(implementation)) {
+        	// legacy of return new EventBusImplementationForAxonSimple();
+        	fqImplementationName = "org.apache.isis.core.runtime.services.eventbus.adapter.EventBusImplementationForAxonSimple";
         }
 
-        final Class<?> aClass = ClassUtil.forName(implementation);
+        final Class<?> aClass = ClassUtil.forName(fqImplementationName);
         if(EventBusImplementation.class.isAssignableFrom(aClass)) {
             try {
                 return (EventBusImplementation) aClass.newInstance();
@@ -144,7 +155,7 @@ public abstract class EventBusServiceDefault extends EventBusService {
         throw new NonRecoverableException(
                 "Could not instantiate event bus implementation '" + implementation + "'");
     }
-    //endregion
+    
 
     @javax.inject.Inject
     ServiceRegistry serviceRegistry;

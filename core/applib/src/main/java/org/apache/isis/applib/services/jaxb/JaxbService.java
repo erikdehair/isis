@@ -30,14 +30,13 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.isis.applib.ApplicationException;
-import org.apache.isis.applib.DomainObjectContainer;
 import org.apache.isis.applib.NonRecoverableException;
 import org.apache.isis.applib.annotation.Programmatic;
+import org.apache.isis.applib.internal.base._Casts;
+import org.apache.isis.applib.internal.base._NullSafe;
+import org.apache.isis.applib.internal.collections._Maps;
 import org.apache.isis.applib.services.dto.Dto_downloadXsd;
-import org.apache.isis.applib.util.Casts;
-import org.apache.isis.applib.util.Streams;
-
-import com.google.common.collect.Maps;
+import org.apache.isis.applib.util.JaxbUtil;
 
 public interface JaxbService {
 
@@ -103,55 +102,65 @@ public interface JaxbService {
 
         @Override
         public Object fromXml(final JAXBContext jaxbContext, final String xml) {
-            return fromXml(jaxbContext, xml, Maps.<String,Object>newHashMap());
+            return fromXml(jaxbContext, xml, _Maps.newHashMap());
         }
+
         @Override
         public Object fromXml(final JAXBContext jaxbContext, final String xml, final Map<String, Object> unmarshallerProperties) {
             try {
 
-                final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-
-                for (Map.Entry<String, Object> entry : unmarshallerProperties.entrySet()) {
-                    unmarshaller.setProperty(entry.getKey(), entry.getValue());
-                }
-
-                configure(unmarshaller);
-
-                final Object unmarshal = unmarshaller.unmarshal(new StringReader(xml));
-                return unmarshal;
+                return internalFromXml(jaxbContext, xml, unmarshallerProperties);
 
             } catch (final JAXBException ex) {
                 throw new NonRecoverableException("Error unmarshalling XML", ex);
             }
         }
 
+        protected Object internalFromXml(
+                final JAXBContext jaxbContext,
+                final String xml,
+                final Map<String, Object> unmarshallerProperties) throws JAXBException {
+            final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+
+            for (Map.Entry<String, Object> entry : unmarshallerProperties.entrySet()) {
+                unmarshaller.setProperty(entry.getKey(), entry.getValue());
+            }
+
+            configure(unmarshaller);
+
+            return unmarshaller.unmarshal(new StringReader(xml));
+        }
+
         @Override
         public <T> T fromXml(final Class<T> domainClass, final String xml) {
-            return fromXml(domainClass, xml, Maps.<String,Object>newHashMap());
+            return fromXml(domainClass, xml, _Maps.newHashMap());
         }
+
         @Override
         public <T> T fromXml(final Class<T> domainClass, final String xml, final Map<String, Object> unmarshallerProperties) {
-            try {
-                final JAXBContext context = JAXBContext.newInstance(domainClass);
-                return Casts.uncheckedCast(fromXml(context, xml, unmarshallerProperties));
+            final JAXBContext context = jaxbContextFor(domainClass);
+            return _Casts.uncheckedCast(fromXml(context, xml, unmarshallerProperties));
+        }
 
-            } catch (final JAXBException ex) {
-                throw new NonRecoverableException("Error unmarshalling XML to class '" + domainClass.getName() + "'", ex);
+        private static <T> JAXBContext jaxbContextFor(final Class<T> clazz)  {
+            try {
+                return JaxbUtil.jaxbContextFor(clazz);
+            } catch (RuntimeException e) {
+                throw new NonRecoverableException("Error obtaining JAXBContext for class '" + clazz + "'", e.getCause());
             }
         }
 
         @Override
         public String toXml(final Object domainObject) {
-            return toXml(domainObject, Maps.<String,Object>newHashMap());
+            return toXml(domainObject, _Maps.newHashMap());
         }
 
         @Override
         public String toXml(final Object domainObject, final Map<String, Object> marshallerProperties)  {
 
             final Class<?> domainClass = domainObject.getClass();
+            final JAXBContext context = jaxbContextFor(domainObject);
             try {
-                final JAXBContext context = JAXBContext.newInstance(domainClass);
-
                 final Marshaller marshaller = context.createMarshaller();
 
                 marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
@@ -178,10 +187,10 @@ public interface JaxbService {
                     String annotationExceptionMessages = null;
                     try {
                         final Method getErrorsMethod = exClass.getMethod("getErrors");
-                        errors = Casts.uncheckedCast(getErrorsMethod.invoke(ex));
+                        errors = _Casts.uncheckedCast(getErrorsMethod.invoke(ex));
                         
                         annotationExceptionMessages = ": " + 
-                        Streams.stream(errors)
+                        _NullSafe.stream(errors)
                         .map(Exception::getMessage)
                         .collect(Collectors.joining("; "));
                         
@@ -205,6 +214,14 @@ public interface JaxbService {
         /**
          * Optional hook
          */
+        protected JAXBContext jaxbContextFor(final Object domainObject) {
+            final Class<?> domainClass = domainObject.getClass();
+            return jaxbContextFor(domainClass);
+        }
+
+        /**
+         * Optional hook
+         */
         protected void configure(final Unmarshaller unmarshaller) {
         }
 
@@ -218,21 +235,16 @@ public interface JaxbService {
 
             try {
                 final Class<?> domainClass = domainObject.getClass();
-                final JAXBContext context = JAXBContext.newInstance(domainClass);
+                final JAXBContext context = jaxbContextFor(domainClass);
 
                 final CatalogingSchemaOutputResolver outputResolver = new CatalogingSchemaOutputResolver(isisSchemas);
                 context.generateSchema(outputResolver);
 
                 return outputResolver.asMap();
-            } catch (final JAXBException | IOException ex) {
+            } catch (final IOException ex) {
                 throw new ApplicationException(ex);
             }
         }
-
-
-        @javax.inject.Inject
-        DomainObjectContainer container;
     }
-
 
 }

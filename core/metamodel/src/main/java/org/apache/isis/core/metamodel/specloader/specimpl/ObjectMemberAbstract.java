@@ -69,14 +69,14 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         return type == null ? null : specificationLookup.loadSpecification(type);
     }
 
-    //region > fields
+    // -- fields
     private final String id;
     private final FacetedMethod facetedMethod;
     private final FeatureType featureType;
     private final SpecificationLoader specificationLoader;
     private final ServicesInjector servicesInjector;
     private final PersistenceSessionServiceInternal persistenceSessionServiceInternal;
-    //endregion
+    
 
     protected ObjectMemberAbstract(
             final FacetedMethod facetedMethod,
@@ -96,7 +96,7 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         this.persistenceSessionServiceInternal = servicesInjector.getPersistenceSessionServiceInternal();
     }
 
-    //region > Identifiers
+    // -- Identifiers
 
     @Override
     public String getId() {
@@ -113,9 +113,9 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         return featureType;
     }
 
-    //endregion
+    
 
-    //region > Facets
+    // -- Facets
 
     public FacetedMethod getFacetedMethod() {
         return facetedMethod;
@@ -175,9 +175,9 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         getFacetHolder().removeFacet(facetType);
     }
 
-    //endregion
+    
 
-    //region > Name, Description, Help (convenience for facets)
+    // -- Name, Description, Help (convenience for facets)
     /**
      * Return the default label for this member. This is based on the name of
      * this member.
@@ -209,9 +209,9 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         return facet.value();
     }
 
-    //endregion
+    
 
-    //region > Hidden (or visible)
+    // -- Hidden (or visible)
     /**
      * Create an {@link InteractionContext} to represent an attempt to view this
      * member (that is, to check if it is visible or not).
@@ -258,9 +258,9 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         final VisibilityContext<?> ic = createVisibleInteractionContext(target, interactionInitiatedBy, where);
         return InteractionUtils.isVisibleResult(this, ic);
     }
-    //endregion
+    
 
-    //region > Disabled (or enabled)
+    // -- Disabled (or enabled)
     /**
      * Create an {@link InteractionContext} to represent an attempt to
      * use this member (that is, to check if it is usable or not).
@@ -296,9 +296,9 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         return InteractionUtils.isUsableResult(this, ic);
     }
 
-    //endregion
+    
 
-    //region > isAssociation, isAction
+    // -- isAssociation, isAction
     @Override
     public boolean isAction() {
         return featureType.isAction();
@@ -318,9 +318,9 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
     public boolean isOneToOneAssociation() {
         return featureType.isProperty();
     }
-    //endregion
+    
 
-    //region > mixinAdapterFor
+    // -- mixinAdapterFor
     /**
      * For mixins
      */
@@ -373,18 +373,18 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         return indexOfUnderscore != -1 && indexOfUnderscore != singularName.length() - 1;
     }
 
-    //endregion
+    
 
-    //region > toString
+    // -- toString
 
     @Override
     public String toString() {
         return String.format("id=%s,name='%s'", getId(), getName());
     }
 
-    //endregion
+    
 
-    //region > Dependencies
+    // -- Dependencies
 
     public SpecificationLoader getSpecificationLoader() {
         return specificationLoader;
@@ -414,9 +414,9 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         return lookupService(CommandDtoServiceInternal.class);
     }
 
-    //endregion
+    
 
-    //region > command (setup)
+    // -- command (setup)
 
 
     protected void setupCommandTarget(final ObjectAdapter targetAdapter, final String arguments) {
@@ -489,6 +489,6 @@ public abstract class ObjectMemberAbstract implements ObjectMember {
         }
     }
 
-    //endregion
+    
 
 }

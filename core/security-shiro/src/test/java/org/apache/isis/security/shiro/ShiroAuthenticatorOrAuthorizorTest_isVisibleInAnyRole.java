@@ -23,6 +23,8 @@ import org.apache.shiro.config.IniSecurityManagerFactory;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.Factory;
+import org.apache.shiro.util.ThreadContext;
+import org.jmock.Expectations;
 import org.jmock.auto.Mock;
 import org.junit.After;
 import org.junit.Before;
@@ -52,13 +54,19 @@ public class ShiroAuthenticatorOrAuthorizorTest_isVisibleInAnyRole {
 
     @Before
     public void setUp() throws Exception {
+    	
+    	context.checking(new Expectations() {{
+            allowing(mockConfiguration).getBoolean("isis.authentication.shiro.autoLogoutIfAlreadyAuthenticated", false);
+            will(returnValue(false));
+        }});
+    	
         authOrAuth = new ShiroAuthenticatorOrAuthorizor(mockConfiguration);
         authOrAuth.init(DeploymentCategory.PRODUCTION);
     }
 
     @After
     public void tearDown() throws Exception {
-        Subject subject = SecurityUtils.getSubject();
+        Subject subject = ThreadContext.getSubject();
         if(subject != null) {
             subject.logout();
         }
@@ -79,9 +87,6 @@ public class ShiroAuthenticatorOrAuthorizorTest_isVisibleInAnyRole {
         Identifier changeAddressIdentifier = Identifier.actionIdentifier("com.mycompany.myapp.Customer", "changeAddress", String.class, String.class);
         assertThat(authOrAuth.isVisibleInAnyRole(changeAddressIdentifier), is(true));
 
-        // when, then
-        Identifier removeCustomerIdentifier = Identifier.actionIdentifier("com.mycompany.myapp.Customer", "remove");
-        assertThat(authOrAuth.isVisibleInAnyRole(removeCustomerIdentifier), is(false));
     }
 
     

@@ -19,6 +19,7 @@
 package org.apache.isis.viewer.wicket.ui.components.layout.bs3.col;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -30,7 +31,7 @@ import com.google.common.collect.Lists;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-
+import org.apache.isis.applib.internal.base._NullSafe;
 import org.apache.isis.applib.layout.component.ActionLayoutData;
 import org.apache.isis.applib.layout.component.CollectionLayoutData;
 import org.apache.isis.applib.layout.component.DomainObjectLayoutData;
@@ -178,11 +179,9 @@ public class Col extends PanelAbstract<EntityModel> implements HasDynamicallyVis
                 FluentIterable.from(bs3Col.getTabGroups())
                         .filter(new Predicate<BS3TabGroup>() {
                             @Override public boolean apply(@Nullable final BS3TabGroup bs3TabGroup) {
-                                final List<BS3Tab> bs3TabsWithRows =
-                                        FluentIterable
-                                                .from(bs3TabGroup.getTabs())
+                                final List<BS3Tab> bs3TabsWithRows = _NullSafe.stream(bs3TabGroup.getTabs())
                                                 .filter(BS3Tab.Predicates.notEmpty())
-                                                .toList();
+                                                .collect(Collectors.toList());
                                 return !bs3TabsWithRows.isEmpty();
                             }
                         }).toList();
@@ -193,22 +192,24 @@ public class Col extends PanelAbstract<EntityModel> implements HasDynamicallyVis
             for (BS3TabGroup bs3TabGroup : tabGroupsWithNonEmptyTabs) {
 
                 final String id = tabGroupRv.newChildId();
-                final List<BS3Tab> tabs =
-                        FluentIterable
-                                .from(bs3TabGroup.getTabs())
-                                .filter(BS3Tab.Predicates.notEmpty())
-                                .toList();
+                final List<BS3Tab> tabs = _NullSafe.stream(bs3TabGroup.getTabs())
+                        .filter(BS3Tab.Predicates.notEmpty())
+                        .collect(Collectors.toList());
+
                 switch (tabs.size()) {
                 case 0:
                     // shouldn't occur; previously have filtered these out
                     throw new IllegalStateException("Cannot render tabGroup with no tabs");
                 case 1:
-                    final BS3Tab bs3Tab = tabs.get(0);
-                    // render the rows of the one-and-only tab of this tab group.
-                    final List<BS3Row> tabRows = bs3Tab.getRows();
-                    final RepeatingViewWithDynamicallyVisibleContent rowsRv = buildRows(id, tabRows);
-                    tabGroupRv.add(rowsRv);
-                    break;
+                    if(bs3TabGroup.isCollapseIfOne() == null || bs3TabGroup.isCollapseIfOne()) {
+                        final BS3Tab bs3Tab = tabs.get(0);
+                        // render the rows of the one-and-only tab of this tab group.
+                        final List<BS3Row> tabRows = bs3Tab.getRows();
+                        final RepeatingViewWithDynamicallyVisibleContent rowsRv = buildRows(id, tabRows);
+                        tabGroupRv.add(rowsRv);
+                        break;
+                    }
+                    // else fall through...
                 default:
                     final WebMarkupContainer tabGroup = new TabGroupPanel(id, getModel(), bs3TabGroup);
 

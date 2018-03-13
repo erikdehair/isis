@@ -32,7 +32,7 @@ To build the app from the latest stable release, then run the following command:
 mvn archetype:generate  \
     -D archetypeGroupId=org.apache.isis.archetype \
     -D archetypeArtifactId=simpleapp-archetype \
-    -D archetypeVersion=1.16.0 \
+    -D archetypeVersion=1.16.2 \
     -D groupId=com.mycompany \
     -D artifactId=myapp \
     -D version=1.0-SNAPSHOT \
@@ -221,7 +221,7 @@ The BDD specs (run using Cucumber) reside under `domain.application.bdd`:
 >>>>> SimpleObjectSpec_listAllAndCreate.feature
 ----
 
-Here the `BootstrappingGlue` glue class inherits from the framework's `CukeGlueBootstrappingAbstract` class, and bootstraps using the `DomainAppApplicationModule` mentioned above.
+Here the `BootstrappingGlue` glue class inherits from the framework's `HeadlessWithBootstrappingAbstract` class, and bootstraps using the `DomainAppApplicationModule` mentioned above.
 
 There is just one feature file: `SimpleObjectSpec_listAllAndCreate.feature`, which is pretty simple:
 

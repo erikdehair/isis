@@ -75,7 +75,7 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
         super(facetedMethod, FeatureType.PROPERTY, objectSpec, servicesInjector);
     }
 
-    //region > visible, usable
+    // -- visible, usable
 
     @Override
     public VisibilityContext<?> createVisibleInteractionContext(
@@ -92,9 +92,9 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
         return new PropertyUsabilityContext(ownerAdapter, getIdentifier(), interactionInitiatedBy, where);
     }
 
-    //endregion
+    
 
-    //region > Validity
+    // -- Validity
     private ValidityContext<?> createValidateInteractionContext(
             final ObjectAdapter ownerAdapter,
             final ObjectAdapter proposedToReferenceAdapter,
@@ -122,9 +122,9 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
         return InteractionUtils.isValidResult(this, validityContext);
     }
 
-    //endregion
+    
 
-    //region > init
+    // -- init
     @Override
     public void initAssociation(final ObjectAdapter ownerAdapter, final ObjectAdapter referencedAdapter) {
         final PropertyInitializationFacet initializerFacet = getFacet(PropertyInitializationFacet.class);
@@ -133,9 +133,9 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
         }
     }
 
-    //endregion
+    
 
-    //region > Access (get, isEmpty)
+    // -- Access (get, isEmpty)
 
     @Override
     public ObjectAdapter get(
@@ -167,9 +167,9 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
         return get(ownerAdapter, interactionInitiatedBy) == null;
     }
 
-    //endregion
+    
 
-    //region > Set
+    // -- Set
     @Override
     public void set(
             final ObjectAdapter ownerAdapter,
@@ -232,9 +232,9 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
         facet.clearProperty(this, ownerAdapter, interactionInitiatedBy);
     }
 
-    //endregion
+    
 
-    //region > defaults
+    // -- defaults
     @Override
     public ObjectAdapter getDefault(final ObjectAdapter ownerAdapter) {
         PropertyDefaultFacet propertyDefaultFacet = getFacet(PropertyDefaultFacet.class);
@@ -264,9 +264,9 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
         }
     }
 
-    //endregion
+    
 
-    //region > choices and autoComplete
+    // -- choices and autoComplete
     @Override
     public boolean hasChoices() {
         return getFacet(PropertyChoicesFacet.class) != null;
@@ -320,7 +320,7 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
         return propertyAutoCompleteFacet != null? propertyAutoCompleteFacet.getMinLength(): MinLengthUtil.MIN_LENGTH_DEFAULT;
     }
 
-    //endregion
+    
 
     /**
      * Internal API
@@ -355,7 +355,7 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
     }
 
 
-    //region > toString
+    // -- toString
 
     @Override
     public String toString() {
@@ -366,7 +366,7 @@ public class OneToOneAssociationDefault extends ObjectAssociationAbstract implem
         str.append("type", getSpecification().getShortIdentifier());
         return str.toString();
     }
-    //endregion
+    
 
 
 }

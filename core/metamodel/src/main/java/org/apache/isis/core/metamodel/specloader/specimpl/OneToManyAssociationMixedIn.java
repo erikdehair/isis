@@ -197,7 +197,7 @@ public class OneToManyAssociationMixedIn extends OneToManyAssociationDefault imp
         return InteractionUtils.isUsableResult(this, ic).createConsent();
     }
 
-    //region > FacetHolder
+    // -- FacetHolder
 
     @Override
     protected FacetHolder getFacetHolder() {
@@ -210,7 +210,7 @@ public class OneToManyAssociationMixedIn extends OneToManyAssociationDefault imp
 
     }
 
-    //endregion
+    
 
     private PublishingServiceInternal getPublishingServiceInternal() {
         return getServicesInjector().lookupService(PublishingServiceInternal.class);

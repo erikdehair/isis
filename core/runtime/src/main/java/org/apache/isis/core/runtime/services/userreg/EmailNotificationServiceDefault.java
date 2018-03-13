@@ -56,7 +56,7 @@ public class EmailNotificationServiceDefault implements EmailNotificationService
 
     private static final Logger LOG = LoggerFactory.getLogger(EmailNotificationServiceDefault.class);
 
-    //region > constants
+    // -- constants
 
     private static final Pattern EMAIL_PATTERN = compile(quote("${email}"));
     private static final Pattern CONFIRMATION_URL_PATTERN = compile(quote("${confirmationUrl}"));
@@ -64,9 +64,9 @@ public class EmailNotificationServiceDefault implements EmailNotificationService
 
     private String passwordResetTemplate;
     private String emailVerificationTemplate;
-    //endregion
+    
 
-    //region > init
+    // -- init
 
     private boolean initialized;
 
@@ -96,9 +96,9 @@ public class EmailNotificationServiceDefault implements EmailNotificationService
         }
     }
 
-    //endregion
+    
 
-    //region > isConfigured
+    // -- isConfigured
 
     @Programmatic
     @Override
@@ -106,9 +106,9 @@ public class EmailNotificationServiceDefault implements EmailNotificationService
         return emailService != null && emailService.isConfigured();
     }
 
-    //endregion
+    
 
-    //region > send
+    // -- send
 
 
     @Programmatic
@@ -127,9 +127,9 @@ public class EmailNotificationServiceDefault implements EmailNotificationService
         return sendEmail(passwordResetEvent, body);
     }
 
-    //endregion
+    
 
-    //region > helper methods for send(...)
+    // -- helper methods for send(...)
 
     private void ensureConfigured() {
         if(!isConfigured()) {
@@ -171,12 +171,12 @@ public class EmailNotificationServiceDefault implements EmailNotificationService
         return message;
     }
 
-    //endregion
+    
 
-    //region > dependencies
+    // -- dependencies
 
     @javax.inject.Inject
     private EmailService emailService;
-    //endregion
+    
 
 }

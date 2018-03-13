@@ -23,14 +23,19 @@
     <parent>
         <groupId>org.apache.isis.core</groupId>
         <artifactId>isis</artifactId>
-        <version>2.0.0-M1-SNAPSHOT</version>
+        <version>${revision}</version>
 	</parent>
 
 	<artifactId>isis-core-wrapper</artifactId>
 
 	<name>Apache Isis Wrapper Service</name>
 
-	<dependencies>
+    <properties>
+        <jar-plugin.automaticModuleName>org.apache.isis.core.wrapper</jar-plugin.automaticModuleName>
+        <git-plugin.propertiesDir>org/apache/isis/core/wrapper</git-plugin.propertiesDir>
+    </properties>
+
+    <dependencies>
         <dependency>
 		    <groupId>org.apache.isis.core</groupId>
 		    <artifactId>isis-core-runtime</artifactId>

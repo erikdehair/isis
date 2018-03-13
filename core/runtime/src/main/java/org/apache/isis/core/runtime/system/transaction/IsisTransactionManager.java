@@ -49,7 +49,7 @@ public class IsisTransactionManager implements SessionScopedComponent {
      */
     private IsisTransaction currentTransaction;
 
-    //region > constructor, fields
+    // -- constructor, fields
 
     private final PersistenceSession persistenceSession;
     private final AuthenticationSession authenticationSession;
@@ -75,10 +75,10 @@ public class IsisTransactionManager implements SessionScopedComponent {
         return persistenceSession;
     }
 
-    //endregion
+    
 
 
-    //region > open, close
+    // -- open, close
 
     public void open() {
         assert session != null;
@@ -94,9 +94,9 @@ public class IsisTransactionManager implements SessionScopedComponent {
         }
         session = null;
     }
-    //endregion
+    
 
-    //region > current transaction (if any)
+    // -- current transaction (if any)
     /**
      * The current transaction, if any.
      */
@@ -108,10 +108,10 @@ public class IsisTransactionManager implements SessionScopedComponent {
         return transactionLevel;
     }
 
-    //endregion
+    
 
 
-    //region > Transactional Execution
+    // -- Transactional Execution
     /**
      * Run the supplied {@link Runnable block of code (closure)} in a
      * {@link IsisTransaction transaction}.
@@ -205,9 +205,9 @@ public class IsisTransactionManager implements SessionScopedComponent {
         return getCurrentTransaction() != null && !getCurrentTransaction().getState().isComplete();
     }
 
-    //endregion
+    
 
-    //region > startTransaction
+    // -- startTransaction
 
     public void startTransaction() {
         startTransaction(null);
@@ -248,13 +248,13 @@ public class IsisTransactionManager implements SessionScopedComponent {
         transactionLevel++;
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("startTransaction: level " + (transactionLevel - 1) + "->" + (transactionLevel) + (noneInProgress ? " (no transaction in progress or was previously completed; transaction created)" : ""));
+            LOG.debug("startTransaction: level {}->{}{}", (transactionLevel - 1), (transactionLevel), (noneInProgress ? " (no transaction in progress or was previously completed; transaction created)" : ""));
         }
     }
 
-    //endregion
+    
 
-    //region > flushTransaction
+    // -- flushTransaction
     public boolean flushTransaction() {
 
         if (LOG.isDebugEnabled()) {
@@ -267,9 +267,9 @@ public class IsisTransactionManager implements SessionScopedComponent {
         return false;
     }
 
-    //endregion
+    
 
-    //region > endTransaction, abortTransaction
+    // -- endTransaction, abortTransaction
     /**
      * Ends the transaction if nesting level is 0 (but will abort the transaction instead, 
      * even if nesting level is not 0, if an {@link IsisTransaction#getAbortCause() abort cause}
@@ -467,12 +467,12 @@ public class IsisTransactionManager implements SessionScopedComponent {
         }
     }
 
-    //endregion
+    
 
-    //region > addCommand
+    // -- addCommand
     public void addCommand(final PersistenceCommand command) {
         getCurrentTransaction().addCommand(command);
     }
-    //endregion
+    
 
 }

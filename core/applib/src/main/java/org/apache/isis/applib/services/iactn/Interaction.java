@@ -27,11 +27,10 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.annotation.Value;
+import org.apache.isis.applib.internal.collections._Lists;
+import org.apache.isis.applib.internal.collections._Maps;
 import org.apache.isis.applib.services.HasTransactionId;
 import org.apache.isis.applib.services.clock.ClockService;
 import org.apache.isis.applib.services.command.Command;
@@ -81,7 +80,7 @@ import org.apache.isis.schema.utils.jaxbadapters.JavaSqlTimestampXmlGregorianCal
 @Value
 public class Interaction implements HasTransactionId {
 
-    //region > transactionId (property)
+    // -- transactionId (property)
 
     private UUID transactionId;
 
@@ -96,11 +95,11 @@ public class Interaction implements HasTransactionId {
     public void setTransactionId(final UUID transactionId) {
         this.transactionId = transactionId;
     }
-    //endregion
+    
 
-    //region > push/pop/current/get/clear Execution(s)
+    // -- push/pop/current/get/clear Execution(s)
 
-    private final List<Execution<?,?>> executionGraphs = Lists.newArrayList();
+    private final List<Execution<?,?>> executionGraphs = _Lists.newArrayList();
     private Execution<?,?> currentExecution;
     private Execution<?,?> priorExecution;
 
@@ -272,9 +271,9 @@ public class Interaction implements HasTransactionId {
     public void clear() {
         executionGraphs.clear();
     }
-    //endregion
+    
 
-    //region > next (programmatic)
+    // -- next (programmatic)
 
     /**
      * Enumerates the different reasons why multiple occurrences of a certain type might occur within a single
@@ -307,7 +306,7 @@ public class Interaction implements HasTransactionId {
     }
 
 
-    private final Map<String, AtomicInteger> maxBySequence = Maps.newHashMap();
+    private final Map<String, AtomicInteger> maxBySequence = _Maps.newHashMap();
 
     /**
      * Generates numbers in a named sequence.  The name of the sequence can be arbitrary, though note that the
@@ -326,7 +325,7 @@ public class Interaction implements HasTransactionId {
         return next.get();
     }
 
-    //endregion
+    
 
     /**
      * Represents an action invocation/property edit as a node in a call-stack execution graph, with sub-interactions
@@ -334,7 +333,7 @@ public class Interaction implements HasTransactionId {
      */
     public static abstract class Execution<T extends MemberExecutionDto, E extends AbstractDomainEvent<?>> {
 
-        //region > fields, constructor
+        // -- fields, constructor
 
         private final String memberIdentifier;
         private final Object target;
@@ -357,9 +356,9 @@ public class Interaction implements HasTransactionId {
             this.targetMember = targetMember;
             this.targetClass = targetClass;
         }
-        //endregion
+        
 
-        //region > via constructor: interaction, interactionType, memberId, target, targetMember, targetClass
+        // -- via constructor: interaction, interactionType, memberId, target, targetMember, targetClass
 
         @Programmatic
         public Interaction getInteraction() {
@@ -401,11 +400,11 @@ public class Interaction implements HasTransactionId {
             return targetMember;
         }
 
-        //endregion
+        
 
-        //region > parent, children
+        // -- parent, children
 
-        private final List<Execution<?,?>> children = Lists.newArrayList();
+        private final List<Execution<?,?>> children = _Lists.newArrayList();
         private Execution<?,?> parent;
 
         /**
@@ -434,10 +433,10 @@ public class Interaction implements HasTransactionId {
         public List<Execution<?,?>> getChildren() {
             return Collections.unmodifiableList(children);
         }
-        //endregion
+        
 
 
-        //region > event
+        // -- event
 
         private E event;
         /**
@@ -462,9 +461,9 @@ public class Interaction implements HasTransactionId {
         public void setEvent(final E event) {
             this.event = event;
         }
-        //endregion
+        
 
-        //region > startedAt, completedAt
+        // -- startedAt, completedAt
 
         private Timestamp startedAt;
         private Timestamp completedAt;
@@ -498,9 +497,9 @@ public class Interaction implements HasTransactionId {
             syncMetrics(When.AFTER, completedAt);
         }
 
-        //endregion
+        
 
-        //region > returned, threw (properties)
+        // -- returned, threw (properties)
 
         private Object returned;
         /**
@@ -542,9 +541,9 @@ public class Interaction implements HasTransactionId {
         }
 
 
-        //endregion
+        
 
-        //region > dto (property)
+        // -- dto (property)
 
         private T dto;
 
@@ -570,9 +569,9 @@ public class Interaction implements HasTransactionId {
             this.dto = executionDto;
         }
 
-        //endregion
+        
 
-        //region > helpers (syncMetrics)
+        // -- helpers (syncMetrics)
 
         enum When {
             BEFORE {
@@ -617,7 +616,7 @@ public class Interaction implements HasTransactionId {
 
             };
 
-            //region > helpers
+            // -- helpers
 
             private static DifferenceDto numberObjectsDirtiedFor(final ObjectCountsDto objectCountsDto) {
                 return MemberExecutionDtoUtils.numberObjectsDirtiedFor(objectCountsDto);
@@ -638,7 +637,7 @@ public class Interaction implements HasTransactionId {
             private static PeriodDto timingsFor(final MetricsDto metricsDto) {
                 return MemberExecutionDtoUtils.timingsFor(metricsDto);
             }
-            //endregion
+            
 
             abstract void syncMetrics(
                     final Execution<?, ?> teExecution,
@@ -655,7 +654,7 @@ public class Interaction implements HasTransactionId {
             when.syncMetrics(this, timestamp, numberObjectsLoaded, numberObjectsDirtied);
         }
 
-        //endregion
+        
 
     }
 

@@ -46,7 +46,7 @@ public class FixturesInstallerDelegate {
 
     private static final Logger LOG = LoggerFactory.getLogger(FixturesInstallerDelegate.class);
 
-    //region > Constructor, fields
+    // -- Constructor, fields
 
     private final IsisSessionFactory isisSessionFactory;
 
@@ -78,9 +78,9 @@ public class FixturesInstallerDelegate {
         return Collections.unmodifiableList(fixtures);
     }
 
-    //endregion
+    
 
-    //region > installFixtures
+    // -- installFixtures
 
     /**
      * Installs all {{@link #addFixture(Object) added fixtures} fixtures (ie as
@@ -125,14 +125,14 @@ public class FixturesInstallerDelegate {
 
         // now, install the fixture itself
         try {
-            LOG.info("installing fixture: " + fixture);
+            LOG.info("installing fixture: {}", fixture);
             getTransactionManager().startTransaction();
             installFixture(fixture);
             saveLogonFixtureIfRequired(fixture);
             getTransactionManager().endTransaction();
             LOG.info("fixture installed");
         } catch (final RuntimeException e) {
-            LOG.error("installing fixture " + fixture.getClass().getName() + " failed; aborting ", e);
+            LOG.error("installing fixture {} failed; aborting ", fixture.getClass().getName() , e);
             try {
                 getTransactionManager().abortTransaction();
             } catch (final Exception e2) {
@@ -180,9 +180,9 @@ public class FixturesInstallerDelegate {
         return true;
     }
 
-    //endregion
+    
 
-    //region > logonFixture
+    // -- logonFixture
 
     /**
      * The requested {@link LogonFixture}, if any.
@@ -214,9 +214,9 @@ public class FixturesInstallerDelegate {
         }
     }
 
-    //endregion
+    
 
-    //region > dependencies (derived)
+    // -- dependencies (derived)
 
     private ServicesInjector getServicesInjector() {
         return isisSessionFactory.getServicesInjector();
@@ -234,6 +234,6 @@ public class FixturesInstallerDelegate {
         return getPersistenceSession().getTransactionManager();
     }
 
-    //endregion
+    
 
 }

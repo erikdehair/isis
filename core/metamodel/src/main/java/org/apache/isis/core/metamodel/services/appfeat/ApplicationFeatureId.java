@@ -32,6 +32,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.io.BaseEncoding;
@@ -40,6 +41,7 @@ import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.annotation.Value;
 import org.apache.isis.applib.services.appfeat.ApplicationMemberType;
 import org.apache.isis.applib.util.TitleBuffer;
+import org.apache.isis.core.metamodel.spec.ObjectSpecId;
 
 /**
  * Value type representing a package, class or member.
@@ -55,7 +57,7 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
 
     // //////////////////////////////////////
 
-    //region > factory methods
+    // -- factory methods
     public static ApplicationFeatureId newFeature(final ApplicationFeatureType featureType, final String fullyQualifiedName) {
         switch (featureType) {
             case PACKAGE:
@@ -119,11 +121,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
     public static ApplicationFeatureId parseEncoded(final String encodedString) {
         return new ApplicationFeatureId(base64UrlDecode(encodedString));
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > constructor
+    // -- constructor
 
     private ApplicationFeatureId(final String asString) {
         final Iterator<String> iterator = Splitter.on(":").split(asString).iterator();
@@ -143,11 +145,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
         type.init(this, fullyQualifiedName);
     }
 
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > identification
+    // -- identification
     /**
      * having a title() method (rather than using @Title annotation) is necessary as a workaround to be able to use
      * wrapperFactory#unwrap(...) method, which is otherwise broken in Isis 1.6.0
@@ -157,11 +159,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
         buf.append(getFullyQualifiedName());
         return buf.toString();
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > fullyQualifiedName (property)
+    // -- fullyQualifiedName (property)
 
     @Programmatic
     public String getFullyQualifiedName() {
@@ -176,21 +178,40 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
         return buf.toString();
     }
 
-    //endregion
+    
+
+    // -- objectSpecId (property)
+
+    @Programmatic
+    public ObjectSpecId getObjectSpecId() {
+        if (getClassName() == null) {
+            return null;
+        }
+
+        final StringBuilder buf = new StringBuilder();
+        if(!Strings.isNullOrEmpty(getPackageName())) {
+            buf.append(getPackageName()).append(".");
+        }
+        buf.append(getClassName());
+
+        return ObjectSpecId.of(buf.toString());
+    }
+
+    
 
     // //////////////////////////////////////
 
-    //region > type (property)
+    // -- type (property)
     ApplicationFeatureType type;
 
     public ApplicationFeatureType getType() {
         return type;
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > packageName (property)
+    // -- packageName (property)
     private String packageName;
 
     @Programmatic
@@ -201,11 +222,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
     void setPackageName(final String packageName) {
         this.packageName = packageName;
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > className (property, optional)
+    // -- className (property, optional)
 
     private String className;
 
@@ -217,11 +238,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
     void setClassName(final String className) {
         this.className = className;
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > memberName (property, optional)
+    // -- memberName (property, optional)
     private String memberName;
 
     @Programmatic
@@ -232,11 +253,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
     void setMemberName(final String memberName) {
         this.memberName = memberName;
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > Package or Class: getParentPackageId
+    // -- Package or Class: getParentPackageId
 
     /**
      * The {@link ApplicationFeatureId id} of the parent package of this
@@ -265,11 +286,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
         }
     }
 
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > Member: getParentClassId
+    // -- Member: getParentClassId
 
     /**
      * The {@link ApplicationFeatureId id} of the member's class.
@@ -279,11 +300,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
         final String classFqn = this.getPackageName() + "." + getClassName();
         return newClass(classFqn);
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > asString, asEncodedString
+    // -- asString, asEncodedString
 
     @Programmatic
     public String asString() {
@@ -307,11 +328,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
 
 
 
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > Functions
+    // -- Functions
 
     public static class Functions {
 
@@ -332,11 +353,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
         };
 
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > Predicates
+    // -- Predicates
 
     public static class Predicates {
         private Predicates(){}
@@ -367,11 +388,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
             };
         }
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > Comparators
+    // -- Comparators
     public static final class Comparators {
         private Comparators(){}
         public static Comparator<ApplicationFeatureId> natural() {
@@ -386,11 +407,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
             }
         }
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > pathIds, parentIds
+    // -- pathIds, parentIds
 
     @Programmatic
     public List<ApplicationFeatureId> getPathIds() {
@@ -418,11 +439,11 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
         }
         return parentIds;
     }
-    //endregion
+    
 
     // //////////////////////////////////////
 
-    //region > equals, hashCode, compareTo, toString
+    // -- equals, hashCode, compareTo, toString
 
     private final static Ordering<ApplicationFeatureId> byType = Ordering.natural()
             .nullsFirst().onResultOf(new Function<ApplicationFeatureId, ApplicationFeatureType>() {
@@ -521,6 +542,6 @@ public class ApplicationFeatureId implements Comparable<ApplicationFeatureId>, S
         throw new IllegalStateException("Unknown feature type " + type);
     }
 
-    //endregion
+    
 
 }

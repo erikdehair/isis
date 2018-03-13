@@ -25,11 +25,17 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Sets;
+
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.isis.core.commons.config.ConfigurationConstants;
 import org.apache.isis.core.commons.config.IsisConfiguration;
 import org.apache.isis.core.commons.config.IsisConfigurationDefault;
@@ -41,11 +47,6 @@ import org.apache.isis.core.commons.resource.ResourceStreamSourceChainOfResponsi
 import org.apache.isis.core.commons.resource.ResourceStreamSourceFileSystem;
 import org.apache.isis.core.runtime.optionhandler.BootPrinter;
 import org.apache.isis.core.runtime.optionhandler.OptionHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.Sets;
 
 /**
  * Holds a mutable set of properties representing the configuration.
@@ -68,7 +69,7 @@ public final class IsisConfigurationBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(IsisConfigurationBuilder.class);
 
-    //region > constructor, fields
+    // -- constructor, fields
 
     private final ResourceStreamSourceChainOfResponsibility resourceStreamSourceChain;
 
@@ -159,9 +160,9 @@ public final class IsisConfigurationBuilder {
         primeWith(new PrimerForEnvironmentVariableISIS_OPTS());
     }
 
-    //endregion
+    
 
-    //region > addResourceStreamSource, addResourceStreamSources
+    // -- addResourceStreamSource, addResourceStreamSources
 
     public void addResourceStreamSource(final ResourceStreamSource resourceStreamSource) {
         addResourceStreamSources(resourceStreamSource);
@@ -178,9 +179,9 @@ public final class IsisConfigurationBuilder {
         }
     }
 
-    //endregion
+    
 
-    //region > addConfigurationResource
+    // -- addConfigurationResource
 
     /**
      * Registers the configuration resource (usually, a file) with the specified
@@ -224,7 +225,7 @@ public final class IsisConfigurationBuilder {
         try {
             final PropertiesReader propertiesReader =
                     loadConfigurationResource(resourceStreamSourceChain, configurationResource);
-            LOG.info("loading properties from " + configurationResource);
+            LOG.info("loading properties from {}", configurationResource);
             configuration.add(propertiesReader.getProperties(), containsPolicy);
             configurationResourcesFound.add(configurationResource);
             return;
@@ -238,7 +239,7 @@ public final class IsisConfigurationBuilder {
         }
         configurationResourcesNotFound.add(configurationResource);
         if(LOG.isDebugEnabled()) {
-            LOG.debug(String.format("'%s' not found, but not needed", configurationResource));
+            LOG.debug("'{}' not found, but not needed", configurationResource);
 
         }
     }
@@ -248,9 +249,9 @@ public final class IsisConfigurationBuilder {
     }
 
 
-    //endregion
+    
 
-    //region > add, put
+    // -- add, put
 
     /**
      * Adds additional property; if already present then will _not_ be replaced.
@@ -269,9 +270,9 @@ public final class IsisConfigurationBuilder {
     }
 
 
-    //endregion
+    
 
-    //region > parseAndPrimeWith, primeWith
+    // -- parseAndPrimeWith, primeWith
 
     public boolean parseAndPrimeWith(final List<OptionHandler> optionHandlers, final String[] args) {
 
@@ -322,9 +323,9 @@ public final class IsisConfigurationBuilder {
         primer.prime(this);
     }
 
-    //endregion
+    
 
-    //region > getConfiguration, peekConfiguration, isLocked
+    // -- getConfiguration, peekConfiguration, isLocked
 
     /**
      * Returns the {@link IsisConfiguration}; this will cause the configuration to be locked
@@ -366,9 +367,9 @@ public final class IsisConfigurationBuilder {
         }
     }
 
-    //endregion
+    
 
-    //region > dumpResourcesToLog, toString
+    // -- dumpResourcesToLog, toString
 
     /**
      * Log a summary of resources found or not found.
@@ -394,6 +395,6 @@ public final class IsisConfigurationBuilder {
                 .toString();
     }
 
-    //endregion
+    
 
 }

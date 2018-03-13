@@ -159,26 +159,26 @@ public class OneToManyAssociationContributee extends OneToManyAssociationDefault
         return InteractionUtils.isUsableResult(this, ic).createConsent();
     }
 
-    //region > FacetHolder
+    // -- FacetHolder
 
     @Override
     protected FacetHolder getFacetHolder() {
         return facetHolder;
     }
 
-    //endregion
+    
 
     private ObjectAdapter getServiceAdapter() {
         return getPersistenceSessionService().adapterFor(servicePojo);
     }
 
-    //region > ContributeeMember2 impl (getServiceContributedBy)
+    // -- ContributeeMember2 impl (getServiceContributedBy)
 
     @Override
     public ObjectSpecification getServiceContributedBy() {
         return getServiceAdapter().getSpecification();
     }
 
-    //endregion
+    
 
 }

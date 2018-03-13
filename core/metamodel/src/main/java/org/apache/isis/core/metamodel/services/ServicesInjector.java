@@ -72,7 +72,7 @@ public class ServicesInjector implements ApplicationScopedComponent {
     public static final String KEY_SET_PREFIX = "isis.services.injector.setPrefix";
     public static final String KEY_INJECT_PREFIX = "isis.services.injector.injectPrefix";
 
-    //region > constructor, fields
+    // -- constructor, fields
     /**
      * This is mutable internally, but only ever exposed (in {@link #getRegisteredServices()}) as immutable.
      */
@@ -128,9 +128,9 @@ public class ServicesInjector implements ApplicationScopedComponent {
         this.autowireInject = configuration.getBoolean(KEY_INJECT_PREFIX, false);
     }
 
-    //endregion
+    
 
-    //region > replaceServices
+    // -- replaceServices
 
     /**
      * Update an individual service.
@@ -230,9 +230,9 @@ public class ServicesInjector implements ApplicationScopedComponent {
         return Collections.unmodifiableList(services);
     }
 
-    //endregion
+    
 
-    //region > injectServicesInto
+    // -- injectServicesInto
 
     /**
      * Provided by the <tt>ServicesInjector</tt> when used by framework.
@@ -255,9 +255,9 @@ public class ServicesInjector implements ApplicationScopedComponent {
         }
     }
 
-    //endregion
+    
 
-    //region > injectInto
+    // -- injectInto
 
     /**
      * That is, injecting this injector...
@@ -269,9 +269,9 @@ public class ServicesInjector implements ApplicationScopedComponent {
         }
     }
 
-    //endregion
+    
 
-    //region > helpers
+    // -- helpers
 
     private void injectServices(final Object object, final List<Object> services) {
 
@@ -408,7 +408,7 @@ public class ServicesInjector implements ApplicationScopedComponent {
             throw new MetaModelException(String.format("Cannot access the %s field in %s", field.getName(), target.getClass().getName()));
         }
         if (LOG.isDebugEnabled()) {
-            LOG.debug("injected " + parameter + " into " + new ToString(target));
+            LOG.debug("injected {} into {}", parameter, new ToString(target));
         }
     }
 
@@ -416,28 +416,28 @@ public class ServicesInjector implements ApplicationScopedComponent {
         final Object[] parameters = new Object[] { parameter };
         invokeMethod(method, target, parameters);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("injected " + parameter + " into " + new ToString(target));
+            LOG.debug("injected {} into {}", parameter, new ToString(target));
         }
     }
 
 
 
 
-    //endregion
+    
 
 
 
-    //region > autoWire
+    // -- autoWire
 
     @Programmatic
     public void autowire() {
         injectServicesInto(this.services);
     }
 
-    //endregion
+    
 
 
-    //region > lookupService, lookupServices
+    // -- lookupService, lookupServices
 
     /**
      * Returns the first registered domain service implementing the requested type.
@@ -508,9 +508,9 @@ public class ServicesInjector implements ApplicationScopedComponent {
     }
 
 
-    //endregion
+    
 
-    //region > convenience lookups (singletons only, cached)
+    // -- convenience lookups (singletons only, cached)
 
     private AuthenticationManager authenticationManager;
 
@@ -572,6 +572,6 @@ public class ServicesInjector implements ApplicationScopedComponent {
     }
 
 
-    //endregion
+    
 
 }

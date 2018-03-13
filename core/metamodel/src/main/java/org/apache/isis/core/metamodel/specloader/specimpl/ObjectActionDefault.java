@@ -34,6 +34,8 @@ import org.apache.isis.applib.RecoverableException;
 import org.apache.isis.applib.annotation.InvokedOn;
 import org.apache.isis.applib.annotation.SemanticsOf;
 import org.apache.isis.applib.annotation.Where;
+import org.apache.isis.applib.internal._Constants;
+
 import com.google.common.base.Predicate;
 import org.apache.isis.applib.services.command.Command;
 import org.apache.isis.core.commons.exceptions.UnknownTypeException;
@@ -83,16 +85,16 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
         return type;
     }
 
-    //region > fields
+    // -- fields
 
     /**
      * Lazily initialized by {@link #getParameters()} (so don't use directly!)
      */
     List<ObjectActionParameter> parameters;
 
-    //endregion
+    
 
-    //region > constructors
+    // -- constructors
 
     public ObjectActionDefault(
             final FacetedMethod facetedMethod,
@@ -100,9 +102,9 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
         super(facetedMethod, FeatureType.ACTION, servicesInjector);
     }
 
-    //endregion
+    
 
-    //region > ReturnType, OnType, Actions (set)
+    // -- ReturnType, OnType, Actions (set)
     /**
      * Always returns <tt>null</tt>.
      */
@@ -143,9 +145,9 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
         return facet != null? facet.value(): SemanticsOf.NON_IDEMPOTENT;
     }
 
-    //endregion
+    
 
-    //region > Type
+    // -- Type
     @Override
     public ActionType getType() {
         return getType(this);
@@ -158,9 +160,9 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
         }
         return ActionType.USER;
     }
-    //endregion
+    
 
-    //region > Parameters
+    // -- Parameters
 
     @Override
     public int getParameterCount() {
@@ -263,9 +265,9 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
         return parameters.get(position);
     }
 
-    //endregion
+    
 
-    //region > visable, usable
+    // -- visable, usable
 
     @Override
     public VisibilityContext<?> createVisibleInteractionContext(
@@ -280,9 +282,9 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
             Where where) {
         return new ActionUsabilityContext(targetObjectAdapter, this, getIdentifier(), interactionInitiatedBy, where);
     }
-    //endregion
+    
 
-    //region > validate
+    // -- validate
 
     @Override
     public Consent isProposedArgumentSetValid(
@@ -336,9 +338,9 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
                 interactionInitiatedBy);
     }
 
-    //endregion
+    
 
-    //region > executeWithRuleChecking, execute
+    // -- executeWithRuleChecking, execute
 
     @Override
     public ObjectAdapter executeWithRuleChecking(
@@ -404,9 +406,9 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
     }
 
 
-    //endregion
+    
 
-    //region > defaults
+    // -- defaults
 
     @Override
     public ObjectAdapter[] getDefaults(final ObjectAdapter target) {
@@ -479,9 +481,9 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
     }
 
 
-    //endregion
+    
 
-    //region > choices
+    // -- choices
 
     @Override
     public ObjectAdapter[][] getChoices(
@@ -518,7 +520,7 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
                     parameterChoicesPojos[i] = paramFacet.getChoices(target, null,
                             interactionInitiatedBy);
                 } else {
-                    parameterChoicesPojos[i] = new Object[0];
+                    parameterChoicesPojos[i] = _Constants.emptyObjects;
                 }
             }
         }
@@ -612,9 +614,9 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
     }
 
 
-    //endregion
+    
 
-    //region > toString
+    // -- toString
 
     @Override
     public String toString() {
@@ -636,16 +638,16 @@ public class ObjectActionDefault extends ObjectMemberAbstract implements ObjectA
         return sb.toString();
     }
 
-    //endregion
+    
 
-    //region > services (lookup)
+    // -- services (lookup)
 
 
     protected org.apache.isis.applib.services.actinvoc.ActionInvocationContext getActionInvocationContext() {
         return lookupService(org.apache.isis.applib.services.actinvoc.ActionInvocationContext.class);
     }
 
-    //endregion
+    
 
 
 }

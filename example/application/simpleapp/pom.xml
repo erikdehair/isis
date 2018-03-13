@@ -24,24 +24,29 @@
     <parent>
         <groupId>org.incode</groupId>
         <artifactId>incode-build</artifactId>
-        <version>2</version>
+        <version>4</version>
     </parent>
 
     <groupId>org.apache.isis.example.application</groupId>
     <artifactId>simpleapp</artifactId>
-    <version>2.0.0-M1-SNAPSHOT</version>
+    <version>${revision}</version>
 
     <name>SimpleApp Parent</name>
 
     <packaging>pom</packaging>
 
     <properties>
-        <isis.version>2.0.0-M1-SNAPSHOT</isis.version>
-        <lombok.version>1.16.18</lombok.version>
+        <revision>2.0.0-M1-SNAPSHOT</revision>
+        <isis.version>${revision}</isis.version>
+
+        <lombok.version>1.16.20</lombok.version>
 
         <compiler-plugin.source>1.8</compiler-plugin.source>
         <compiler-plugin.target>1.8</compiler-plugin.target>
         <compiler-plugin.compilerArgument>-parameters</compiler-plugin.compilerArgument>
+
+        <!-- override incode-build -->
+        <datanucleus-core.version>5.1.6</datanucleus-core.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -129,32 +134,32 @@
             <dependency>
                 <groupId>org.apache.isis.core</groupId>
                 <artifactId>isis</artifactId>
-                <version>${isis.version}</version>
+                <version>${revision}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
 
             <!-- this project's own modules -->
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>org.apache.isis.example.application</groupId>
                 <artifactId>simpleapp-module-simple</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>org.apache.isis.example.application</groupId>
                 <artifactId>simpleapp-module-simple</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
                 <type>test-jar</type>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>org.apache.isis.example.application</groupId>
                 <artifactId>simpleapp-application</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>org.apache.isis.example.application</groupId>
                 <artifactId>simpleapp-webapp</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
 
             <!-- lombok -->
@@ -177,6 +182,73 @@
     </dependencies>
 
     <profiles>
+        <profile>
+            <!--
+            specifying -Drevision means that scope=pom dependencies are not resolved.
+            This is a workaround for that issue
+            -->
+            <id>revision</id>
+            <activation>
+                <property>
+                    <name>revision</name>
+                </property>
+            </activation>
+            <dependencyManagement>
+                <dependencies>
+
+                    <dependency>
+                        <groupId>org.apache.isis.core</groupId>
+                        <artifactId>isis-core-applib</artifactId>
+                        <version>${revision}</version>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.apache.isis.core</groupId>
+                        <artifactId>isis-core-unittestsupport</artifactId>
+                        <version>${revision}</version>
+                        <scope>test</scope>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.apache.isis.core</groupId>
+                        <artifactId>isis-core-wrapper</artifactId>
+                        <version>${revision}</version>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.apache.isis.mavendeps</groupId>
+                        <artifactId>isis-mavendeps-testing</artifactId>
+                        <version>${revision}</version>
+                        <type>pom</type>
+                        <scope>test</scope>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.apache.isis.mavendeps</groupId>
+                        <artifactId>isis-mavendeps-webapp</artifactId>
+                        <version>${revision}</version>
+                        <type>pom</type>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.hsqldb</groupId>
+                        <artifactId>hsqldb</artifactId>
+                        <version>${hsqldb.version}</version>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.lazyluke</groupId>
+                        <artifactId>log4jdbc-remix</artifactId>
+                        <version>${log4jdbc-remix.version}</version>
+                    </dependency>
+
+                </dependencies>
+            </dependencyManagement>
+            <properties>
+                <hsqldb.version>2.3.4</hsqldb.version>
+                <log4jdbc-remix.version>0.2.7</log4jdbc-remix.version>
+            </properties>
+        </profile>
         <profile>
             <id>m2e</id>
             <activation>

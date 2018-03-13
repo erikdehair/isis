@@ -26,9 +26,8 @@ import javax.jdo.metadata.DiscriminatorMetadata;
 import javax.jdo.metadata.InheritanceMetadata;
 import javax.jdo.metadata.TypeMetadata;
 
-import com.google.common.base.Strings;
-
-import org.apache.isis.applib.services.jdosupport.IsisJdoSupport;
+import org.apache.isis.applib.internal.base._Strings;
+import org.apache.isis.applib.services.jdosupport.IsisJdoSupport0;
 
 public abstract class TeardownFixtureAbstract2 extends TeardownFixtureAbstract {
 
@@ -45,7 +44,7 @@ public abstract class TeardownFixtureAbstract2 extends TeardownFixtureAbstract {
         final String table = tableOf(cls);
 
         this.preDeleteFrom(cls);
-        if (Strings.isNullOrEmpty(schema)) {
+        if (_Strings.isNullOrEmpty(schema)) {
             this.deleteFromWhere(table, column, value);
         } else {
             this.deleteFromWhere(schema, table, column, value);
@@ -75,7 +74,7 @@ public abstract class TeardownFixtureAbstract2 extends TeardownFixtureAbstract {
             return tableOf(cls.getSuperclass());
         }
         final String table = metadata.getTable();
-        return !Strings.isNullOrEmpty(table) ? table : cls.getSimpleName();
+        return !_Strings.isNullOrEmpty(table) ? table : cls.getSimpleName();
     }
 
     protected String discriminatorValueOf(final Class<?> cls) {
@@ -148,5 +147,5 @@ public abstract class TeardownFixtureAbstract2 extends TeardownFixtureAbstract {
     }
 
     @Inject
-    protected IsisJdoSupport isisJdoSupport;
+    protected IsisJdoSupport0 isisJdoSupport;
 }

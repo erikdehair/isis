@@ -28,7 +28,7 @@ import org.apache.isis.core.commons.config.IsisConfiguration;
 
 public abstract class InstallerAbstract implements Installer {
 
-    //region > constructor, fields
+    // -- constructor, fields
 
     private final String name;
     private final IsisConfiguration isisConfiguration;
@@ -59,9 +59,9 @@ public abstract class InstallerAbstract implements Installer {
     public IsisConfiguration getConfiguration() {
         return isisConfiguration;
     }
-    //endregion
+    
 
-    //region > init, shutdown
+    // -- init, shutdown
 
     /**
      * Default implementation does nothing.
@@ -77,9 +77,9 @@ public abstract class InstallerAbstract implements Installer {
         // no-op implementation, subclasses may override!
     }
 
-    //endregion
+    
 
-    //region > helpers (for subclasses)
+    // -- helpers (for subclasses)
 
     /**
      * Helper for subclasses implementing {@link #getTypes()}.
@@ -97,6 +97,6 @@ public abstract class InstallerAbstract implements Installer {
         return Collections.unmodifiableList(arrayList);
     }
 
-    //endregion
+    
 
 }

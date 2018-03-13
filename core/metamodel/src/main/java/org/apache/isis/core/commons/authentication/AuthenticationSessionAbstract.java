@@ -41,7 +41,7 @@ public abstract class AuthenticationSessionAbstract implements AuthenticationSes
 
     private static final long serialVersionUID = 1L;
 
-    //region > Constructor, fields
+    // -- Constructor, fields
 
     private final String name;
     private final List<String> roles = new ArrayList<String>();
@@ -73,9 +73,9 @@ public abstract class AuthenticationSessionAbstract implements AuthenticationSes
         // nothing to do
     }
 
-    //endregion
+    
 
-    //region > encode
+    // -- encode
 
     @Override
     public void encode(final DataOutputExtended output) throws IOException {
@@ -84,9 +84,9 @@ public abstract class AuthenticationSessionAbstract implements AuthenticationSes
         output.writeUTF(validationCode);
     }
 
-    //endregion
+    
 
-    //region > User Name
+    // -- User Name
 
     @Override
     public String getUserName() {
@@ -98,9 +98,9 @@ public abstract class AuthenticationSessionAbstract implements AuthenticationSes
         return Objects.equal(userName, getUserName());
     }
 
-    //endregion
+    
 
-    //region > Roles
+    // -- Roles
 
     /**
      * Can be overridden.
@@ -110,18 +110,18 @@ public abstract class AuthenticationSessionAbstract implements AuthenticationSes
         return Collections.unmodifiableList(roles);
     }
 
-    //endregion
+    
 
-    //region > Validation Code
+    // -- Validation Code
 
     @Override
     public String getValidationCode() {
         return validationCode;
     }
 
-    //endregion
+    
 
-    //region > Attributes
+    // -- Attributes
 
     @Override
     public Object getAttribute(final String attributeName) {
@@ -133,18 +133,18 @@ public abstract class AuthenticationSessionAbstract implements AuthenticationSes
         attributeByName.put(attributeName, attribute);
     }
 
-    //endregion
+    
 
-    //region > MessageBroker
+    // -- MessageBroker
 
     @Override
     public MessageBroker getMessageBroker() {
         return messageBroker;
     }
 
-    //endregion
+    
 
-    //region > createUserMemento
+    // -- createUserMemento
 
     @Override
     public UserMemento createUserMemento() {
@@ -155,15 +155,15 @@ public abstract class AuthenticationSessionAbstract implements AuthenticationSes
         return new UserMemento(getUserName(), roles);
     }
 
-    //endregion
+    
 
-    //region > toString
+    // -- toString
 
     @Override
     public String toString() {
         return new ToString(this).append("name", getUserName()).append("code", getValidationCode()).toString();
     }
 
-    //endregion
+    
 
 }

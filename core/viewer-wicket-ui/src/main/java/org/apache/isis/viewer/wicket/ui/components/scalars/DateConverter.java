@@ -18,7 +18,6 @@
  */
 package org.apache.isis.viewer.wicket.ui.components.scalars;
 
-import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 import org.apache.wicket.util.convert.IConverter;

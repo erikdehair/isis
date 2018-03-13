@@ -51,6 +51,7 @@ import org.apache.isis.core.metamodel.facets.value.bigdecimal.BigDecimalValueFac
 import org.apache.isis.core.metamodel.facets.value.string.StringValueSemanticsProvider;
 import org.apache.isis.core.metamodel.spec.ObjectSpecId;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
+import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
 import org.apache.isis.core.metamodel.spec.feature.ObjectActionParameter;
 import org.apache.isis.core.metamodel.spec.feature.OneToOneAssociation;
 import org.apache.isis.viewer.wicket.model.links.LinkAndLabel;
@@ -67,6 +68,16 @@ import org.apache.isis.viewer.wicket.model.mementos.SpecUtils;
  * <p>
  * Is the backing model to each of the fields that appear in forms (for entities
  * or action dialogs).
+ *
+ * <p>
+ *     NOTE: although this inherits from {@link EntityModel}, this is wrong I think; what is being shared
+ *     is just some of the implementation - both objects have to wrap some arbitrary memento holding some state
+ *     (a value or entity reference in a ScalarModel's case, an entity reference in an EntityModel's), they have
+ *     a view mode, they have a rendering hint, and scalar models have a pending value (not sure if Entity Model really
+ *     requires this).
+ *     Fundamentally though a ScalarModel is NOT really an EntityModel, so this hierarchy should be broken out with a
+ *     common superclass for both EntityModel and ScalarModel.
+ * </p>
  */
 public class ScalarModel extends EntityModel implements LinksProvider,FormExecutorContext, ActionArgumentModel {
 
@@ -91,13 +102,11 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
             }
 
             @Override
-            public String getLongName(final ScalarModel scalarModel) {
-
-                ObjectSpecId objectSpecId =
-                        scalarModel.getParentEntityModel().getTypeOfSpecification().getSpecId();
-
-                final String specShortName = SpecUtils.getSpecificationFor(objectSpecId, scalarModel.getSpecificationLoader()).getShortIdentifier();
-                return specShortName + "-" + scalarModel.getPropertyMemento().getProperty(scalarModel.getSpecificationLoader()).getId();
+            public String getCssClass(final ScalarModel scalarModel) {
+                final String objectSpecId =
+                        scalarModel.getParentEntityModel().getTypeOfSpecification().getSpecId().asString().replace(".", "-");
+                final String propertyId = getIdentifier(scalarModel);
+                return "isis-" + objectSpecId + "-" + propertyId;
             }
 
             @Override
@@ -289,9 +298,7 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
 
                 final ObjectAdapter parentAdapter = scalarModel.getParentEntityModel().load();
 
-                final ObjectAdapter associatedAdapter =
-                        property.get(parentAdapter, InteractionInitiatedBy.USER);
-                scalarModel.setObject(associatedAdapter);
+                setObjectFromPropertyIfVisible(scalarModel, property, parentAdapter);
             }
 
             @Override
@@ -326,16 +333,19 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
             }
 
             @Override
-            public String getLongName(final ScalarModel scalarModel) {
+            public String getCssClass(final ScalarModel scalarModel) {
                 final ObjectAdapterMemento adapterMemento = scalarModel.getObjectAdapterMemento();
                 if (adapterMemento == null) {
                     // shouldn't happen
                     return null;
                 }
-                ObjectSpecId objectSpecId = adapterMemento.getObjectSpecId();
-                final String specShortName = SpecUtils.getSpecificationFor(objectSpecId, scalarModel.getSpecificationLoader()).getShortIdentifier();
-                final String parmId = scalarModel.getParameterMemento().getActionParameter(scalarModel.getSpecificationLoader()).getIdentifier().toNameIdentityString();
-                return specShortName + "-" + parmId + "-" + scalarModel.getParameterMemento().getNumber();
+                final ObjectActionParameter actionParameter = scalarModel.getParameterMemento()
+                        .getActionParameter(scalarModel.getSpecificationLoader());
+                final ObjectAction action = actionParameter.getAction();
+                final String objectSpecId = action.getOnType().getSpecId().asString().replace(".", "-");
+                final String parmId = actionParameter.getId();
+
+                return "isis-" + objectSpecId + "-" + action.getId() + "-" + parmId;
             }
 
             @Override
@@ -577,7 +587,7 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
 
         public abstract String validate(ScalarModel scalarModel, ObjectAdapter proposedAdapter);
 
-        public abstract String getLongName(ScalarModel scalarModel);
+        public abstract String getCssClass(ScalarModel scalarModel);
 
         public abstract boolean isRequired(ScalarModel scalarModel);
 
@@ -625,7 +635,6 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
         public abstract String toStringOf(final ScalarModel scalarModel);
     }
 
-
     private final Kind kind;
     
     private final EntityModel parentEntityModel;
@@ -656,12 +665,12 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
      * value (if any) of that action parameter.
      */
     public ScalarModel(final EntityModel parentEntityModel, final ActionParameterMemento apm) {
+        super(EntityModel.Mode.EDIT, EntityModel.RenderingHint.REGULAR);
         this.kind = Kind.PARAMETER;
         this.parentEntityModel = parentEntityModel;
         this.parameterMemento = apm;
 
         init();
-        setMode(Mode.EDIT);
     }
 
     /**
@@ -669,14 +678,16 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
      * {@link #getObject() value of this model} to be current value of the
      * property.
      */
-    public ScalarModel(final EntityModel parentEntityModel, final PropertyMemento pm) {
+    public ScalarModel(
+            final EntityModel parentEntityModel, final PropertyMemento pm,
+            final EntityModel.Mode mode, final EntityModel.RenderingHint renderingHint) {
+        super(mode, renderingHint);
         this.kind = Kind.PROPERTY;
         this.parentEntityModel = parentEntityModel;
         this.propertyMemento = pm;
 
         init();
         getAndStore(parentEntityModel);
-        setMode(Mode.VIEW);
     }
 
     private void init() {
@@ -701,9 +712,30 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
         final OneToOneAssociation property = propertyMemento.getProperty(getSpecificationLoader());
         final ObjectAdapter parentAdapter = parentAdapterMemento.getObjectAdapter(ConcurrencyChecking.CHECK,
                 getPersistenceSession(), getSpecificationLoader());
-        final ObjectAdapter associatedAdapter = property.get(parentAdapter, InteractionInitiatedBy.USER);
-        setObject(associatedAdapter);
+
+        setObjectFromPropertyIfVisible(ScalarModel.this, property, parentAdapter);
     }
+
+    private static void setObjectFromPropertyIfVisible(
+            final ScalarModel scalarModel,
+            final OneToOneAssociation property,
+            final ObjectAdapter parentAdapter) {
+
+        final Where where = scalarModel.getRenderingHint().asWhere();
+
+        final Consent visibility =
+                property.isVisible(parentAdapter, InteractionInitiatedBy.FRAMEWORK, where);
+
+        final ObjectAdapter associatedAdapter;
+        if (visibility.isAllowed()) {
+            associatedAdapter = property.get(parentAdapter, InteractionInitiatedBy.USER);
+        } else {
+            associatedAdapter = null;
+        }
+
+        scalarModel.setObject(associatedAdapter);
+    }
+
 
     public boolean isCollection() {
         return kind.isCollection(this);
@@ -804,11 +836,13 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
         setObject(adapter);
     }
 
-    public boolean whetherHidden(Where where) {
+    public boolean whetherHidden() {
+        final Where where = getRenderingHint().asWhere();
         return kind.whetherHidden(this, where);
     }
 
-    public String whetherDisabled(Where where) {
+    public String whetherDisabled() {
+        final Where where = getRenderingHint().asWhere();
         return kind.whetherDisabled(this, where);
     }
 
@@ -828,8 +862,8 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
         return kind.isRequired(this);
     }
 
-    public String getLongName() {
-        return kind.getLongName(this);
+    public String getCssClass() {
+        return kind.getCssClass(this);
     }
 
     public <T extends Facet> T getFacet(final Class<T> facetType) {
@@ -976,9 +1010,8 @@ public class ScalarModel extends EntityModel implements LinksProvider,FormExecut
         return editable && isViewMode();
     }
 
-    boolean isEnabled() {
-        Where where = getRenderingHint().isInTable() ? Where.PARENTED_TABLES : Where.OBJECT_FORMS;
-        return whetherDisabled(where) == null;
+    public boolean isEnabled() {
+        return whetherDisabled() == null;
     }
 
     public String getReasonInvalidIfAny() {

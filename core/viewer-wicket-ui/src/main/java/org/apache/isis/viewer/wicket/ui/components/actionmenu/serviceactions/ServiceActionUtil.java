@@ -37,6 +37,8 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.model.Model;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.isis.applib.layout.component.ServiceActionLayoutData;
 import org.apache.isis.applib.layout.menubars.MenuBars;
@@ -64,6 +66,8 @@ import de.agilecoders.wicket.extensions.markup.html.bootstrap.confirmation.Confi
 
 public final class ServiceActionUtil {
 
+    private final static Logger LOG = LoggerFactory.getLogger(ServiceActionUtil.class);
+
     private ServiceActionUtil(){}
 
     static void addLeafItem(
@@ -80,6 +84,7 @@ public final class ServiceActionUtil {
             Label menuItemLabel = new Label("menuLinkLabel", menuItem.getName());
             subMenuItemLink.addOrReplace(menuItemLabel);
 
+            listItem.add(new CssClassAppender("isis-" + CssClassAppender.asCssStyle(menuItem.getActionIdentifier())));
             if (!menuItem.isEnabled()) {
                 listItem.add(new CssClassAppender("disabled"));
                 subMenuItemLink.setEnabled(false);
@@ -234,9 +239,17 @@ public final class ServiceActionUtil {
                     final Bookmark bookmark = new Bookmark(objectType, PersistenceSession.SERVICE_IDENTIFIER);
                     final String oid = bookmark.toString();
                     final ObjectAdapter serviceAdapter = serviceAdapterByOid.get(oid);
+                    if(serviceAdapter == null) {
+                        // service not recognised, presumably the menu layout is out of sync with actual configured modules
+                        continue;
+                    }
                     final EntityModel entityModel = new EntityModel(serviceAdapter);
                     final ObjectAction objectAction = serviceAdapter.getSpecification()
                             .getObjectAction(actionLayoutData.getId());
+                    if(objectAction == null) {
+                        LOG.warn("No such action {}", actionLayoutData.getId());
+                        continue;
+                    }
                     final ServiceAndAction serviceAndAction =
                             new ServiceAndAction(actionLayoutData.getNamed(), entityModel, objectAction);
 

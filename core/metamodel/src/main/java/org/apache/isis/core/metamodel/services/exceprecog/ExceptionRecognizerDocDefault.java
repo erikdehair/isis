@@ -42,7 +42,7 @@ public class ExceptionRecognizerDocDefault
         implements ExceptionRecognizer {
 
 
-    //region > init, shutdown
+    // -- init, shutdown
 
     @Programmatic
     @PostConstruct
@@ -59,7 +59,7 @@ public class ExceptionRecognizerDocDefault
         recognizer.shutdown();
     }
 
-    //endregion
+    
 
     static class ExceptionRecognizerForConcurrencyException
             extends ExceptionRecognizerForType {
@@ -67,7 +67,8 @@ public class ExceptionRecognizerDocDefault
             super(Category.CONCURRENCY, ConcurrencyException.class, prefix("Another user has just changed this data"));
         }
     }
-    static class ExceptionRecognizerForRecoverableException extends ExceptionRecognizerForType {
+    static class ExceptionRecognizerForRecoverableException 
+    	extends ExceptionRecognizerForType {
         public ExceptionRecognizerForRecoverableException() {
             super(Category.CLIENT_ERROR, RecoverableException.class);
         }

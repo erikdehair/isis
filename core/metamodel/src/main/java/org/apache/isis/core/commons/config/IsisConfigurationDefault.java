@@ -70,7 +70,7 @@ public class IsisConfigurationDefault implements ConfigurationServiceInternal {
 
     public IsisConfigurationDefault(final ResourceStreamSource resourceStreamSource) {
         this.resourceStreamSource = resourceStreamSource;
-        LOG.debug("configuration initialised with stream: " + nameOf(resourceStreamSource));
+        LOG.debug("configuration initialised with stream: {}", nameOf(resourceStreamSource));
     }
 
     private String nameOf(final ResourceStreamSource resourceStreamSource) {
@@ -396,7 +396,7 @@ public class IsisConfigurationDefault implements ConfigurationServiceInternal {
         }
         String property = properties.getProperty(key, defaultValue);
         property = property != null ? property.trim() : null;
-        LOG.debug("get property: '" + key + "' =  '" + property + "'");
+        LOG.debug("get property: '{} = '{}'", key, property);
         return property;
     }
 
@@ -469,7 +469,7 @@ public class IsisConfigurationDefault implements ConfigurationServiceInternal {
     }
 
 
-    //region > ConfigurationService impl
+    // -- ConfigurationService impl
     @Override
     public String getProperty(final String name) {
         initAppPropertiesIfRequired();
@@ -503,6 +503,6 @@ public class IsisConfigurationDefault implements ConfigurationServiceInternal {
         }
         return list;
     }
-    //endregion
+    
 
 }

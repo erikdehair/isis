@@ -45,12 +45,12 @@ public class ServiceInitializer {
         this.services = services;
     }
 
-    //region > validate
+    // -- validate
 
     public void validate() {
         
         for (final Object service : services) {
-            LOG.debug("checking for @PostConstruct and @PostDestroy methods on " + service.getClass().getName());
+            LOG.debug("checking for @PostConstruct and @PostDestroy methods on {}", service.getClass().getName());
             final Method[] methods = service.getClass().getMethods();
 
             // @PostConstruct
@@ -103,9 +103,9 @@ public class ServiceInitializer {
         }
 
     }
-    //endregion
+    
 
-    //region > postConstruct
+    // -- postConstruct
 
     public void postConstruct() {
         if(LOG.isInfoEnabled()) {
@@ -146,9 +146,9 @@ public class ServiceInitializer {
         }
     }
 
-    //endregion
+    
 
-    //region > preDestroy
+    // -- preDestroy
 
     public void preDestroy() {
         if(LOG.isInfoEnabled()) {
@@ -159,7 +159,7 @@ public class ServiceInitializer {
             final Method method = entry.getValue();
 
             if(LOG.isDebugEnabled()) {
-                LOG.debug("... calling @PreDestroy method: " + service.getClass().getName() + ": " + method.getName());
+                LOG.debug("... calling @PreDestroy method: {}: {}", service.getClass().getName(), method.getName());
             }
             
             try {
@@ -173,6 +173,6 @@ public class ServiceInitializer {
         }
     }
 
-    //endregion
+    
 
 }

@@ -19,12 +19,13 @@
 package org.apache.isis.applib.services.eventbus;
 
 import org.apache.isis.applib.util.ObjectContracts;
+import org.apache.isis.applib.util.ToString;
 
 public abstract class CollectionDomainEvent<S,T> extends AbstractDomainEvent<S> {
 
     private static final long serialVersionUID = 1L;
 
-    //region > Default class
+    // -- Default class
     /**
      * This class is the default for the
      * {@link org.apache.isis.applib.annotation.Collection#domainEvent()} annotation attribute.  Whether this
@@ -34,9 +35,9 @@ public abstract class CollectionDomainEvent<S,T> extends AbstractDomainEvent<S> 
     public static class Default extends CollectionDomainEvent<Object, Object> {
         private static final long serialVersionUID = 1L;
     }
-    //endregion
+    
 
-    //region > Noop class
+    // -- Noop class
 
     /**
      * Convenience class to use indicating that an event should <i>not</i> be posted (irrespective of the configuration
@@ -45,9 +46,9 @@ public abstract class CollectionDomainEvent<S,T> extends AbstractDomainEvent<S> 
     public static class Noop extends CollectionDomainEvent<Object, Object> {
         private static final long serialVersionUID = 1L;
     }
-    //endregion
+    
 
-    //region > Doop class
+    // -- Doop class
 
     /**
      * Convenience class meaning that an event <i>should</i> be posted (irrespective of the configuration
@@ -56,10 +57,10 @@ public abstract class CollectionDomainEvent<S,T> extends AbstractDomainEvent<S> 
     public static class Doop extends CollectionDomainEvent<Object, Object> {
         private static final long serialVersionUID = 1L;
     }
-    //endregion
+    
 
 
-    //region > constructor
+    // -- constructor
 
     /**
      * If used then the framework will set state via (non-API) setters.
@@ -71,9 +72,9 @@ public abstract class CollectionDomainEvent<S,T> extends AbstractDomainEvent<S> 
     public CollectionDomainEvent() {
     }
 
-    //endregion
+    
 
-    //region > value
+    // -- value
     private T value;
 
     /**
@@ -89,9 +90,9 @@ public abstract class CollectionDomainEvent<S,T> extends AbstractDomainEvent<S> 
     public void setValue(T value) {
         this.value = value;
     }
-    //endregion
+    
 
-    //region > Of
+    // -- Of
     public static enum Of {
         /**
          * The collection is being accessed
@@ -127,12 +128,20 @@ public abstract class CollectionDomainEvent<S,T> extends AbstractDomainEvent<S> 
         this.of = of;
     }
 
-    //endregion
+    
+    
+    private final static ToString<CollectionDomainEvent<?,?>> toString = 
+    		ObjectContracts.<CollectionDomainEvent<?,?>>
+		    toString("source", CollectionDomainEvent::getSource)
+		    .thenToString("identifier", CollectionDomainEvent::getIdentifier)
+		    .thenToString("eventPhase", CollectionDomainEvent::getEventPhase)
+		    .thenToString("of", CollectionDomainEvent::getOf) 
+		    .thenToString("value", CollectionDomainEvent::getValue)
+		    ;
 
-    //region > toString
     @Override
     public String toString() {
-        return ObjectContracts.toString(this, "source,identifier,phase,of,value");
+    	return toString.toString(this);
     }
-    //endregion
+
 }

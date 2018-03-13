@@ -23,9 +23,8 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import com.google.common.collect.Sets;
-
 import org.apache.isis.applib.annotation.Programmatic;
+import org.apache.isis.applib.internal.collections._Sets;
 
 /**
  * A service implementing an Event Bus, allowing arbitrary events to be posted and
@@ -66,7 +65,7 @@ public abstract class EventBusService {
 
     public static final EventBusService NOOP = new Noop();
 
-    //region > init, shutdown
+    // -- init, shutdown
 
     /**
      * Cannot do the setup of the event bus here (so this is asymmetric with <code>@PreDestroy</code>) because there is
@@ -93,9 +92,9 @@ public abstract class EventBusService {
         teardownEventBus();
     }
 
-    //endregion
+    
 
-    //region > register, unregister
+    // -- register, unregister
 
     /**
      * Both singleton and request-scoped domain services can register on the event bus; this should be done in their
@@ -180,22 +179,22 @@ public abstract class EventBusService {
         // intentionally no-op
     }
 
-    //endregion
+    
 
-    //region > subscribers
+    // -- subscribers
 
-    private final Set<Object> subscribers = Sets.newConcurrentHashSet();
+    private final Set<Object> subscribers = _Sets.newConcurrentHashSet();
 
     /**
      * Returns an immutable snapshot of the current subscribers.
      */
     @Programmatic
     public Set<Object> getSubscribers() {
-        return Collections.unmodifiableSet(Sets.newLinkedHashSet(subscribers));
+        return Collections.unmodifiableSet(_Sets.newLinkedHashSet(subscribers));
     }
-    //endregion
+    
 
-    //region > post
+    // -- post
 
     /**
      * Post an event.
@@ -213,10 +212,10 @@ public abstract class EventBusService {
         return this.eventBusImplementation != null;
     }
 
-    //endregion
+    
 
 
-    //region > getEventBus
+    // -- getEventBus
 
     /**
      * Lazily populated in {@link #getEventBusImplementation()} as result of the first {@link #post(Object)}.
@@ -280,9 +279,9 @@ public abstract class EventBusService {
         this.eventBusImplementation = null;
     }
 
-    //endregion
+    
 
-    //region > hook methods (newEventBus, skip)
+    // -- hook methods (newEventBus, skip)
 
     /**
      * Mandatory hook method for subclass to instantiate an appropriately configured Guava event bus.
@@ -301,7 +300,7 @@ public abstract class EventBusService {
         return false;
     }
 
-    //endregion
+    
 
 
 }

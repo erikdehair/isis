@@ -21,9 +21,9 @@ package org.apache.isis.applib.services.bookmark;
 import java.io.Serializable;
 import java.util.Iterator;
 
-import com.google.common.base.Splitter;
-
 import org.apache.isis.applib.annotation.Value;
+import org.apache.isis.applib.internal.base._Strings;
+import org.apache.isis.applib.internal.exceptions._Exceptions;
 import org.apache.isis.schema.common.v1.BookmarkObjectState;
 import org.apache.isis.schema.common.v1.OidDto;
 
@@ -38,7 +38,7 @@ public class Bookmark implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    protected static final char SEPARATOR = ':';
+    protected static final String SEPARATOR = ":";
 
     public static Bookmark create(final String str) {
         return str != null? new Bookmark(str): null;
@@ -108,6 +108,7 @@ public class Bookmark implements Serializable {
 
         public static ObjectState from(final BookmarkObjectState objectState) {
             if(objectState == null) {
+                // persistent is assumed if not specified
                 return ObjectState.PERSISTENT;
             }
             switch (objectState) {
@@ -118,8 +119,7 @@ public class Bookmark implements Serializable {
             case PERSISTENT:
                 return ObjectState.PERSISTENT;
             default:
-                // persistent is assumed if not specified
-                return ObjectState.PERSISTENT;
+            	throw _Exceptions.unmatchedCase(objectState);
             }
         }
 
@@ -137,7 +137,7 @@ public class Bookmark implements Serializable {
      * Round-trip with {@link #toString()} representation.
      */
     public Bookmark(final String toString) {
-        this(Splitter.on(SEPARATOR).split(toString).iterator());
+        this(_Strings.splitThenStream(toString, SEPARATOR).iterator());
     }
 
     private Bookmark(final Iterator<String> split) {

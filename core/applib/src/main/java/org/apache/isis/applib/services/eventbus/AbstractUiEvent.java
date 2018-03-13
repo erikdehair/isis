@@ -21,15 +21,15 @@ package org.apache.isis.applib.services.eventbus;
 import java.util.EventObject;
 import java.util.Map;
 
-import com.google.common.collect.Maps;
-
+import org.apache.isis.applib.internal.collections._Maps;
 import org.apache.isis.applib.util.ObjectContracts;
+import org.apache.isis.applib.util.ToString;
 
 public abstract class AbstractUiEvent<S> extends EventObject {
 
     private static final long serialVersionUID = 1L;
 
-    //region > constructors
+    // -- constructors
     /**
      * If used then the framework will set state via (non-API) setters.
      *
@@ -48,9 +48,9 @@ public abstract class AbstractUiEvent<S> extends EventObject {
     private static Object sourceElseDummy(final Object source) {
         return source != null ? source : new Object();
     }
-    //endregion
+    
 
-    //region > source
+    // -- source
 
     @Override
     @SuppressWarnings("unchecked")
@@ -65,13 +65,13 @@ public abstract class AbstractUiEvent<S> extends EventObject {
         this.source = source;
     }
 
-    //endregion
+    
 
-    //region > userData
+    // -- userData
     /**
      * Provides a mechanism to pass data around.
      */
-    private final Map<Object, Object> userData = Maps.newHashMap();
+    private final Map<Object, Object> userData = _Maps.newHashMap();
 
     /**
      * Obtain user-data, as set by any other subscribers.
@@ -85,13 +85,14 @@ public abstract class AbstractUiEvent<S> extends EventObject {
     public void put(Object key, Object value) {
         userData.put(key, value);
     }
-    //endregion
+    
 
-    //region > toString
+    private final static ToString<AbstractUiEvent<?>> toString = ObjectContracts
+    		.toString("source", AbstractUiEvent::getSource);
+    
     @Override
     public String toString() {
-        return ObjectContracts.toString(this, "source");
+    	return toString.toString(this);
     }
-    //endregion
 
 }

@@ -23,13 +23,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-import com.google.common.base.Function;
+import java.util.function.Function;
 
 import org.junit.Test;
 
 public class ExceptionRecognizerForTypeTest {
 
-    private ExceptionRecognizerForType ersForType;
+    private ExceptionRecognizer ersForType;
 
     static class FooException extends Exception {
         private static final long serialVersionUID = 1L;
@@ -51,7 +51,7 @@ public class ExceptionRecognizerForTypeTest {
             return "pre: " + input;
         }
     };
-
+    
     @Test
     public void whenRecognized() {
         ersForType = new ExceptionRecognizerForType(FooException.class);
@@ -70,4 +70,5 @@ public class ExceptionRecognizerForTypeTest {
         assertThat(ersForType.recognize(new FooException()), is("pre: foo"));
     }
 
+    
 }

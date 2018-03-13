@@ -22,11 +22,7 @@ package org.apache.isis.core.runtime.memento;
 import java.io.Serializable;
 import java.util.List;
 
-import com.google.common.collect.Lists;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.apache.isis.applib.internal.collections._Lists;
 import org.apache.isis.core.commons.ensure.Assert;
 import org.apache.isis.core.commons.exceptions.IsisException;
 import org.apache.isis.core.commons.exceptions.UnknownTypeException;
@@ -41,14 +37,16 @@ import org.apache.isis.core.metamodel.facets.object.encodeable.EncodableFacet;
 import org.apache.isis.core.metamodel.facets.propcoll.accessor.PropertyOrCollectionAccessorFacet;
 import org.apache.isis.core.metamodel.facets.properties.update.modify.PropertySetterFacet;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
-import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
 import org.apache.isis.core.metamodel.spec.feature.Contributed;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAssociation;
 import org.apache.isis.core.metamodel.spec.feature.OneToManyAssociation;
 import org.apache.isis.core.metamodel.spec.feature.OneToOneAssociation;
+import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
 import org.apache.isis.core.runtime.system.context.IsisContext;
 import org.apache.isis.core.runtime.system.persistence.PersistenceSession;
 import org.apache.isis.core.runtime.system.session.IsisSessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Holds the state for the specified object in serializable form.
@@ -65,7 +63,7 @@ public class Memento implements Serializable {
 
     private final static OidMarshaller OID_MARSHALLER = OidMarshaller.INSTANCE;
 
-    private final List<Oid> transientObjects = Lists.newArrayList();
+    private final List<Oid> transientObjects = _Lists.newArrayList();
 
 
     private Data data;
@@ -77,9 +75,7 @@ public class Memento implements Serializable {
 
     public Memento(final ObjectAdapter adapter) {
         data = adapter == null ? null : createData(adapter);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("created memento for " + this);
-        }
+        LOG.debug("created memento for {}", this);
     }
 
     
@@ -118,7 +114,7 @@ public class Memento implements Serializable {
                     continue;
                 }
                 if (associations.get(i).containsFacet(PropertyOrCollectionAccessorFacet.class) && !associations.get(i).containsFacet(PropertySetterFacet.class)) {
-                    LOG.debug("ignoring not-settable field " + associations.get(i).getName());
+                    LOG.debug("ignoring not-settable field {}", associations.get(i).getName());
                     continue;
                 }
             }
@@ -227,7 +223,7 @@ public class Memento implements Serializable {
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("recreated object " + adapter.getOid());
+            LOG.debug("recreated object {}", adapter.getOid());
         }
         return adapter;
     }
@@ -285,7 +281,7 @@ public class Memento implements Serializable {
         updateFieldsAndResolveState(adapter, data);
         
         if (LOG.isDebugEnabled()) {
-            LOG.debug("object updated " + adapter.getOid());
+            LOG.debug("object updated {}", adapter.getOid());
         }
     }
 
@@ -320,7 +316,7 @@ public class Memento implements Serializable {
                     continue;
                 }
                 if (field.containsFacet(PropertyOrCollectionAccessorFacet.class) && !field.containsFacet(PropertySetterFacet.class)) {
-                    LOG.debug("ignoring not-settable field " + field.getName());
+                    LOG.debug("ignoring not-settable field {}", field.getName());
                     continue;
                 }
             }
@@ -347,7 +343,7 @@ public class Memento implements Serializable {
     private void updateOneToManyAssociation(final ObjectAdapter objectAdapter, final OneToManyAssociation otma, final CollectionData collectionData) {
         final ObjectAdapter collection = otma.get(objectAdapter, InteractionInitiatedBy.FRAMEWORK);
         final CollectionFacet facet = CollectionFacetUtils.getCollectionFacetFromSpec(collection);
-        final List<ObjectAdapter> original = Lists.newArrayList();
+        final List<ObjectAdapter> original = _Lists.newArrayList();
         for (final ObjectAdapter adapter : facet.iterable(collection)) {
             original.add(adapter);
         }
@@ -357,7 +353,7 @@ public class Memento implements Serializable {
             final ObjectAdapter elementAdapter = recreateReference(data);
             if (!facet.contains(collection, elementAdapter)) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("  association " + otma + " changed, added " + elementAdapter.getOid());
+                    LOG.debug("  association {} changed, added {}", otma, elementAdapter.getOid());
                 }
                 otma.addElement(objectAdapter, elementAdapter, InteractionInitiatedBy.FRAMEWORK);
             } else {
@@ -367,7 +363,7 @@ public class Memento implements Serializable {
 
         for (final ObjectAdapter element : original) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("  association " + otma + " changed, removed " + element.getOid());
+                LOG.debug("  association {} changed, removed {}", otma, element.getOid());
             }
             otma.removeElement(objectAdapter, element, InteractionInitiatedBy.FRAMEWORK);
         }
@@ -380,7 +376,7 @@ public class Memento implements Serializable {
             final ObjectAdapter ref = recreateReference(assocData);
             if (otoa.get(objectAdapter, InteractionInitiatedBy.FRAMEWORK) != ref) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("  association " + otoa + " changed to " + ref.getOid());
+                    LOG.debug("  association {} changed to {}", otoa, ref.getOid());
                 }
                 otoa.initAssociation(objectAdapter, ref);
             }

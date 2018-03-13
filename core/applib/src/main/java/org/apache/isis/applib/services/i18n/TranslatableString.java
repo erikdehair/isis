@@ -23,14 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import com.google.common.collect.Lists;
+
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.annotation.Value;
+import org.apache.isis.applib.internal.collections._Lists;
 
 @Value
 public final class TranslatableString {
 
-    //region > tr, trn (factory methods); constructor
+    // -- tr, trn (factory methods); constructor
 
     /**
      * A translatable string with a single pattern for both singular and plural forms.
@@ -104,9 +105,9 @@ public final class TranslatableString {
         this.argumentsByParameterName = argumentsByParameterName;
     }
 
-    //endregion
+    
 
-    //region > singularText, pluralText, pluralForm
+    // -- singularText, pluralText, pluralForm
 
     private final String singularText;
     private final String pluralText;
@@ -158,9 +159,9 @@ public final class TranslatableString {
     boolean isPluralForm() {
         return type == Type.TRN;
     }
-    //endregion
+    
 
-    //region > argumentsByParameterName
+    // -- argumentsByParameterName
     private final Map<String, Object> argumentsByParameterName;
 
     /**
@@ -169,9 +170,9 @@ public final class TranslatableString {
     Map<String, Object> getArgumentsByParameterName() {
         return argumentsByParameterName;
     }
-    //endregion
+    
 
-    //region > translate
+    // -- translate
 
     /**
      * Translates this string using the provided {@link org.apache.isis.applib.services.i18n.TranslationService}, selecting
@@ -214,7 +215,7 @@ public final class TranslatableString {
     static String format(String format, Map<String, Object> values)
     {
         StringBuilder formatter = new StringBuilder(format);
-        List<Object> valueList = Lists.newArrayList();
+        List<Object> valueList = _Lists.newArrayList();
 
         Matcher matcher = Pattern.compile("\\{(\\w+)}").matcher(format);
 
@@ -235,9 +236,9 @@ public final class TranslatableString {
         return String.format(formatter.toString(), valueList.toArray());
     }
 
-    //endregion
+    
 
-    //region > equals, hashCode, toString
+    // -- equals, hashCode, toString
 
     @Override
     public boolean equals(final Object o) {
@@ -268,6 +269,6 @@ public final class TranslatableString {
         return type.toString(this);
     }
 
-    //endregion
+    
 
 }

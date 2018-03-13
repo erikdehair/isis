@@ -36,12 +36,12 @@ public abstract class PromptFormPanelAbstract<T extends IModel<?> & FormExecutor
         super(id, model);
     }
 
-    //region > dependencies
+    // -- dependencies
     @com.google.inject.Inject
     WicketViewerSettings settings;
     protected WicketViewerSettings getSettings() {
         return settings;
     }
-    //endregion
+    
 
 }

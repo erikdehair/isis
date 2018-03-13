@@ -23,10 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 import org.apache.isis.applib.fixturescripts.FixtureScript;
+import org.apache.isis.applib.internal.collections._Lists;
+import org.apache.isis.applib.internal.collections._Maps;
 
 /**
  * Convenience adapter, configured using an {@link Builder}.
@@ -45,7 +44,7 @@ public abstract class AppManifestAbstract implements AppManifest {
         overrideModules(builderModules);
         this.modules = builderModules;
 
-        final List<Class<?>> builderAdditionalServices = Lists.newArrayList(builder.getAllAdditionalServices());
+        final List<Class<?>> builderAdditionalServices = _Lists.newArrayList(builder.getAllAdditionalServices());
         overrideAdditionalServices(builderAdditionalServices);
 
         this.additionalServices = builderAdditionalServices;
@@ -64,30 +63,41 @@ public abstract class AppManifestAbstract implements AppManifest {
         if (overriddenAuthMechanism != null) {
             return overriddenAuthMechanism;
         } else {
-            if(builder instanceof Builder) {
-                return ((Builder) builder).authMechanism;
-            } else {
-                return null;
-            }
+            return obtainAuthMechanismFrom(builder);
         }
     }
 
     private List<Class<? extends FixtureScript>> determineFixtures(final ModuleOrBuilderAbstract<?> builder) {
-        final List<Class<? extends FixtureScript>> builderFixtures;
-        if(builder instanceof Builder) {
-            builderFixtures = ((Builder) builder).fixtures;
-        } else {
-            builderFixtures = Lists.newArrayList();
-        }
+        final List<Class<? extends FixtureScript>> builderFixtures = obtainBuilderFixturesFrom(builder);
         overrideFixtures(builderFixtures);
         return builderFixtures;
+    }
+
+    private static String obtainAuthMechanismFrom(final ModuleOrBuilderAbstract<?> builder) {
+        if(builder instanceof Builder) {
+            return ((Builder) builder).authMechanism;
+        }
+        if(builder instanceof AppManifestAbstract2.Builder) {
+            return ((AppManifestAbstract2.Builder) builder).authMechanism;
+        }
+        return null;
+    }
+
+    private static List<Class<? extends FixtureScript>> obtainBuilderFixturesFrom(final ModuleOrBuilderAbstract<?> builder) {
+        if(builder instanceof Builder) {
+            return ((Builder) builder).fixtures;
+        }
+        if(builder instanceof AppManifestAbstract2.Builder) {
+            return ((AppManifestAbstract2.Builder) builder).fixtures;
+        }
+        return _Lists.newArrayList();
     }
 
     private Map<String, String> createConfigurationProperties(
             final List<PropertyResource> propertyResources,
             final Map<String,String> individualConfigProps,
             final List<Class<? extends FixtureScript>> fixtures) {
-        final Map<String, String> props = Maps.newHashMap();
+        final Map<String, String> props = _Maps.newHashMap();
         for (PropertyResource propertyResource : propertyResources) {
             propertyResource.loadPropsInto(props);
         }
@@ -204,14 +214,15 @@ public abstract class AppManifestAbstract implements AppManifest {
     public static abstract class BuilderAbstract<B extends BuilderAbstract<B>> extends ModuleOrBuilderAbstract<B> {
 
         String authMechanism = "shiro";
-        List<Class<? extends FixtureScript>> fixtures = Lists.newArrayList();
+        List<Class<? extends FixtureScript>> fixtures = _Lists.newArrayList();
 
         public B withAuthMechanism(final String authMechanism) {
             this.authMechanism = authMechanism;
             return self();
         }
 
-        public B withFixtureScripts(final Class<? extends FixtureScript>... fixtures) {
+		@SuppressWarnings("unchecked") // at least type-safety applies
+		public B withFixtureScripts(final Class<? extends FixtureScript>... fixtures) {
             return withFixtureScripts(Arrays.asList(fixtures));
         }
 
@@ -224,7 +235,7 @@ public abstract class AppManifestAbstract implements AppManifest {
         }
 
         List<Class<?>> getAllAdditionalModules() {
-            return Lists.newArrayList(additionalModules);
+            return _Lists.newArrayList(additionalModules);
         }
 
         Set<Class<?>> getAllAdditionalServices() {

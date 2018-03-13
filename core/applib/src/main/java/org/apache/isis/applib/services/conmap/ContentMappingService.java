@@ -19,10 +19,13 @@
 package org.apache.isis.applib.services.conmap;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 
 import org.apache.isis.applib.annotation.Programmatic;
+import org.apache.isis.applib.internal.base._NullSafe;
 
 public interface ContentMappingService {
 
@@ -32,4 +35,32 @@ public interface ContentMappingService {
     @Programmatic
     Object map(Object object, final List<MediaType> acceptableMediaTypes);
 
+    /**
+     * Convenience utilities for implementations of {@link ContentMappingService}.
+     */
+    public static class Util {
+
+        public static String determineDomainType(final List<MediaType> acceptableMediaTypes) {
+            for (MediaType acceptableMediaType : acceptableMediaTypes) {
+                final Map<String, String> parameters = acceptableMediaType.getParameters();
+                final String domainType = parameters.get("x-ro-domain-type");
+                if(domainType != null) {
+                    return domainType;
+                }
+            }
+            throw new IllegalArgumentException(
+                    "Could not locate x-ro-domain-type parameter in any of the provided media types; got: " +
+                    		_NullSafe.stream(acceptableMediaTypes)
+                    		.filter(_NullSafe::isPresent)
+                    		.map(Object::toString)
+                    		.collect(Collectors.joining(", ")) );
+        }
+
+        public static boolean isSupported(
+                final Class<?> clazz,
+                final List<MediaType> acceptableMediaTypes) {
+            final String domainType = determineDomainType(acceptableMediaTypes);
+            return clazz.getName().equals(domainType);
+        }
+    }
 }

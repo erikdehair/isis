@@ -159,7 +159,7 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
 
     private static final Logger LOG = LoggerFactory.getLogger(IsisTransaction.class);
 
-    //region > constructor, fields
+    // -- constructor, fields
 
     private final UUID interactionId;
     private final int sequence;
@@ -197,14 +197,12 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
 
         this.state = State.IN_PROGRESS;
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("new transaction " + this);
-        }
+        LOG.debug("new transaction {}", this);
     }
 
-    //endregion
+    
 
-    //region > transactionId
+    // -- transactionId
 
     @Programmatic
     public final UUID getTransactionId() {
@@ -224,9 +222,9 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
         return sequence;
     }
 
-    //endregion
+    
 
-    //region > state
+    // -- state
 
     private State state;
 
@@ -254,9 +252,9 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
     }
 
 
-    //endregion
+    
 
-    //region > commands
+    // -- commands
 
 
     /**
@@ -274,23 +272,19 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
         if (command instanceof DestroyObjectCommand) {
             if (alreadyHasCreate(onObject)) {
                 removeCreate(onObject);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("ignored both create and destroy command " + command);
-                }
+                LOG.debug("ignored both create and destroy command {}", command);
                 return;
             }
 
             if (alreadyHasDestroy(onObject)) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("ignored command " + command + " as command already recorded");
+                    LOG.debug("ignored command {} as command already recorded", command );
                 }
                 return;
             }
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("add command " + command);
-        }
+        LOG.debug("add command {}", command);
         persistenceCommands.add(command);
     }
 
@@ -326,9 +320,9 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
         removeCommand(CreateObjectCommand.class, onObject);
     }
 
-    //endregion
+    
 
-    //region > flush
+    // -- flush
 
     public final void flush() {
 
@@ -339,9 +333,7 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
         //
         // ensureThatState(getState().canFlush(), is(true), "state is: " + getState());
         //
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("flush transaction " + this);
-        }
+        LOG.debug("flush transaction {}", this);
 
         try {
             doFlush();
@@ -408,22 +400,18 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
         
     }
 
-    //endregion
+    
 
-    //region > preCommit, commit
+    // -- preCommit, commit
 
     void preCommit() {
         assert getState().canCommit();
         assert abortCause == null;
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("preCommit transaction " + this);
-        }
+        LOG.debug("preCommit transaction {}", this);
 
         if (getState() == State.COMMITTED) {
-            if (LOG.isInfoEnabled()) {
-                LOG.info("already committed; ignoring");
-            }
+            LOG.info("already committed; ignoring");
             return;
         }
 
@@ -448,14 +436,10 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
         assert getState().canCommit();
         assert abortCause == null;
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("postCommit transaction " + this);
-        }
+        LOG.debug("postCommit transaction {}", this);
 
         if (getState() == State.COMMITTED) {
-            if (LOG.isInfoEnabled()) {
-                LOG.info("already committed; ignoring");
-            }
+            LOG.info("already committed; ignoring");
             return;
         }
 
@@ -463,9 +447,9 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
     }
 
 
-    //endregion
+    
 
-    //region > abortCause, markAsAborted
+    // -- abortCause, markAsAborted
 
     /**
      * internal API called by IsisTransactionManager only
@@ -473,10 +457,7 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
     final void markAsAborted() {
         assert getState().canAbort();
 
-        if (LOG.isInfoEnabled()) {
-            LOG.info("abort transaction " + this);
-        }
-
+        LOG.info("abort transaction {}", this);
         setState(State.ABORTED);
     }
 
@@ -516,9 +497,9 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
 
 
 
-    //endregion
+    
 
-    //region > toString
+    // -- toString
 
     @Override
     public String toString() {
@@ -531,9 +512,9 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
         return str;
     }
 
-    //endregion
+    
 
-    //region > getMessageBroker
+    // -- getMessageBroker
 
     /**
      * The {@link org.apache.isis.core.commons.authentication.MessageBroker} for this transaction.
@@ -547,7 +528,7 @@ public class IsisTransaction implements TransactionScopedComponent, Transaction 
         return messageBroker;
     }
 
-    //endregion
+    
 
 }
 

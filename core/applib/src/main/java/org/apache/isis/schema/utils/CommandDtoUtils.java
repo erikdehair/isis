@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
-import java.net.URL;
 import java.nio.charset.Charset;
 
 import javax.xml.bind.JAXBContext;
@@ -31,12 +30,14 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
-import com.google.common.io.Resources;
-
+import org.apache.isis.applib.internal.resources._Resource;
+import org.apache.isis.applib.util.JaxbUtil;
 import org.apache.isis.schema.cmd.v1.ActionDto;
 import org.apache.isis.schema.cmd.v1.CommandDto;
+import org.apache.isis.schema.cmd.v1.MapDto;
 import org.apache.isis.schema.cmd.v1.ParamsDto;
 import org.apache.isis.schema.common.v1.OidsDto;
+import org.apache.isis.schema.common.v1.PeriodDto;
 
 public final class CommandDtoUtils {
 
@@ -44,15 +45,11 @@ public final class CommandDtoUtils {
         getJaxbContext();
     }
 
-    //region > marshalling
+    // -- marshalling
     static JAXBContext jaxbContext;
     static JAXBContext getJaxbContext() {
         if(jaxbContext == null) {
-            try {
-                jaxbContext = JAXBContext.newInstance(CommandDto.class);
-            } catch (JAXBException e) {
-                throw new RuntimeException(e);
-            }
+            jaxbContext = JaxbUtil.jaxbContextFor(CommandDto.class);
         }
         return jaxbContext;
     }
@@ -74,8 +71,8 @@ public final class CommandDtoUtils {
             final Class<?> contextClass,
             final String resourceName,
             final Charset charset) throws IOException {
-        final URL url = Resources.getResource(contextClass, resourceName);
-        final String s = Resources.toString(url, charset);
+        
+        final String s = _Resource.loadAsString(contextClass, resourceName, charset);
         return fromXml(new StringReader(s));
     }
 
@@ -95,7 +92,7 @@ public final class CommandDtoUtils {
         }
     }
 
-    //endregion
+    
 
     public static OidsDto targetsFor(final CommandDto dto) {
         OidsDto targets = dto.getTargets();
@@ -113,6 +110,40 @@ public final class CommandDtoUtils {
             actionDto.setParameters(parameters);
         }
         return parameters;
+    }
+
+    public static PeriodDto timingsFor(final CommandDto commandDto) {
+        PeriodDto timings = commandDto.getTimings();
+        if(timings == null) {
+            timings = new PeriodDto();
+            commandDto.setTimings(timings);
+        }
+        return timings;
+    }
+
+    public static String getUserData(final CommandDto dto, final String key) {
+        if(dto == null || key == null) {
+            return null;
+        }
+        return CommonDtoUtils.getMapValue(dto.getUserData(), key);
+    }
+
+    public static void setUserData(
+            final CommandDto dto, final String key, final String value) {
+        if(dto == null || key == null) {
+            return;
+        }
+        final MapDto userData = userDataFor(dto);
+        CommonDtoUtils.putMapKeyValue(userData, key, value);
+    }
+
+    private static MapDto userDataFor(final CommandDto commandDto) {
+        MapDto userData = commandDto.getUserData();
+        if(userData == null) {
+            userData = new MapDto();
+            commandDto.setUserData(userData);
+        }
+        return userData;
     }
 
 }

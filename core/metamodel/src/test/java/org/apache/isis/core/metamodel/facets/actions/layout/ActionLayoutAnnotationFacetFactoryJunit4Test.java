@@ -20,6 +20,7 @@
 package org.apache.isis.core.metamodel.facets.actions.layout;
 
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.jmock.Expectations;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +40,7 @@ import org.apache.isis.core.metamodel.facets.object.mixin.MixinFacet;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetFactoryJUnit4TestCase {
@@ -67,6 +69,9 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             }
 
             context.checking(new Expectations() {{
+            	allowing(mockConfiguration).getString("isis.viewer.wicket.promptStyle");
+            	will(returnValue(null));
+            	
                 allowing(mockSpecificationLoader).loadSpecification(CustomerService.class);
                 will(returnValue(mockObjSpec));
 
@@ -80,7 +85,8 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             facetedMethod = FacetedMethod.createForAction(CustomerService.class, "name", mockSpecificationLoader);
 
             // when
-            facetFactory.process(new FacetFactory.ProcessMethodContext(CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
+            facetFactory.process(new FacetFactory.ProcessMethodContext(
+            		CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
 
             // then
             final Facet facet = facetedMethod.getFacet(NotContributedFacet.class);
@@ -101,6 +107,9 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             }
 
             context.checking(new Expectations() {{
+            	allowing(mockConfiguration).getString("isis.viewer.wicket.promptStyle");
+            	will(returnValue(null));
+            	
                 allowing(mockSpecificationLoader).loadSpecification(CustomerService.class);
                 will(returnValue(mockObjSpec));
 
@@ -114,12 +123,13 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             facetedMethod = FacetedMethod.createForAction(CustomerService.class, "name", mockSpecificationLoader);
 
             // when
-            facetFactory.process(new FacetFactory.ProcessMethodContext(CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
+            facetFactory.process(new FacetFactory.ProcessMethodContext(
+            		CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
 
             // then
-            final Facet facet = facetedMethod.getFacet(NotContributedFacet.class);
-            assertThat(facet, CoreMatchers.is(nullValue()));
-
+            final NotContributedFacet facet = facetedMethod.getFacet(NotContributedFacet.class);
+            assertThat(facet, CoreMatchers.is(notNullValue()));
+            assertThat(facet.contributed(), CoreMatchers.is(Contributed.AS_BOTH));
         }
 
         @Test
@@ -136,6 +146,9 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             }
 
             context.checking(new Expectations() {{
+            	allowing(mockConfiguration).getString("isis.viewer.wicket.promptStyle");
+            	will(returnValue(null));
+            	
                 allowing(mockSpecificationLoader).loadSpecification(CustomerService.class);
                 will(returnValue(mockObjSpec));
 
@@ -149,14 +162,14 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             facetedMethod = FacetedMethod.createForAction(CustomerService.class, "name", mockSpecificationLoader);
 
             // when
-            facetFactory.process(new FacetFactory.ProcessMethodContext(CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
+            facetFactory.process(new FacetFactory.ProcessMethodContext(
+            		CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
 
             // then
             final Facet facet = facetedMethod.getFacet(NotContributedFacet.class);
             assertThat(facet, CoreMatchers.is(not(nullValue())));
             assertThat(facet instanceof NotContributedFacetForActionLayoutAnnotation, CoreMatchers.is(true));
             final NotContributedFacetForActionLayoutAnnotation facetImpl = (NotContributedFacetForActionLayoutAnnotation) facet;
-            assertThat(facetImpl.notContributed(), CoreMatchers.equalTo(NotContributedFacet.NotContributedAs.ACTION));
             assertThat(facetImpl.contributed(), CoreMatchers.equalTo(Contributed.AS_ASSOCIATION));
 
         }
@@ -175,6 +188,9 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             }
 
             context.checking(new Expectations() {{
+            	allowing(mockConfiguration).getString("isis.viewer.wicket.promptStyle");
+            	will(returnValue(null));
+            	
                 allowing(mockSpecificationLoader).loadSpecification(CustomerService.class);
                 will(returnValue(mockObjSpec));
 
@@ -188,14 +204,14 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             facetedMethod = FacetedMethod.createForAction(CustomerService.class, "name", mockSpecificationLoader);
 
             // when
-            facetFactory.process(new FacetFactory.ProcessMethodContext(CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
+            facetFactory.process(new FacetFactory.ProcessMethodContext(
+            		CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
 
             // then
             final Facet facet = facetedMethod.getFacet(NotContributedFacet.class);
             assertThat(facet, CoreMatchers.is(not(nullValue())));
             assertThat(facet instanceof NotContributedFacetForActionLayoutAnnotation, CoreMatchers.is(true));
             final NotContributedFacetForActionLayoutAnnotation facetImpl = (NotContributedFacetForActionLayoutAnnotation) facet;
-            assertThat(facetImpl.notContributed(), CoreMatchers.equalTo(NotContributedFacet.NotContributedAs.ASSOCIATION));
             assertThat(facetImpl.contributed(), CoreMatchers.equalTo(Contributed.AS_ACTION));
         }
 
@@ -212,6 +228,9 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             }
 
             context.checking(new Expectations() {{
+            	allowing(mockConfiguration).getString("isis.viewer.wicket.promptStyle");
+            	will(returnValue(null));
+            	
                 allowing(mockSpecificationLoader).loadSpecification(CustomerService.class);
                 will(returnValue(mockObjSpec));
 
@@ -225,14 +244,14 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             facetedMethod = FacetedMethod.createForAction(CustomerService.class, "name", mockSpecificationLoader);
 
             // when
-            facetFactory.process(new FacetFactory.ProcessMethodContext(CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
+            facetFactory.process(new FacetFactory.ProcessMethodContext(
+            		CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
 
             // then
             final Facet facet = facetedMethod.getFacet(NotContributedFacet.class);
             assertThat(facet, CoreMatchers.is(not(nullValue())));
             assertThat(facet instanceof NotContributedFacetForActionLayoutAnnotation, CoreMatchers.is(true));
             final NotContributedFacetForActionLayoutAnnotation facetImpl = (NotContributedFacetForActionLayoutAnnotation) facet;
-            assertThat(facetImpl.notContributed(), CoreMatchers.equalTo(NotContributedFacet.NotContributedAs.EITHER));
             assertThat(facetImpl.contributed(), CoreMatchers.equalTo(Contributed.AS_NEITHER));
 
         }
@@ -251,6 +270,9 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             }
 
             context.checking(new Expectations() {{
+            	allowing(mockConfiguration).getString("isis.viewer.wicket.promptStyle");
+            	will(returnValue(null));            	
+            	
                 allowing(mockSpecificationLoader).loadSpecification(CustomerService.class);
                 will(returnValue(mockObjSpec));
 
@@ -264,14 +286,14 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             facetedMethod = FacetedMethod.createForAction(CustomerService.class, "name", mockSpecificationLoader);
 
             // when
-            facetFactory.process(new FacetFactory.ProcessMethodContext(CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
+            facetFactory.process(new FacetFactory.ProcessMethodContext(
+            		CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
 
             // then
             final Facet facet = facetedMethod.getFacet(NotContributedFacet.class);
             assertThat(facet, CoreMatchers.is(not(nullValue())));
             assertThat(facet instanceof NotContributedFacetForActionLayoutAnnotation, CoreMatchers.is(true));
             final NotContributedFacetForActionLayoutAnnotation facetImpl = (NotContributedFacetForActionLayoutAnnotation) facet;
-            assertThat(facetImpl.notContributed(), CoreMatchers.equalTo(NotContributedFacet.NotContributedAs.EITHER));
             assertThat(facetImpl.contributed(), CoreMatchers.equalTo(Contributed.AS_NEITHER));
 
         }
@@ -290,6 +312,10 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             }
 
             context.checking(new Expectations() {{
+            	
+            	allowing(mockConfiguration).getString("isis.viewer.wicket.promptStyle");
+            	will(returnValue(null));
+            	
                 allowing(mockSpecificationLoader).loadSpecification(CustomerService.class);
                 will(returnValue(mockObjSpec));
 
@@ -303,10 +329,12 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
 
             expectNoMethodsRemoved();
 
-            facetedMethod = FacetedMethod.createForAction(CustomerService.class, "name", mockSpecificationLoader);
+            facetedMethod = FacetedMethod.createForAction(
+            		CustomerService.class, "name", mockSpecificationLoader);
 
             // when
-            facetFactory.process(new FacetFactory.ProcessMethodContext(CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
+            facetFactory.process(new FacetFactory.ProcessMethodContext(
+            		CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
 
             // then
             final Facet facet = facetedMethod.getFacet(NotContributedFacet.class);
@@ -328,6 +356,9 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             }
 
             context.checking(new Expectations() {{
+            	allowing(mockConfiguration).getString("isis.viewer.wicket.promptStyle");
+            	will(returnValue(null));
+            	
                 allowing(mockSpecificationLoader).loadSpecification(CustomerService.class);
                 will(returnValue(mockObjSpec));
 
@@ -344,7 +375,8 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             facetedMethod = FacetedMethod.createForAction(CustomerService.class, "name", mockSpecificationLoader);
 
             // when
-            facetFactory.process(new FacetFactory.ProcessMethodContext(CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
+            facetFactory.process(new FacetFactory.ProcessMethodContext(
+            		CustomerService.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
 
             // then
             final Facet facet = facetedMethod.getFacet(NotContributedFacet.class);
@@ -366,6 +398,9 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             }
 
             context.checking(new Expectations() {{
+            	allowing(mockConfiguration).getString("isis.viewer.wicket.promptStyle");
+            	will(returnValue(null));
+            	
                 allowing(mockSpecificationLoader).loadSpecification(Customer.class);
                 will(returnValue(mockObjSpec));
 
@@ -381,7 +416,8 @@ public class ActionLayoutAnnotationFacetFactoryJunit4Test extends AbstractFacetF
             facetedMethod = FacetedMethod.createForAction(Customer.class, "name", mockSpecificationLoader);
 
             // when
-            facetFactory.process(new FacetFactory.ProcessMethodContext(Customer.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
+            facetFactory.process(new FacetFactory.ProcessMethodContext(
+            		Customer.class, null, facetedMethod.getMethod(), mockMethodRemover, facetedMethod));
 
             // then
             final Facet facet = facetedMethod.getFacet(NotContributedFacet.class);

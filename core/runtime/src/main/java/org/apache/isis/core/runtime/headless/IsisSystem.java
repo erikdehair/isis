@@ -59,7 +59,7 @@ import org.apache.isis.core.runtime.systemusinginstallers.IsisComponentProvider;
  */
 public class IsisSystem {
 
-    //region > getElseNull, get, set
+    // -- getElseNull, get, set
 
     protected static ThreadLocal<IsisSystem> ISFT = new ThreadLocal<>();
 
@@ -79,9 +79,9 @@ public class IsisSystem {
     public static void set(IsisSystem isft) {
         ISFT.set(isft);
     }
-    //endregion
+    
 
-    //region > Builder
+    // -- Builder
 
 
     public static class Builder<T extends Builder<T, S>, S extends IsisSystem> {
@@ -156,9 +156,9 @@ public class IsisSystem {
         return new Builder();
     }
 
-    //endregion
+    
 
-    //region > constructor, fields
+    // -- constructor, fields
 
     // these fields 'xxxForComponentProvider' are used to initialize the IsisComponentProvider, but shouldn't be used thereafter.
     protected final AppManifest appManifestIfAny;
@@ -177,9 +177,9 @@ public class IsisSystem {
         this.authenticationRequestIfAny = authenticationRequestIfAny;
     }
 
-    //endregion
+    
 
-    //region > level
+    // -- level
     private org.apache.log4j.Level level = org.apache.log4j.Level.INFO;
 
     /**
@@ -193,9 +193,9 @@ public class IsisSystem {
         this.level = level;
     }
 
-    //endregion
+    
 
-    //region > setup (also componentProvider)
+    // -- setup (also componentProvider)
 
     // populated at #setupSystem
     protected IsisComponentProvider componentProvider;
@@ -245,7 +245,7 @@ public class IsisSystem {
 
                 // for subsequent tests; the attempt to bootstrap the framework will leave
                 // the IsisContext singleton as set.
-                IsisContext.testReset();
+                IsisContext.clear();
 
                 final Set<String> validationErrors = ex.getValidationErrors();
                 final StringBuilder buf = new StringBuilder();
@@ -266,9 +266,9 @@ public class IsisSystem {
         return getService(DomainObjectContainer.class);
     }
 
-    //endregion
+    
 
-    //region > isisSystem (populated during setup)
+    // -- isisSystem (populated during setup)
     protected IsisSessionFactory isisSessionFactory;
 
     /**
@@ -285,9 +285,9 @@ public class IsisSystem {
         return authenticationSession;
     }
 
-    //endregion
+    
 
-    //region > openSession, closeSession, nextSession
+    // -- openSession, closeSession, nextSession
 
 
     public void nextSession() throws Exception {
@@ -309,9 +309,9 @@ public class IsisSystem {
         }
     }
 
-    //endregion
+    
 
-    //region > beginTran, endTran, commitTran, abortTran
+    // -- beginTran, endTran, commitTran, abortTran
 
     /**
      * @deprecated - ought to be using regular domain services rather than reaching into the framework
@@ -435,9 +435,9 @@ public class IsisSystem {
         }
     }
 
-    //endregion
+    
 
-    //region > getService
+    // -- getService
 
     @SuppressWarnings("unchecked")
     public <C> C getService(Class<C> serviceClass) {
@@ -445,9 +445,9 @@ public class IsisSystem {
         return servicesInjector.lookupServiceElseFail(serviceClass);
     }
 
-    //endregion
+    
 
-    //region > Fixture management (for each test, rather than at bootstrap)
+    // -- Fixture management (for each test, rather than at bootstrap)
 
     /**
      * @deprecated - use {@link org.apache.isis.applib.fixturescripts.FixtureScripts} domain service instead.
@@ -475,9 +475,9 @@ public class IsisSystem {
         }
     }
 
-    //endregion
+    
 
-    //region > Dependencies
+    // -- Dependencies
 
     private IsisTransactionManager getTransactionManager() {
         return getPersistenceSession().getTransactionManager();
@@ -487,6 +487,6 @@ public class IsisSystem {
         return isisSessionFactory.getCurrentSession().getPersistenceSession();
     }
 
-    //endregion
+    
 
 }

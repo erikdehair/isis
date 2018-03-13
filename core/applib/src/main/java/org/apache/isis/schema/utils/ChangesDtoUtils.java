@@ -24,7 +24,6 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
-import java.net.URL;
 import java.nio.charset.Charset;
 
 import javax.xml.bind.JAXBContext;
@@ -32,8 +31,9 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
-import com.google.common.io.Resources;
+import org.apache.isis.applib.internal.resources._Resource;
 
+import org.apache.isis.applib.util.JaxbUtil;
 import org.apache.isis.schema.chg.v1.ChangesDto;
 
 public final class ChangesDtoUtils {
@@ -42,15 +42,11 @@ public final class ChangesDtoUtils {
         getJaxbContext();
     }
 
-    //region > marshalling
+    // -- marshalling
     static JAXBContext jaxbContext;
     static JAXBContext getJaxbContext() {
         if(jaxbContext == null) {
-            try {
-                jaxbContext = JAXBContext.newInstance(ChangesDto.class);
-            } catch (JAXBException e) {
-                throw new RuntimeException(e);
-            }
+            jaxbContext = JaxbUtil.jaxbContextFor(ChangesDto.class);
         }
         return jaxbContext;
     }
@@ -72,8 +68,8 @@ public final class ChangesDtoUtils {
             final Class<?> contextClass,
             final String resourceName,
             final Charset charset) throws IOException {
-        final URL url = Resources.getResource(contextClass, resourceName);
-        final String s = Resources.toString(url, charset);
+    	
+    	final String s = _Resource.loadAsString(contextClass, resourceName, charset);
         return fromXml(new StringReader(s));
     }
 
@@ -92,15 +88,15 @@ public final class ChangesDtoUtils {
             throw new RuntimeException(e);
         }
     }
-    //endregion
+    
 
 
 
-    //region > debugging (dump)
+    // -- debugging (dump)
     public static void dump(final ChangesDto changesDto, final PrintStream out) throws JAXBException {
         out.println(toXml(changesDto));
     }
 
-    //endregion
+    
 
 }

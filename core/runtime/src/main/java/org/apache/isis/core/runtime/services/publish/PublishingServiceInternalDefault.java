@@ -172,7 +172,7 @@ public class PublishingServiceInternalDefault implements PublishingServiceIntern
         };
     }
 
-    //region > injected services
+    // -- injected services
     @javax.inject.Inject
     List<PublisherService> publisherServices;
 
@@ -194,6 +194,6 @@ public class PublishingServiceInternalDefault implements PublishingServiceIntern
     @javax.inject.Inject
     MetricsService metricsService;
 
-    //endregion
+    
 
 }

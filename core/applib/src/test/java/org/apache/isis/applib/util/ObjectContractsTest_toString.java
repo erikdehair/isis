@@ -19,6 +19,8 @@ package org.apache.isis.applib.util;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import org.apache.isis.applib.util.ObjectContracts.ObjectContract;
+import org.apache.isis.applib.util.ObjectContracts.ToStringEvaluator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,6 +58,7 @@ public class ObjectContractsTest_toString {
 
 }
 
+@SuppressWarnings("deprecation")
 class Invoice2 implements Comparable<Invoice2>, Numbered {
     private static final String KEY_PROPERTIES = "number";
     
@@ -75,6 +78,8 @@ class Invoice2 implements Comparable<Invoice2>, Numbered {
         return ObjectContracts.compare(this, o, KEY_PROPERTIES);
     }
 }
+
+@SuppressWarnings("deprecation")
 class InvoiceItem2 implements Comparable<InvoiceItem2> {
 
     static InvoiceItem2 newInvoiceItem(Invoice2 invoice, String productCode, Integer quantity, Boolean rush) {
@@ -118,12 +123,17 @@ class InvoiceItem2 implements Comparable<InvoiceItem2> {
         this.rush = rush;
     }
     
-    
     private static final String KEY_PROPERTIES = "invoice desc, productCode, quantity, rush desc";
+    
+    private static final ObjectContract<InvoiceItem2> contract = 
+    		ObjectContracts.parse(InvoiceItem2.class, KEY_PROPERTIES)
+    		.withValueToStringFunction(ToStringEvaluator.combineToFunction(new NumberedEvaluator()));
     
     @Override
     public String toString() {
-        return new ObjectContracts().with(new NumberedEvaluator()).toStringOf(this, KEY_PROPERTIES);
+    	return contract.toString(this);
+    	//legacy of ...
+        //return new ObjectContracts().with(new NumberedEvaluator()).toStringOf(this, KEY_PROPERTIES);
     }
     @Override
     public int compareTo(InvoiceItem2 o) {

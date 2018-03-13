@@ -29,7 +29,8 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.isis.applib.util.Casts;
+import org.apache.isis.applib.internal.base._Casts;
+import org.apache.isis.applib.util.JaxbUtil;
 import org.apache.isis.schema.common.v1.DifferenceDto;
 import org.apache.isis.schema.common.v1.PeriodDto;
 import org.apache.isis.schema.ixn.v1.MemberExecutionDto;
@@ -39,13 +40,13 @@ import org.apache.isis.schema.ixn.v1.ObjectCountsDto;
 public final class MemberExecutionDtoUtils {
 
     public static <T extends MemberExecutionDto> T clone(final T dto) {
-        final Class<T> aClass = Casts.uncheckedCast(dto.getClass());
+        final Class<T> aClass = _Casts.uncheckedCast(dto.getClass());
         return clone(dto, aClass);
     }
 
     private static <T> T clone(final T dto, final Class<T> dtoClass) {
         try {
-            JAXBContext jaxbContext = JAXBContext.newInstance(dtoClass);
+            JAXBContext jaxbContext = jaxbContextFor(dtoClass);
 
             final Marshaller marshaller = jaxbContext.createMarshaller();
 
@@ -66,6 +67,10 @@ public final class MemberExecutionDtoUtils {
         } catch (JAXBException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static <T> JAXBContext jaxbContextFor(final Class<T> dtoClass)  {
+        return JaxbUtil.jaxbContextFor(dtoClass);
     }
 
     public static MetricsDto metricsFor(final MemberExecutionDto executionDto) {

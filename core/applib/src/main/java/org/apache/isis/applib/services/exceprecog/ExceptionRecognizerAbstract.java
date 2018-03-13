@@ -18,25 +18,26 @@
  */
 package org.apache.isis.applib.services.exceprecog;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.isis.applib.annotation.Programmatic;
+import org.apache.isis.applib.internal.exceptions._Exceptions;
 import org.apache.isis.applib.services.i18n.TranslatableString;
 import org.apache.isis.applib.services.i18n.TranslationService;
 
 /**
  * Abstract implementation of {@link ExceptionRecognizer} that looks 
  * exceptions meeting the {@link Predicate} supplied in the constructor
- * and, if found anywhere in the {@link Throwables#getCausalChain(Throwable) causal chain},
+ * and, if found anywhere in the causal chain,
  * then returns a non-null message indicating that the exception has been recognized.
  * 
  * <p>
@@ -93,11 +94,14 @@ public abstract class ExceptionRecognizerAbstract implements ExceptionRecognizer
     private boolean logRecognizedExceptions;
 
     // //////////////////////////////////////
-
+    
+    // -- JAVA 8+
+    
     public ExceptionRecognizerAbstract(final Category category, Predicate<Throwable> predicate, final Function<String,String> messageParser) {
-        this.category = category;
+    	Objects.requireNonNull(predicate);
+    	this.category = category;
         this.predicate = predicate;
-        this.messageParser = messageParser != null? messageParser: Functions.<String>identity();
+        this.messageParser = messageParser != null ? messageParser : Function.identity();
     }
 
     public ExceptionRecognizerAbstract(Predicate<Throwable> predicate, final Function<String,String> messageParser) {
@@ -111,7 +115,6 @@ public abstract class ExceptionRecognizerAbstract implements ExceptionRecognizer
     public ExceptionRecognizerAbstract(Predicate<Throwable> predicate) {
         this(Category.OTHER, predicate);
     }
-
 
     @PostConstruct
     public void init(Map<String, String> properties) {
@@ -127,27 +130,29 @@ public abstract class ExceptionRecognizerAbstract implements ExceptionRecognizer
 
     @Programmatic
     public String recognize(Throwable ex) {
-        List<Throwable> causalChain = Throwables.getCausalChain(ex);
-        for (Throwable throwable : causalChain) {
-            if(predicate.apply(throwable)) {
-                if(logRecognizedExceptions) {
-                    LOG.info("Recognized exception, stacktrace : ", throwable);
-                }
-                if(ex instanceof TranslatableException) {
-                    final TranslatableException translatableException = (TranslatableException) ex;
-                    final TranslatableString translatableMessage = translatableException.getTranslatableMessage();
-                    final String translationContext = translatableException.getTranslationContext();
-                    if(translatableMessage != null && translationContext != null) {
-                        return translatableMessage.translate(translationService, translationContext);
-                    }
-                }
-                final Throwable rootCause = Throwables.getRootCause(throwable);
-                final String rootCauseMessage = rootCause.getMessage();
-                final String parsedMessage = messageParser.apply(rootCauseMessage);
-                return parsedMessage;
+        
+        return _Exceptions.streamCausalChain(ex)
+        .filter(predicate)
+        .map(throwable->{
+            if(logRecognizedExceptions) {
+                LOG.info("Recognized exception, stacktrace : ", throwable);
             }
-        }
-        return null;
+            if(ex instanceof TranslatableException) {
+                final TranslatableException translatableException = (TranslatableException) ex;
+                final TranslatableString translatableMessage = translatableException.getTranslatableMessage();
+                final String translationContext = translatableException.getTranslationContext();
+                if(translatableMessage != null && translationContext != null) {
+                    return translatableMessage.translate(translationService, translationContext);
+                }
+            }
+            final Throwable rootCause = _Exceptions.getRootCause(throwable);
+            final String rootCauseMessage = rootCause.getMessage();
+            final String parsedMessage = messageParser.apply(rootCauseMessage);
+            return parsedMessage;
+        })
+        .findFirst()
+        .orElse(null);
+        
     }
 
     @Programmatic

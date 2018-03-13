@@ -23,11 +23,16 @@
     <parent>
 		<groupId>org.apache.isis.core</groupId>
 		<artifactId>isis</artifactId>
-        <version>2.0.0-M1-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
 	<artifactId>isis-core-webserver</artifactId>
 	<name>Apache Isis WebServer</name>
+
+	<properties>
+		<jar-plugin.automaticModuleName>org.apache.isis.core.webserver</jar-plugin.automaticModuleName>
+		<git-plugin.propertiesDir>org/apache/isis/core/webserver</git-plugin.propertiesDir>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -42,11 +47,12 @@
 			<groupId>org.eclipse.jetty</groupId>
     		<artifactId>jetty-webapp</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.geronimo.specs</groupId>
-			<artifactId>geronimo-servlet_3.0_spec</artifactId>
-            <scope>provided</scope>
-		</dependency>
+<!-- provided by JEE standard API -->		
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.apache.geronimo.specs</groupId> -->
+<!-- 			<artifactId>geronimo-servlet_3.0_spec</artifactId> -->
+<!--             <scope>provided</scope> -->
+<!-- 		</dependency> -->
 	</dependencies>
 
 </project>

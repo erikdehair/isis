@@ -18,19 +18,23 @@
  */
 package org.apache.isis.core.metamodel.services.appfeat;
 
+import java.util.Comparator;
 import java.util.SortedSet;
-
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 
 import org.apache.isis.applib.IsisApplibModule;
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.annotation.SemanticsOf;
 import org.apache.isis.applib.services.appfeat.ApplicationFeatureRepository;
 import org.apache.isis.applib.services.appfeat.ApplicationMemberType;
+import org.apache.isis.applib.util.Equality;
+import org.apache.isis.applib.util.Hashing;
 import org.apache.isis.applib.util.ObjectContracts;
+import org.apache.isis.applib.util.ToString;
+
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 /**
  * Canonical application feature, identified by {@link ApplicationFeatureId},
@@ -49,24 +53,24 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
 
     public static abstract class ActionDomainEvent extends IsisApplibModule.ActionDomainEvent<ApplicationFeature> {}
 
-    //region > constants
+    // -- constants
 
     // using same value for all to neaten up rendering
     public static final int TYPICAL_LENGTH_PKG_FQN = 50;
     public static final int TYPICAL_LENGTH_CLS_NAME = 50;
     public static final int TYPICAL_LENGTH_MEMBER_NAME = 50;
-    //endregion
+    
 
-    //region > constructors
+    // -- constructors
     public ApplicationFeature() {
         this(null);
     }
     public ApplicationFeature(final ApplicationFeatureId featureId) {
         setFeatureId(featureId);
     }
-    //endregion
+    
 
-    //region > featureId
+    // -- featureId
     private ApplicationFeatureId featureId;
 
     @Programmatic
@@ -77,9 +81,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
     public void setFeatureId(final ApplicationFeatureId applicationFeatureId) {
         this.featureId = applicationFeatureId;
     }
-    //endregion
+    
 
-    //region > memberType
+    // -- memberType
     private ApplicationMemberType memberType;
 
     /**
@@ -93,9 +97,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
     public void setMemberType(final ApplicationMemberType memberType) {
         this.memberType = memberType;
     }
-    //endregion
+    
 
-    //region > returnTypeName (for: properties, collections, actions)
+    // -- returnTypeName (for: properties, collections, actions)
     private String returnTypeName;
 
     /**
@@ -109,9 +113,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
     public void setReturnTypeName(final String returnTypeName) {
         this.returnTypeName = returnTypeName;
     }
-    //endregion
+    
 
-    //region > contributed (for: properties, collections, actions)
+    // -- contributed (for: properties, collections, actions)
     private boolean contributed;
 
     @Programmatic
@@ -122,9 +126,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
     public void setContributed(final boolean contributed) {
         this.contributed = contributed;
     }
-    //endregion
+    
 
-    //region > derived (properties and collections)
+    // -- derived (properties and collections)
     private Boolean derived;
 
     /**
@@ -138,9 +142,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
     public void setDerived(final Boolean derived) {
         this.derived = derived;
     }
-    //endregion
+    
 
-    //region > propertyMaxLength (properties only)
+    // -- propertyMaxLength (properties only)
     private Integer propertyMaxLength;
 
     /**
@@ -154,9 +158,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
     public void setPropertyMaxLength(final Integer propertyMaxLength) {
         this.propertyMaxLength = propertyMaxLength;
     }
-    //endregion
+    
 
-    //region > propertyTypicalLength (properties only)
+    // -- propertyTypicalLength (properties only)
     private Integer propertyTypicalLength;
 
     /**
@@ -170,9 +174,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
     public void setPropertyTypicalLength(final Integer propertyTypicalLength) {
         this.propertyTypicalLength = propertyTypicalLength;
     }
-    //endregion
+    
 
-    //region > actionSemantics (actions only)
+    // -- actionSemantics (actions only)
     private SemanticsOf actionSemantics;
 
     /**
@@ -186,9 +190,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
     public void setActionSemantics(final SemanticsOf actionSemantics) {
         this.actionSemantics = actionSemantics;
     }
-    //endregion
+    
 
-    //region > packages: Contents
+    // -- packages: Contents
     private final SortedSet<ApplicationFeatureId> contents = Sets.newTreeSet();
 
     @Programmatic
@@ -203,9 +207,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
         ApplicationFeatureType.ensurePackageOrClass(contentId);
         this.contents.add(contentId);
     }
-    //endregion
+    
 
-    //region > classes: Properties, Collections, Actions
+    // -- classes: Properties, Collections, Actions
     private final SortedSet<ApplicationFeatureId> properties = Sets.newTreeSet();
 
     @Programmatic
@@ -251,9 +255,9 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
                 return actions;
         }
     }
-    //endregion
+    
 
-    //region > Functions
+    // -- Functions
 
     public static class Functions {
         private Functions(){}
@@ -285,32 +289,42 @@ public class ApplicationFeature implements Comparable<ApplicationFeature> {
         }
     }
 
-    //endregion
+    
 
-    //region > equals, hashCode, compareTo, toString
+    // -- equals, hashCode, compareTo, toString
 
-    private final static String propertyNames = "featureId";
-
+    private final static Comparator<ApplicationFeature> comparator = 
+    		Comparator.comparing(ApplicationFeature::getFeatureId);
+    
+    private final static Equality<ApplicationFeature> equality = 
+    		ObjectContracts.checkEquals(ApplicationFeature::getFeatureId);
+    
+    private final static Hashing<ApplicationFeature> hashing = 
+    		ObjectContracts.hashing(ApplicationFeature::getFeatureId);
+    
+    private final static ToString<ApplicationFeature> toString = 
+    		ObjectContracts.toString("featureId", ApplicationFeature::getFeatureId);
+    
     @Override
     public int compareTo(final ApplicationFeature other) {
-        return ObjectContracts.compare(this, other, propertyNames);
+    	return comparator.compare(this, other);
     }
 
     @Override
     public boolean equals(final Object obj) {
-        return ObjectContracts.equals(this, obj, propertyNames);
+    	return equality.equals(this, obj);
     }
 
     @Override
     public int hashCode() {
-        return ObjectContracts.hashCode(this, propertyNames);
+        return hashing.hashCode(this);
     }
 
     @Override
     public String toString() {
-        return ObjectContracts.toString(this, propertyNames);
+        return toString.toString(this);
     }
 
-    //endregion
+    
 
 }

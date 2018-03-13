@@ -87,12 +87,12 @@ public final class OidMarshaller {
 
     private OidMarshaller(){}
 
-    //region > public constants
+    // -- public constants
     public static final String VIEWMODEL_INDICATOR =
             Bookmark.ObjectState.VIEW_MODEL.getCode(); // "*"
-    //endregion
+    
 
-    //region > private constants
+    // -- private constants
     private static final String TRANSIENT_INDICATOR =
             Bookmark.ObjectState.TRANSIENT.getCode() ; // "!"
 
@@ -126,9 +126,9 @@ public final class OidMarshaller {
     		 		     SEPARATOR + DIGITS_GROUP + "?" +  // optional version UTC time
     		 		 ")?" + 
             		 "$");
-    //endregion
+    
 
-    //region > join, split
+    // -- join, split
     @Programmatic
     public String joinAsOid(String domainType, String instanceId) {
 	    return domainType + SEPARATOR + instanceId;
@@ -140,9 +140,9 @@ public final class OidMarshaller {
         return indexOfSeperator > 0? oidStr.substring(indexOfSeperator+1): null;
     }
 
-    //endregion
+    
 
-    //region > unmarshal
+    // -- unmarshal
 
     @Programmatic
     @SuppressWarnings("unchecked")
@@ -240,9 +240,9 @@ public final class OidMarshaller {
     }
 
 
-    //endregion
+    
 
-    //region > marshal
+    // -- marshal
     @Programmatic
     public final String marshal(RootOid rootOid) {
         return marshalNoVersion(rootOid) + marshal(rootOid.getVersion());
@@ -277,6 +277,6 @@ public final class OidMarshaller {
     private static String nullToEmpty(Object obj) {
         return obj == null? "": "" + obj;
     }
-    //endregion
+    
 
 }

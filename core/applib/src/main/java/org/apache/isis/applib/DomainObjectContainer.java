@@ -33,12 +33,13 @@ import org.apache.isis.applib.services.xactn.TransactionService;
  * domain objects, and which provides functionality to those domain objects
  * in order that they might interact or have knowledge of with the "outside world".
  *
- * @deprecated - use {@link MessageService}, {@link TitleService}, {@link RepositoryService}, {@link FactoryService}, {@link UserService}, {@link TransactionService}.
+ * @deprecated - use {@link MessageService}, {@link TitleService}, {@link RepositoryService}, 
+ * {@link FactoryService}, {@link UserService}, {@link TransactionService}.
  */
 @Deprecated
 public interface DomainObjectContainer {
 
-    //region > resolve, objectChanged (DEPRECATED)
+    // -- resolve, objectChanged (DEPRECATED)
 
     /**
      * Re-initialises the fields of an object, using the
@@ -85,9 +86,9 @@ public interface DomainObjectContainer {
     void objectChanged(Object domainObject);
 
 
-    //endregion
+    
 
-    //region > commit (DEPRECATED)
+    // -- commit (DEPRECATED)
 
     /**
      * Commit all changes to the object store.
@@ -103,9 +104,9 @@ public interface DomainObjectContainer {
     @Deprecated
     void commit();
 
-    //endregion
+    
 
-    //region > newViewModelInstance
+    // -- newViewModelInstance
 
 
     /**
@@ -115,10 +116,10 @@ public interface DomainObjectContainer {
     @Programmatic
     <T> T newViewModelInstance(final Class<T> ofType, final String memento);
 
-    //endregion
+    
 
 
-    //region > isValid, validate
+    // -- isValid, validate
 
     /**
      * Whether the object is in a valid state, that is that none of the
@@ -148,9 +149,9 @@ public interface DomainObjectContainer {
     @Programmatic
     String validate(Object domainObject);
 
-    //endregion
+    
 
-    //region > isViewModel
+    // -- isViewModel
 
     /**
      * @deprecated - use {@link org.apache.isis.applib.services.metamodel.MetaModelService#sortOf(Class, MetaModelService.Mode)} instead.
@@ -159,9 +160,9 @@ public interface DomainObjectContainer {
     @Programmatic
     boolean isViewModel(Object domainObject);
 
-    //endregion
+    
 
-    //region > persist, remove (DEPRECATED)
+    // -- persist, remove (DEPRECATED)
 
     /**
      * @deprecated - use {@link org.apache.isis.applib.services.repository.RepositoryService#persist(Object)} instead. Please note that {@link org.apache.isis.applib.services.repository.RepositoryService#persist(Object)} will not throw an exception if the Domain Object is already persistent, so the implementation will be the same as that of {@link org.apache.isis.applib.services.repository.RepositoryService#persist(Object)}instead.
@@ -177,7 +178,7 @@ public interface DomainObjectContainer {
     @Programmatic
     void remove(Object persistentDomainObject);
 
-    //endregion
+    
 
 
 }

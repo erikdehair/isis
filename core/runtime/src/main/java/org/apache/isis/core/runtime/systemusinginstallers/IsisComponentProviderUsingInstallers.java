@@ -46,7 +46,7 @@ import org.apache.isis.core.runtime.system.SystemConstants;
 
 public class IsisComponentProviderUsingInstallers extends IsisComponentProvider {
 
-    //region > constructors
+    // -- constructors
 
     public IsisComponentProviderUsingInstallers(
             final AppManifest appManifest,
@@ -73,9 +73,9 @@ public class IsisComponentProviderUsingInstallers extends IsisComponentProvider 
         super(appManifest, configuration, authenticationManager, authorizationManager);
     }
 
-    //endregion
+    
 
-    //region > constructor helpers (factories)
+    // -- constructor helpers (factories)
 
     private static AuthenticationManager lookupAuthenticationManager(
             final AppManifest appManifest, final InstallerLookup installerLookup,
@@ -108,7 +108,7 @@ public class IsisComponentProviderUsingInstallers extends IsisComponentProvider 
     }
 
 
-    //endregion
+    
 
     /**
      * Looks up authorization and authentication implementations.
@@ -130,7 +130,7 @@ public class IsisComponentProviderUsingInstallers extends IsisComponentProvider 
 
         private static final Logger LOG = LoggerFactory.getLogger(InstallerLookup.class);
 
-        //region > constructor, fields
+        // -- constructor, fields
 
         private final IsisConfiguration isisConfiguration;
         private final List<Installer> installerList = Lists.newArrayList();
@@ -151,29 +151,29 @@ public class IsisComponentProviderUsingInstallers extends IsisComponentProvider 
                 }
                 try {
                     final Installer object = (Installer) InstanceUtil.createInstance(className, isisConfiguration);
-                    LOG.debug("created component installer: " + object.getName() + " - " + className);
+                    LOG.debug("created component installer: {} - {}", object.getName(), className);
                     installerList.add(object);
                 } catch (final UnavailableClassException e) {
-                    LOG.info("component installer not found; it will not be available: " + className);
+                    LOG.info("component installer not found; it will not be available: {}", className);
                 } catch (final InstanceCreationClassException e) {
-                    LOG.info("instance creation exception: " + e.getMessage());
+                    LOG.info("instance creation exception: {}", e.getMessage());
                 } catch (final InstanceCreationException e) {
                     try {
                         final Installer object = (Installer) InstanceUtil.createInstance(className);
-                        LOG.debug("created component installer: " + object.getName() + " - " + className);
+                        LOG.debug("created component installer: {} - {}", object.getName(), className);
                         installerList.add(object);
                     } catch (final UnavailableClassException e2) {
-                        LOG.info("component installer not found; it will not be available: " + className);
+                        LOG.info("component installer not found; it will not be available: {}", className);
                     } catch (final InstanceCreationClassException e2) {
-                        LOG.info("instance creation exception: " + e2.getMessage());
+                        LOG.info("instance creation exception: {}", e2.getMessage());
                     }
                 }
             }
         }
 
-        //endregion
+        
 
-        //region > framework
+        // -- framework
 
         public AuthenticationManagerInstaller authenticationManagerInstaller(final String requested) {
 
@@ -191,9 +191,9 @@ public class IsisComponentProviderUsingInstallers extends IsisComponentProvider 
                     SystemConstants.AUTHORIZATION_DEFAULT);
         }
 
-        //endregion
+        
 
-        //region > helpers
+        // -- helpers
         @SuppressWarnings("unchecked")
         private <T extends Installer> T getInstaller(final Class<T> cls, final String implName) {
             Assert.assertNotNull("No name specified", implName);
@@ -233,7 +233,7 @@ public class IsisComponentProviderUsingInstallers extends IsisComponentProvider 
             return installer;
         }
 
-        //endregion
+        
 
     }
 }

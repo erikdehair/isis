@@ -85,7 +85,7 @@ public class ResourceContext implements RendererContext6 {
 
     private JsonRepresentation readQueryStringAsMap;
 
-    //region > constructor and init
+    // -- constructor and init
 
     public ResourceContext(
             final RepresentationType representationType,
@@ -148,7 +148,7 @@ public class ResourceContext implements RendererContext6 {
         }
     }
 
-    //endregion
+    
 
     
 
@@ -318,16 +318,16 @@ public class ResourceContext implements RendererContext6 {
         return intent;
     }
 
-    //region > canEagerlyRender
+    // -- canEagerlyRender
     private Set<Oid> rendered = Sets.newHashSet();
     @Override
     public boolean canEagerlyRender(ObjectAdapter objectAdapter) {
         final Oid oid = objectAdapter.getOid();
         return rendered.add(oid);
     }
-    //endregion
+    
 
-    //region > configuration settings
+    // -- configuration settings
 
     private static final boolean HONOR_UI_HINTS_DEFAULT = false;
 
@@ -379,7 +379,7 @@ public class ResourceContext implements RendererContext6 {
     public boolean suppressMemberDisabledReason() {
         return getConfiguration().getBoolean("isis.viewer.restfulobjects.suppressMemberDisabledReason", SUPPRESS_MEMBER_DISABLED_REASON_DEFAULT);
     }
-    //endregion
+    
 
 
     @Override

@@ -23,14 +23,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicates;
+import java.util.function.Predicate;
 
 import org.junit.Test;
 
 public class ExceptionRecognizerGeneralTest {
 
-    private ExceptionRecognizerAbstract ersGeneral;
+    private ExceptionRecognizer ersGeneral;
 
     static class FooException extends Exception {
         private static final long serialVersionUID = 1L;
@@ -39,29 +38,24 @@ public class ExceptionRecognizerGeneralTest {
         }
     }
     
-    private Function<String,String> prepend = new Function<String, String>() {
-        @Override
-        public String apply(String input) {
-            return "pre: " + input;
-        }
-    };
-    
+    private final static Predicate<Throwable> ALWAYS_TRUE = __->true;
+    private final static Predicate<Throwable> ALWAYS_FALSE = __->false;
     
     @Test
     public void whenRecognized() {
-        ersGeneral = new ExceptionRecognizerAbstract(Predicates.<Throwable>alwaysTrue()){};
+        ersGeneral = new ExceptionRecognizerAbstract(ALWAYS_TRUE){};
         assertThat(ersGeneral.recognize(new FooException()), is("foo"));
     }
 
     @Test
     public void whenDoesNotRecognize() {
-        ersGeneral = new ExceptionRecognizerAbstract(Predicates.<Throwable>alwaysFalse()){};
+        ersGeneral = new ExceptionRecognizerAbstract(ALWAYS_FALSE){};
         assertThat(ersGeneral.recognize(new FooException()), is(nullValue()));
     }
 
     @Test
     public void whenRecognizedWithMessageParser() {
-        ersGeneral = new ExceptionRecognizerAbstract(Predicates.<Throwable>alwaysTrue(), prepend){};
+        ersGeneral = new ExceptionRecognizerAbstract(ALWAYS_TRUE, s->"pre: " + s){};
         assertThat(ersGeneral.recognize(new FooException()), is("pre: foo"));
     }
 

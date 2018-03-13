@@ -20,8 +20,7 @@
 package org.apache.isis.applib.services.repository;
 
 import java.util.List;
-
-import com.google.common.base.Predicate;
+import java.util.function.Predicate;
 
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.query.Query;
@@ -146,7 +145,7 @@ public interface RepositoryService {
      */
     @Programmatic
     <T> List<T> allMatches(final Class<T> ofType, final Predicate<? super T> predicate, long... range);
-
+    
     /**
      * Returns all the instances that match the given {@link Query}.
      *
@@ -165,38 +164,6 @@ public interface RepositoryService {
     <T> List<T> allMatches(Query<T> query);
 
     /**
-     * Returns the first instance of the specified type (including subtypes)
-     * that matches the supplied {@link Predicate}, or <tt>null</tt> if none.
-     *
-     * <p>
-     * This method is useful during exploration/prototyping, but - because the filtering is performed client-side -
-     * this method is only really suitable for initial development/prototyping, or for classes with very few
-     * instances.  Use {@link #firstMatch(Query)} for production code.
-     * </p>
-     *
-     * @deprecated - use {@link #uniqueMatch(Class, Predicate)} or {@link #allMatches(Class, Predicate, long...)}
-     */
-    @Deprecated
-    @Programmatic
-    <T> T firstMatch(final Class<T> ofType, final Predicate<T> predicate);
-
-    /**
-     * Returns the first instance that matches the supplied query, or <tt>null</tt> if none.
-     *
-     * <p>
-     *     This method is the recommended way of querying for an instance when one or more may match.  See also
-     *     {@link #uniqueMatch(Query)}.
-     * </p>
-     *
-     * @see #uniqueMatch(Query)
-     *
-     * @deprecated - use {@link #uniqueMatch(Query)} or {@link #allMatches(Query)}.
-     */
-    @Deprecated
-    @Programmatic
-    <T> T firstMatch(Query<T> query);
-
-    /**
      * Find the only instance of the specified type (including subtypes) that
      * has the specified title.
      *
@@ -212,7 +179,7 @@ public interface RepositoryService {
      */
     @Programmatic
     <T> T uniqueMatch(final Class<T> ofType, final Predicate<T> predicate);
-
+    
     /**
      * Find the only instance that matches the provided query.
      *

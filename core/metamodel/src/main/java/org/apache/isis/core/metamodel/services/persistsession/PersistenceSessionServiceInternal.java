@@ -23,6 +23,7 @@ import org.apache.isis.applib.query.Query;
 import org.apache.isis.applib.services.bookmark.Bookmark;
 import org.apache.isis.applib.services.bookmark.BookmarkService;
 import org.apache.isis.applib.services.xactn.Transaction;
+import org.apache.isis.applib.services.command.Command;
 import org.apache.isis.applib.services.xactn.TransactionState;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.adapter.mgr.AdapterManager;
@@ -31,7 +32,7 @@ import org.apache.isis.core.runtime.system.transaction.TransactionalClosure;
 
 public interface PersistenceSessionServiceInternal extends AdapterManager {
 
-    //region > instantiate
+    // -- instantiate
 
     /**
      * Provided by the <tt>PersistenceSession</tt> when used by framework.
@@ -45,9 +46,9 @@ public interface PersistenceSessionServiceInternal extends AdapterManager {
     @Programmatic
     ObjectAdapter createViewModelInstance(ObjectSpecification spec, String memento);
 
-    //endregion
+    
 
-    //region > retrieve
+    // -- retrieve
 
     /**
      * Provided by <tt>PersistenceSession</tt> when used by framework.
@@ -86,12 +87,15 @@ public interface PersistenceSessionServiceInternal extends AdapterManager {
     @Programmatic
     Bookmark bookmarkFor(Class<?> cls, String identifier);
 
-    //endregion
+    
 
-    //region > beginTran, flush, commit, currentTransaction
+    // -- beginTran, flush, commit, currentTransaction
 
     @Programmatic
     void beginTran();
+
+    @Programmatic
+    void beginTran(final Command commandIfAny);
 
     /**
      * Provided by <tt>TransactionManager</tt> when used by framework.
@@ -121,9 +125,9 @@ public interface PersistenceSessionServiceInternal extends AdapterManager {
     @Programmatic
     TransactionState getTransactionState();
 
-    //endregion
+    
 
-    //region > makePersistent, remove
+    // -- makePersistent, remove
 
     /**
      * Provided by the <tt>PersistenceSession</tt> when used by framework.
@@ -145,9 +149,9 @@ public interface PersistenceSessionServiceInternal extends AdapterManager {
     @Programmatic
     void remove(ObjectAdapter adapter);
 
-    //endregion
+    
 
-    //region > allMatchingQuery, firstMatchingQuery
+    // -- allMatchingQuery, firstMatchingQuery
     /**
      * Provided by <tt>PersistenceSession</tt> when used by framework.
      *
@@ -170,6 +174,6 @@ public interface PersistenceSessionServiceInternal extends AdapterManager {
     void executeWithinTransaction(TransactionalClosure transactionalClosure);
 
 
-    //endregion
+    
 
 }

@@ -41,7 +41,7 @@ public class OidAdapterHashMap implements Iterable<Oid>, SessionScopedComponent 
 
     private final Map<Oid, ObjectAdapter> adapterByOidMap = Maps.newHashMapWithExpectedSize(DEFAULT_OID_ADAPTER_MAP_SIZE);
 
-    //region > open, close
+    // -- open, close
 
     public void open() {
         // nothing to do
@@ -54,9 +54,9 @@ public class OidAdapterHashMap implements Iterable<Oid>, SessionScopedComponent 
         adapterByOidMap.clear();
     }
 
-    //endregion
+    
 
-    //region > add, remove
+    // -- add, remove
     /**
      * Add an adapter for a given oid
      */
@@ -69,7 +69,7 @@ public class OidAdapterHashMap implements Iterable<Oid>, SessionScopedComponent 
             // the pojo,
             // which for Hibernate PersistentCollections would trigger a
             // resolve.
-            LOG.debug("add oid: " + oid + " ; oid.hashCode: + #" + Long.toHexString(oid.hashCode()) + " ; adapter.hashCode(): #" + Long.toHexString(adapter.hashCode()));
+            LOG.debug("add oid: {} ; oid.hashCode: + #{} ; adapter.hashCode(): #{}", oid, Long.toHexString(oid.hashCode()), Long.toHexString(adapter.hashCode()));
         }
     }
 
@@ -79,15 +79,13 @@ public class OidAdapterHashMap implements Iterable<Oid>, SessionScopedComponent 
      * @return <tt>true</tt> if an adapter was removed.
      */
     public boolean remove(final Oid oid) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("remove oid: " + oid);
-        }
+        LOG.debug("remove oid: {}", oid);
         return adapterByOidMap.remove(oid) != null;
     }
 
-    //endregion
+    
 
-    //region > getAdapter, iterator
+    // -- getAdapter, iterator
     /**
      * Get the adapter identified by the specified OID.
      */
@@ -100,7 +98,7 @@ public class OidAdapterHashMap implements Iterable<Oid>, SessionScopedComponent 
         return adapterByOidMap.keySet().iterator();
     }
 
-    //endregion
+    
 
 
 }

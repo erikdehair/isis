@@ -74,7 +74,7 @@ public class IsisSessionFactory
     @SuppressWarnings("unused")
     private final static Logger LOG = LoggerFactory.getLogger(IsisSessionFactory.class);
 
-    //region > constructor, fields, accessors
+    // -- constructor, fields, accessors
 
     private final DeploymentCategory deploymentCategory;
     private final IsisConfiguration configuration;
@@ -106,9 +106,9 @@ public class IsisSessionFactory
         return appManifest;
     }
 
-    //endregion
+    
 
-    //region > constructServices, destroyServicesAndShutdown
+    // -- constructServices, destroyServicesAndShutdown
 
     private ServiceInitializer serviceInitializer;
 
@@ -230,9 +230,9 @@ public class IsisSessionFactory
         specificationLoader.shutdown();
     }
 
-    //endregion
+    
 
-    //region > logonFixture
+    // -- logonFixture
 
     private LogonFixture logonFixture;
 
@@ -250,9 +250,9 @@ public class IsisSessionFactory
         return logonFixture;
     }
 
-    //endregion
+    
 
-    //region > openSession, closeSession, currentSession, inSession
+    // -- openSession, closeSession, currentSession, inSession
     private final ThreadLocal<IsisSession> currentSession = new ThreadLocal<>();
 
     /**
@@ -373,9 +373,9 @@ public class IsisSessionFactory
         }
     }
 
-    //endregion
+    
 
-    //region > component accessors
+    // -- component accessors
     /**
      * The {@link ApplicationScopedComponent application-scoped}
      * {@link DeploymentCategory}.
@@ -454,6 +454,6 @@ public class IsisSessionFactory
     }
 
 
-    //endregion
+    
 
 }

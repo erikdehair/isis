@@ -15,11 +15,16 @@
     <parent>
         <groupId>org.apache.isis.core</groupId>
         <artifactId>isis</artifactId>
-        <version>2.0.0-M1-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>isis-core-specsupport</artifactId>
     <name>Apache Isis Spec Support</name>
+
+    <properties>
+        <jar-plugin.automaticModuleName>org.apache.isis.core.specsupport</jar-plugin.automaticModuleName>
+        <git-plugin.propertiesDir>org/apache/isis/core/specsupport</git-plugin.propertiesDir>
+    </properties>
 
     <dependencies>
         <dependency>

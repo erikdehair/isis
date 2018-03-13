@@ -24,12 +24,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 
 import org.apache.isis.applib.AbstractService;
 import org.apache.isis.applib.DomainObjectContainer;
@@ -42,6 +40,9 @@ import org.apache.isis.applib.annotation.Parameter;
 import org.apache.isis.applib.annotation.ParameterLayout;
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.annotation.RestrictTo;
+import org.apache.isis.applib.internal.base._NullSafe;
+import org.apache.isis.applib.internal.collections._Lists;
+import org.apache.isis.applib.internal.exceptions._Exceptions;
 import org.apache.isis.applib.services.bookmark.BookmarkService;
 import org.apache.isis.applib.services.classdiscovery.ClassDiscoveryService;
 import org.apache.isis.applib.services.fixturespec.FixtureScriptsDefault;
@@ -52,7 +53,6 @@ import org.apache.isis.applib.services.registry.ServiceRegistry;
 import org.apache.isis.applib.services.repository.RepositoryService;
 import org.apache.isis.applib.services.title.TitleService;
 import org.apache.isis.applib.services.xactn.TransactionService;
-import org.apache.isis.applib.util.ObjectContracts;
 
 
 /**
@@ -62,7 +62,7 @@ import org.apache.isis.applib.util.ObjectContracts;
  */
 public abstract class FixtureScripts extends AbstractService {
 
-    //region > Specification, nonPersistedObjectsStrategy, multipleExecutionStrategy enums
+    // -- Specification, nonPersistedObjectsStrategy, multipleExecutionStrategy enums
 
     /**
      * How to handle objects that are to be
@@ -155,9 +155,7 @@ public abstract class FixtureScripts extends AbstractService {
         }
     }
 
-    //endregion
-
-    //region > constructors
+    // -- constructors
 
     /**
      * @param specification - specifies how the service will find instances and execute them.
@@ -166,9 +164,7 @@ public abstract class FixtureScripts extends AbstractService {
         this.specification = specification;
     }
 
-    //endregion
-
-    //region > packagePrefix, nonPersistedObjectsStrategy, multipleExecutionStrategy
+    // -- packagePrefix, nonPersistedObjectsStrategy, multipleExecutionStrategy
 
     private FixtureScriptsSpecification specification;
 
@@ -208,17 +204,14 @@ public abstract class FixtureScripts extends AbstractService {
         return specification.getMultipleExecutionStrategy();
     }
 
-    //endregion
-
-    //region > init
+    // -- init
+    
     @Programmatic
     @PostConstruct
     public void init() {
     }
 
-    //endregion
-
-    //region > fixtureScriptList (lazily built)
+    // -- fixtureScriptList (lazily built)
 
     private List<FixtureScript> fixtureScriptList;
     @Programmatic
@@ -230,7 +223,7 @@ public abstract class FixtureScripts extends AbstractService {
     }
 
     private List<FixtureScript> findAndInstantiateFixtureScripts() {
-        final List<FixtureScript> fixtureScripts = Lists.newArrayList();
+        final List<FixtureScript> fixtureScripts = _Lists.newArrayList();
         final Set<Class<? extends FixtureScript>> fixtureScriptSubtypes =
                 findFixtureScriptSubTypesInPackage();
         for (final Class<? extends FixtureScript> fixtureScriptCls : fixtureScriptSubtypes) {
@@ -247,7 +240,10 @@ public abstract class FixtureScripts extends AbstractService {
         Collections.sort(fixtureScripts, new Comparator<FixtureScript>() {
             @Override
             public int compare(final FixtureScript o1, final FixtureScript o2) {
-                return ObjectContracts.compare(o1, o2, "friendlyName","qualifiedName");
+            	return Comparator
+            				.comparing(FixtureScript::getFriendlyName)
+            				.thenComparing(FixtureScript::getQualifiedName)
+            				.compare(o1, o2);
             }
         });
         return fixtureScripts;
@@ -276,9 +272,7 @@ public abstract class FixtureScripts extends AbstractService {
     }
 
 
-    //endregion
-
-    //region > fixtureTracing (thread-local)
+    // -- fixtureTracing (thread-local)
 
     private final ThreadLocal<PrintStream> fixtureTracing = new ThreadLocal<PrintStream>(){{
         set(System.out);
@@ -294,9 +288,7 @@ public abstract class FixtureScripts extends AbstractService {
         this.fixtureTracing.set(fixtureTracing);
     }
 
-    //endregion
-
-    //region > runFixtureScript (prototype action)
+    // -- runFixtureScript (prototype action)
 
     /**
      * To make this action usable in the UI, override either {@link #choices0RunFixtureScript()} or 
@@ -330,17 +322,14 @@ public abstract class FixtureScripts extends AbstractService {
         return getFixtureScriptList();
     }
     protected List<FixtureScript> autoComplete0RunFixtureScript(final @MinLength(1) String arg) {
-        return Lists.newArrayList(
-                Collections2.filter(getFixtureScriptList(), new Predicate<FixtureScript>() {
-                    @Override
-                    public boolean apply(final FixtureScript input) {
-                        return contains(input.getFriendlyName()) || contains(input.getLocalName());
-                    }
-
-                    private boolean contains(final String str) {
-                        return str != null && str.contains(arg);
-                    }
-                }));
+    	
+    	final Predicate<String> contains = str -> str != null && str.contains(arg);
+    	
+    	return _NullSafe.stream(getFixtureScriptList())
+	    	.filter(script->{
+	    		return contains.test(script.getFriendlyName()) || contains.test(script.getLocalName());
+	    	})
+	    	.collect(Collectors.toList());
     }
     public String disableRunFixtureScript() {
         return getFixtureScriptList().isEmpty()? "No fixture scripts found under package '" + getPackagePrefix() + "'": null;
@@ -353,10 +342,7 @@ public abstract class FixtureScripts extends AbstractService {
         return fixtureScript.run(parameters);
     }
 
-
-    //endregion
-
-    //region > programmatic API
+    // -- programmatic API
 
     @Programmatic
     public void runFixtureScript(final FixtureScript... fixtureScriptList) {
@@ -409,9 +395,7 @@ public abstract class FixtureScripts extends AbstractService {
         return FixtureScript.ExecutionContext.create(executionParameters, this);
     }
 
-    //endregion
-
-    //region > hooks
+    // -- hooks
 
     /**
      * Optional hook.
@@ -427,10 +411,7 @@ public abstract class FixtureScripts extends AbstractService {
     }
 
 
-
-    //endregion
-
-    //region > memento support for FixtureScript
+    // -- memento support for FixtureScript
 
 
     String mementoFor(final FixtureScript fs) {
@@ -443,9 +424,7 @@ public abstract class FixtureScripts extends AbstractService {
         fs.setParentPath(memento.get("path", String.class));
     }
 
-    //endregion
-
-    //region > helpers (package level)
+    // -- helpers (package level)
 
     @Programmatic
     FixtureResult newFixtureResult(final FixtureScript script, final String subkey, final Object object, final boolean firstTime) {
@@ -461,6 +440,8 @@ public abstract class FixtureScripts extends AbstractService {
                     break;
                 case IGNORE:
                     return null;
+                default:
+                	throw _Exceptions.unmatchedCase(getNonPersistedObjectsStrategy());
             }
         }
         final FixtureResult fixtureResult = new FixtureResult();
@@ -477,9 +458,7 @@ public abstract class FixtureScripts extends AbstractService {
         return object != null? titleService.titleOf(object): "(null)";
     }
 
-    //endregion
-
-    //region > injected services
+    // -- injected services
 
     @javax.inject.Inject
     DomainObjectContainer container;
@@ -507,6 +486,5 @@ public abstract class FixtureScripts extends AbstractService {
 
     @javax.inject.Inject
     ExecutionParametersService executionParametersService;
-    //endregion
 
 }

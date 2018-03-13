@@ -25,6 +25,7 @@ import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.isis.applib.annotation.DomainService;
 import org.apache.isis.applib.annotation.NatureOfService;
 import org.apache.isis.applib.annotation.Programmatic;
+import org.apache.isis.applib.internal._Constants;
 import org.apache.isis.applib.layout.grid.Grid;
 import org.apache.isis.applib.services.grid.GridLoaderService;
 import org.apache.isis.applib.services.grid.GridSystemService;
@@ -59,20 +61,22 @@ public class GridLoaderServiceDefault implements GridLoaderService {
     // cache (used only in prototyping mode)
     private final Map<String, Grid> gridByXml = Maps.newHashMap();
 
-    private List<Class<? extends Grid>> pageImplementations;
-
-
+    private JAXBContext jaxbContext;
 
     @PostConstruct
     public void init(){
-        pageImplementations = FluentIterable.from(gridSystemServices)
-                .transform(new Function<GridSystemService, Class<? extends Grid>>() {
-                    @Override
-                    public Class<? extends Grid> apply(final GridSystemService gridSystemService) {
-                        return gridSystemService.gridImplementation();
-                    }
-                })
-                .toList();
+        final List<Class<? extends Grid>> pageImplementations =
+                FluentIterable.from(gridSystemServices)
+                    .transform(
+                            (Function<GridSystemService, Class<? extends Grid>>) gss -> gss.gridImplementation())
+                    .toList();
+
+        final Class[] clazz = pageImplementations.toArray(_Constants.emptyClasses);
+        try {
+            jaxbContext = JAXBContext.newInstance(clazz);
+        } catch (JAXBException e) {
+            // leave as null
+        }
     }
 
     @Override
@@ -96,8 +100,7 @@ public class GridLoaderServiceDefault implements GridLoaderService {
     @Override
     @Programmatic
     public boolean existsFor(final Class<?> domainClass) {
-        final URL resource = Resources.getResource(domainClass, resourceNameFor(domainClass));
-        return resource != null;
+        return resourceNameFor(domainClass) != null;
     }
 
     @Override
@@ -126,11 +129,14 @@ public class GridLoaderServiceDefault implements GridLoaderService {
             }
         }
 
-        try {
-            // all known implementations of Page
-            final JAXBContext context = JAXBContext.newInstance(pageImplementations.toArray(new Class[0]));
 
-            final Grid grid = (Grid) jaxbService.fromXml(context, xml);
+        try {
+            if(jaxbContext == null) {
+                // shouldn't occur, indicates that initialization failed to locate any GridSystemService implementations.
+                return null;
+            }
+            
+            final Grid grid = (Grid) jaxbService.fromXml(jaxbContext, xml);
             grid.setDomainClass(domainClass);
             if(supportsReloading()) {
                 gridByXml.put(xml, grid);
@@ -158,17 +164,16 @@ public class GridLoaderServiceDefault implements GridLoaderService {
 
     private String loadXml(final Class<?> domainClass) {
         final String resourceName = resourceNameFor(domainClass);
+        if(resourceName == null) {
+            LOG.debug("Failed to locate layout file for '{}'", domainClass.getName());
+            return null;
+        }
         try {
             return resourceContentOf(domainClass, resourceName);
-        } catch (IOException | IllegalArgumentException ex) {
-
-            if(LOG.isDebugEnabled()) {
-                final String message = String .format(
-                        "Failed to locate file %s (relative to %s.class); ex: %s)",
-                        resourceName, domainClass.getName(), ex.getMessage());
-
-                LOG.debug(message);
-            }
+        } catch (IOException ex) {
+            LOG.debug(
+                    "Failed to locate file {} (relative to {}.class)",
+                    resourceName, domainClass.getName(), ex);
             return null;
         }
     }
@@ -178,13 +183,50 @@ public class GridLoaderServiceDefault implements GridLoaderService {
         return Resources.toString(url, Charset.defaultCharset());
     }
 
-    private String resourceNameFor(final Class<?> domainClass) {
-        return domainClass.getSimpleName() + ".layout.xml";
+    String resourceNameFor(final Class<?> domainClass) {
+        for (final Type type : Type.values()) {
+            final String candidateResourceName = resourceNameFor(domainClass, type);
+            try {
+                final URL resource = Resources.getResource(domainClass, candidateResourceName);
+                if (resource != null) {
+                    return candidateResourceName;
+                }
+            } catch(IllegalArgumentException ex) {
+                // continue
+            }
+        }
+        return null;
+    }
+
+    enum Type {
+        DEFAULT {
+            @Override
+            protected String suffix() {
+                return ".layout.xml";
+            }
+        },
+        FALLBACK {
+            @Override
+            protected String suffix() {
+                return ".layout.fallback.xml";
+            }
+        };
+
+        private String resourceNameFor(final Class<?> domainClass) {
+            return domainClass.getSimpleName() + suffix();
+        }
+
+        protected abstract String suffix();
+    }
+
+    private String resourceNameFor(
+            final Class<?> domainClass,
+            final Type type) {
+        return type.resourceNameFor(domainClass);
     }
 
 
-
-    //region > injected dependencies
+    // -- injected dependencies
 
     @javax.inject.Inject
     DeploymentCategoryProvider deploymentCategoryProvider;
@@ -197,7 +239,7 @@ public class GridLoaderServiceDefault implements GridLoaderService {
 
     @javax.inject.Inject
     List<GridSystemService> gridSystemServices;
-    //endregion
+    
 
 
 }

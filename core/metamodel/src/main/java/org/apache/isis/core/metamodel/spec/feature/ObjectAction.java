@@ -20,9 +20,12 @@ package org.apache.isis.core.metamodel.spec.feature;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 
 import org.apache.isis.applib.Identifier;
@@ -31,13 +34,15 @@ import org.apache.isis.applib.annotation.InvokeOn;
 import org.apache.isis.applib.annotation.PromptStyle;
 import org.apache.isis.applib.annotation.SemanticsOf;
 import org.apache.isis.applib.annotation.Where;
+import org.apache.isis.applib.internal.base._NullSafe;
+import org.apache.isis.applib.internal.base._Strings;
 import org.apache.isis.applib.value.Blob;
 import org.apache.isis.applib.value.Clob;
-import org.apache.isis.core.commons.lang.StringFunctions;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.consent.Consent;
 import org.apache.isis.core.metamodel.consent.InteractionInitiatedBy;
 import org.apache.isis.core.metamodel.deployment.DeploymentCategory;
+import org.apache.isis.core.metamodel.facets.actions.action.associateWith.AssociatedWithFacet;
 import org.apache.isis.core.metamodel.facets.actions.action.invocation.ActionInvocationFacet;
 import org.apache.isis.core.metamodel.facets.actions.bulk.BulkFacet;
 import org.apache.isis.core.metamodel.facets.actions.position.ActionPositionFacet;
@@ -54,7 +59,7 @@ import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 
 public interface ObjectAction extends ObjectMember {
 
-    //region > getSemantics, getOnType
+    // -- getSemantics, getOnType
     /**
      * The semantics of this action.
      */
@@ -65,17 +70,17 @@ public interface ObjectAction extends ObjectMember {
      * invoked upon.
      */
     ObjectSpecification getOnType();
-    //endregion
+    
 
-    //region > getType, isPrototype
+    // -- getType, isPrototype
 
     ActionType getType();
 
     boolean isPrototype();
 
-    //endregion
+    
 
-    //region > ReturnType
+    // -- ReturnType
     /**
      * Returns the specifications for the return type.
      */
@@ -87,9 +92,9 @@ public interface ObjectAction extends ObjectMember {
      */
     boolean hasReturn();
 
-    //endregion
+    
 
-    //region > execute, executeWithRuleChecking
+    // -- execute, executeWithRuleChecking
 
     /**
      * Invokes the action's method on the target object given the specified set
@@ -116,9 +121,9 @@ public interface ObjectAction extends ObjectMember {
             ObjectAdapter[] parameters,
             final InteractionInitiatedBy interactionInitiatedBy);
 
-    //endregion
+    
 
-    //region > isProposedArgumentSetValid
+    // -- isProposedArgumentSetValid
 
     /**
      * Whether the provided argument set is valid, represented as a {@link Consent}.
@@ -128,9 +133,9 @@ public interface ObjectAction extends ObjectMember {
             ObjectAdapter[] proposedArguments,
             final InteractionInitiatedBy interactionInitiatedBy);
 
-    //endregion
+    
 
-    //region > Parameters (declarative)
+    // -- Parameters (declarative)
 
     /**
      * Returns the number of parameters used by this method.
@@ -170,9 +175,9 @@ public interface ObjectAction extends ObjectMember {
      */
     ObjectActionParameter getParameterByName(String paramName);
 
-    //endregion
+    
 
-    //region > Parameters (per instance)
+    // -- Parameters (per instance)
 
     /**
      * Returns the defaults references/values to be used for the action.
@@ -187,9 +192,9 @@ public interface ObjectAction extends ObjectMember {
             final ObjectAdapter target,
             final InteractionInitiatedBy interactionInitiatedBy);
 
-    //endregion
+    
 
-    //region > setupBulkActionInvocationContext
+    // -- setupBulkActionInvocationContext
     /**
      * internal API, called by {@link ActionInvocationFacet} if the action is actually executed (ie in the foreground).
      */
@@ -197,9 +202,9 @@ public interface ObjectAction extends ObjectMember {
             final ObjectAdapter targetAdapter);
 
 
-    //endregion
+    
 
-    //region > Util
+    // -- Util
     public static final class Util {
 
         final static MemberOrderFacetComparator memberOrderFacetComparator = new MemberOrderFacetComparator(false);
@@ -250,7 +255,7 @@ public interface ObjectAction extends ObjectMember {
             @SuppressWarnings("unused")
             final Identifier identifier = action.getIdentifier();
 
-            final String className = action.getOnType().getShortIdentifier();
+            final String className = action.getOnType().getSpecId().asString().replace(".","-");
             final String actionId = action.getId();
             return className + "-" + actionId;
         }
@@ -365,15 +370,70 @@ public interface ObjectAction extends ObjectMember {
         }
     }
 
-    //endregion
+    
 
-    //region > Predicates
+    // -- Predicates
 
     public static final class Predicates {
 
         private Predicates() {
         }
 
+        public static Predicate<ObjectAction> associatedWith(final ObjectAssociation objectAssociation) {
+            return new AssociatedWith(objectAssociation);
+        }
+
+        public static Predicate<ObjectAction> associatedWithAndWithCollectionParameterFor(
+                final OneToManyAssociation collection) {
+
+            final ObjectSpecification collectionTypeOfSpec = collection.getSpecification();
+
+            return com.google.common.base.Predicates.and(
+                    new AssociatedWith(collection),
+                    new HasParameterMatching(
+                        new ObjectActionParameter.Predicates.CollectionParameter(collectionTypeOfSpec)
+                    )
+            );
+        }
+
+        public static class AssociatedWith implements Predicate<ObjectAction> {
+            private final String memberId;
+            private final String memberName;
+
+            public AssociatedWith(final ObjectAssociation objectAssociation) {
+                this.memberId = objectAssociation.getId();
+                this.memberName = objectAssociation.getName();
+            }
+
+            @Override
+            public boolean apply(final ObjectAction objectAction) {
+                final AssociatedWithFacet associatedWithFacet = objectAction.getFacet(AssociatedWithFacet.class);
+                if(associatedWithFacet == null) {
+                    return false;
+                }
+                final String associatedMemberName = associatedWithFacet.value();
+                if (associatedMemberName == null) {
+                    return false;
+                }
+                final String memberOrderNameLowerCase = associatedMemberName.toLowerCase();
+                return memberName != null && Objects.equal(memberName.toLowerCase(), memberOrderNameLowerCase) ||
+                       memberId   != null && Objects.equal(memberId.toLowerCase(), memberOrderNameLowerCase);
+            }
+        }
+
+        public static class HasParameterMatching implements Predicate<ObjectAction> {
+            private final Predicate<ObjectActionParameter> parameterPredicate;
+            public HasParameterMatching(final Predicate<ObjectActionParameter> parameterPredicate) {
+                this.parameterPredicate = parameterPredicate;
+            }
+
+            @Override
+            public boolean apply(final ObjectAction objectAction) {
+                return FluentIterable
+                        .from(objectAction.getParameters())
+                        .anyMatch(parameterPredicate);
+            }
+        }
 
         public static com.google.common.base.Predicate ofType(final ActionType type) {
             return new Predicate<ObjectAction>() {
@@ -477,10 +537,16 @@ public interface ObjectAction extends ObjectMember {
         public static Predicate<ObjectAction> memberOrderNotAssociationOf(final ObjectSpecification adapterSpec) {
 
             final List<ObjectAssociation> associations = adapterSpec.getAssociations(Contributed.INCLUDED);
-            final List<String> associationNames = Lists.transform(associations,
-                    com.google.common.base.Functions.compose(StringFunctions.toLowerCase(), ObjectAssociation.Functions.toName()));
-            final List<String> associationIds = Lists.transform(associations,
-                    com.google.common.base.Functions.compose(StringFunctions.toLowerCase(), ObjectAssociation.Functions.toId()));
+            
+            final List<String> associationNames = _NullSafe.stream(associations)
+            		.map(ObjectAssociation::getName)
+            		.map(_Strings::lower)
+            		.collect(Collectors.toList());
+            		
+            final List<String> associationIds = _NullSafe.stream(associations) 
+            		.map(ObjectAssociation::getId)
+            		.map(_Strings::lower)
+            		.collect(Collectors.toList());
 
             return new Predicate<ObjectAction>() {
 
@@ -500,6 +566,6 @@ public interface ObjectAction extends ObjectMember {
         }
     }
 
-    //endregion
+    
 
 }

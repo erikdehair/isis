@@ -24,9 +24,11 @@ import java.util.List;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.facetapi.FacetUtil;
 import org.apache.isis.core.metamodel.facets.actcoll.typeof.TypeOfFacetDefaultToObject;
+import org.apache.isis.core.metamodel.facets.object.objectspecid.classname.ObjectSpecIdFacetOnStandaloneList;
 import org.apache.isis.core.metamodel.services.ServicesInjector;
 import org.apache.isis.core.metamodel.spec.ActionType;
 import org.apache.isis.core.metamodel.spec.FreeStandingList;
+import org.apache.isis.core.metamodel.spec.ObjectSpecId;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAssociation;
@@ -43,17 +45,18 @@ public class ObjectSpecificationOnStandaloneList extends ObjectSpecificationAbst
     private static final String DESCRIBED_AS = "Typed instances";
     private static final String ICON_NAME = "instances";
 
-    //region > constructor
+    // -- constructor
 
     public ObjectSpecificationOnStandaloneList(
             final ServicesInjector servicesInjector,
             final FacetProcessor facetProcessor) {
         super(FreeStandingList.class, NAME, servicesInjector, facetProcessor);
+        this.specId = new ObjectSpecId(getCorrespondingClass().getName());
     }
 
-    //endregion
+    
 
-    //region > Introspection
+    // -- Introspection
 
     @Override
     public void introspectTypeHierarchyAndMembers() {
@@ -67,12 +70,13 @@ public class ObjectSpecificationOnStandaloneList extends ObjectSpecificationAbst
         FacetUtil.addFacet(new NamedFacetOnStandaloneList(NAME, this));
         FacetUtil.addFacet(new PluralFacetOnStandaloneList(NAME, this));
         FacetUtil.addFacet(new DescribedAsFacetOnStandaloneList(DESCRIBED_AS, this));
+         FacetUtil.addFacet(new ObjectSpecIdFacetOnStandaloneList(specId, this));
         // don't install anything for NotPersistableFacet
     }
 
-    //endregion
+    
 
-    //region > isXxx
+    // -- isXxx
 
     @Override
     public boolean isService() {
@@ -98,9 +102,9 @@ public class ObjectSpecificationOnStandaloneList extends ObjectSpecificationAbst
         return false;
     }
 
-    //endregion
+    
 
-    //region > Associations
+    // -- Associations
     /**
      * Review: is this ever called for an instance of this class? If not, then
      * no need to override.
@@ -110,9 +114,9 @@ public class ObjectSpecificationOnStandaloneList extends ObjectSpecificationAbst
         return null;
     }
 
-    //endregion
+    
 
-    //region > Title and Icon
+    // -- Title and Icon
 
     @Override
     public String getTitle(final ObjectAdapter object) {
@@ -124,9 +128,9 @@ public class ObjectSpecificationOnStandaloneList extends ObjectSpecificationAbst
         return ICON_NAME;
     }
 
-    //endregion
+    
 
-    //region > Object Actions
+    // -- Object Actions
     /**
      * Review: is it necessary to override for this subclass?
      */
@@ -152,7 +156,7 @@ public class ObjectSpecificationOnStandaloneList extends ObjectSpecificationAbst
     }
 
 
-    //endregion
+    
 
 
 }

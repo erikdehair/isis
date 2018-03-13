@@ -18,6 +18,7 @@
  */
 package org.apache.isis.applib;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +26,9 @@ import java.util.Set;
 
 import javax.xml.bind.annotation.XmlTransient;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import org.apache.isis.applib.internal.collections._Lists;
+import org.apache.isis.applib.internal.collections._Maps;
+import org.apache.isis.applib.internal.collections._Sets;
 
 /**
  * Factors out the commonality between {@link AppManifestAbstract.Builder} and {@link ModuleAbstract}.
@@ -36,14 +37,48 @@ import com.google.common.collect.Sets;
  */
 abstract class ModuleOrBuilderAbstract<B extends ModuleOrBuilderAbstract<B>> {
 
-    final Set<Class<?>> additionalModules = Sets.newLinkedHashSet();
-    final Set<Class<?>> additionalServices  = Sets.newLinkedHashSet();
+    final Set<Class<?>> additionalModules = _Sets.newLinkedHashSet();
+    final Set<Class<?>> additionalServices  = _Sets.newLinkedHashSet();
 
-    final Map<String,String> individualConfigProps = Maps.newLinkedHashMap();
-    final List<PropertyResource> propertyResources = Lists.newArrayList();
+    final Map<String,String> individualConfigProps = _Maps.newLinkedHashMap();
+    final List<PropertyResource> propertyResources = _Lists.newArrayList();
 
     ModuleOrBuilderAbstract() {}
-    
+
+    public B withAdditionalDependency(final Module dependency) {
+        withTransitiveFrom(dependency);
+        return self();
+    }
+
+    public B withAdditionalDependencies(final Set<Module> dependencies) {
+        for (final Module dependency : dependencies) {
+            withAdditionalDependency(dependency);
+        }
+        return self();
+    }
+
+    public B withAdditionalDependencies(final Module... dependencies) {
+        return withAdditionalDependencies(_Sets.unmodifiable(dependencies));
+    }
+
+    void withTransitiveFrom(final Module module) {
+        withAdditionalModules(asClasses(Module.Util.transitiveDependenciesOf(module)));
+        withAdditionalModules(Module.Util.transitiveAdditionalModulesOf(module));
+        withAdditionalServices(Module.Util.transitiveAdditionalServicesOf(module));
+        withConfigurationPropertyResources(Module.Util.transitivePropertyResourcesOf(module));
+        withConfigurationProperties(Module.Util.transitiveIndividualConfigPropsOf(module));
+    }
+
+    @SuppressWarnings("unchecked") //[ahuber] it's safe to assume correct type casting here
+    private static Class<? extends Module>[] asClasses(final List<Module> dependencies) {
+        final List<Class<? extends Module>> list = new ArrayList<>();
+        for (Module dependency : dependencies) {
+            Class<? extends Module> aClass = dependency.getClass();
+            list.add(aClass);
+        }
+        return list.toArray(new Class[] {});
+    }
+
     public B withAdditionalModules(final Class<?>... modules) {
         return withAdditionalModules(Arrays.asList(modules));
     }

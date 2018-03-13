@@ -28,12 +28,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.RequestScoped;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.apache.isis.applib.internal.context._Context;
 import org.apache.isis.core.commons.config.IsisConfiguration;
 import org.apache.isis.core.commons.exceptions.IsisException;
 import org.apache.isis.core.commons.factory.InstanceCreationClassException;
@@ -42,6 +37,11 @@ import org.apache.isis.core.commons.lang.ArrayExtensions;
 import org.apache.isis.core.commons.lang.MethodExtensions;
 import org.apache.isis.core.metamodel.services.ServicesInjector;
 import org.apache.isis.core.metamodel.specloader.classsubstitutor.JavassistEnhanced;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
@@ -109,9 +109,8 @@ public final class ServiceInstantiator {
 
     private Class<?> loadClass(final String className) {
         try {
-            LOG.debug("loading class for service: " + className);
-            //return Thread.currentThread().getContextClassLoader().loadClass(className);
-            return Class.forName(className);
+            LOG.debug("loading class for service: {}", className);
+            return _Context.loadClassAndInitialize(className);
         } catch (final ClassNotFoundException ex) {
             throw new InitialisationException(String.format("Cannot find class '%s' for service", className));
         }
@@ -157,8 +156,10 @@ public final class ServiceInstantiator {
             final T newInstance = proxySubclass.newInstance();
             final ProxyObject proxyObject = (ProxyObject) newInstance;
             proxyObject.setHandler(new MethodHandler() {
-                private ThreadLocal<T> serviceByThread = new ThreadLocal<>();
-                
+            	// Allow serviceByThread to be propagated from the thread that starts the request 
+            	// to any child-threads, hence InheritableThreadLocal.
+            	private InheritableThreadLocal<T> serviceByThread = new InheritableThreadLocal<>();
+
                 @Override
                 public Object invoke(final Object proxied, final Method proxyMethod, final Method proxiedMethod, final Object[] args) throws Throwable {
 
@@ -242,7 +243,7 @@ public final class ServiceInstantiator {
         final int numParams = postConstructMethod.getParameterTypes().length;
 
         if(LOG.isDebugEnabled()) {
-            LOG.debug("... calling @PostConstruct method: " + serviceClass.getName() + ": " + postConstructMethod.getName());
+            LOG.debug("... calling @PostConstruct method: {}: {}", serviceClass.getName(), postConstructMethod.getName());
         }
         // unlike shutdown, we don't swallow exceptions; would rather fail early
         if(numParams == 0) {
@@ -261,7 +262,7 @@ public final class ServiceInstantiator {
         }
 
         if(LOG.isDebugEnabled()) {
-            LOG.debug("... calling @PreDestroy method: " + serviceClass.getName() + ": " + preDestroyMethod.getName());
+            LOG.debug("... calling @PreDestroy method: {}: {}", serviceClass.getName(), preDestroyMethod.getName());
         }
         try {
             MethodExtensions.invoke(preDestroyMethod, service);

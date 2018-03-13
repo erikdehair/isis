@@ -27,13 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
-
 import org.apache.isis.applib.AbstractViewModel;
 import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.annotation.PropertyLayout;
@@ -42,6 +35,11 @@ import org.apache.isis.applib.annotation.ViewModelLayout;
 import org.apache.isis.applib.annotation.Where;
 import org.apache.isis.applib.fixtures.FixtureType;
 import org.apache.isis.applib.fixtures.InstallableFixture;
+import org.apache.isis.applib.internal.base._Casts;
+import org.apache.isis.applib.internal.base._Strings;
+import org.apache.isis.applib.internal.collections._Lists;
+import org.apache.isis.applib.internal.collections._Maps;
+import org.apache.isis.applib.internal.exceptions._Exceptions;
 import org.apache.isis.applib.services.factory.FactoryService;
 import org.apache.isis.applib.services.registry.ServiceRegistry;
 import org.apache.isis.applib.services.repository.RepositoryService;
@@ -49,7 +47,8 @@ import org.apache.isis.applib.services.sessmgmt.SessionManagementService;
 import org.apache.isis.applib.services.user.UserService;
 import org.apache.isis.applib.services.wrapper.WrapperFactory;
 import org.apache.isis.applib.services.xactn.TransactionService;
-import org.apache.isis.applib.util.Casts;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
 
 @ViewModelLayout(named="Script")
 public abstract class FixtureScript 
@@ -58,7 +57,7 @@ public abstract class FixtureScript
 
     protected static final String PATH_SEPARATOR = "/";
 
-    //region > constructors
+    // -- constructors
 
     /**
      * Initializes a {@link Discoverability#NON_DISCOVERABLE} fixture, with
@@ -115,17 +114,18 @@ public abstract class FixtureScript
 
         withTracing(printStream);
     }
+    
     protected String localNameElseDerived(final String str) {
-        return str != null ? str : StringUtil.asLowerDashed(friendlyNameElseDerived(str));
+        return str != null ? str : _Strings.asLowerDashed.apply(friendlyNameElseDerived(str));
     }
 
     protected String friendlyNameElseDerived(final String str) {
-        return str != null ? str : StringUtil.asNaturalName2(getClass().getSimpleName());
+        return str != null ? str : _Strings.asNaturalName2.apply(getClass().getSimpleName());
     }
 
-    //endregion
+    
 
-    //region > tracing
+    // -- tracing
 
     private PrintStream tracePrintStream;
 
@@ -146,9 +146,9 @@ public abstract class FixtureScript
         return withTracing(System.out);
     }
 
-    //endregion
+    
 
-    //region > viewModel impl
+    // -- viewModel impl
 
     @Programmatic
     @Override
@@ -162,18 +162,18 @@ public abstract class FixtureScript
         fixtureScripts.initOf(mementoStr, this);
     }
 
-    //endregion
+    
 
-    //region > qualifiedName
+    // -- qualifiedName
 
     @Programmatic
     public String getQualifiedName() {
         return getParentPath() + getLocalName();
     }
 
-    //endregion
+    
 
-    //region > friendlyName (property)
+    // -- friendlyName (property)
 
     private String friendlyName;
     
@@ -186,9 +186,9 @@ public abstract class FixtureScript
         this.friendlyName = friendlyName;
     }
 
-    //endregion
+    
 
-    //region > localName
+    // -- localName
 
     private String localName;
     /**
@@ -203,9 +203,9 @@ public abstract class FixtureScript
         this.localName = localName;
     }
 
-    //endregion
+    
 
-    //region > parentPath
+    // -- parentPath
 
     private String parentPath;
     
@@ -221,9 +221,9 @@ public abstract class FixtureScript
         this.parentPath = parentPath;
     }
 
-    //endregion
+    
 
-    //region > discoverability
+    // -- discoverability
 
 
     /**
@@ -265,9 +265,9 @@ public abstract class FixtureScript
         return this;
     }
 
-    //endregion
+    
 
-    //region > ExecutionContext
+    // -- ExecutionContext
 
     public static class ExecutionContext {
 
@@ -628,7 +628,7 @@ public abstract class FixtureScript
                     return childFixtureScript;
                 } else {
                     trace(childFixtureScript, As.SKIP);
-                    return Casts.uncheckedCast(previouslyExecutedScript);
+                    return _Casts.uncheckedCast(previouslyExecutedScript);
                 }
 
             case EXECUTE_ONCE_BY_VALUE:
@@ -641,7 +641,7 @@ public abstract class FixtureScript
                 return childFixtureScript;
 
             default:
-                throw new IllegalArgumentException("Execution strategy: '" + executionStrategy + "' not recognized");
+            	throw _Exceptions.unmatchedCase("Execution strategy: '%s' not recognized", executionStrategy);
             }
         }
 
@@ -676,18 +676,18 @@ public abstract class FixtureScript
                 return childFixtureScript;
             } else {
                 trace(childFixtureScript, As.SKIP);
-                return Casts.uncheckedCast(previouslyExecutedScript);
+                return _Casts.uncheckedCast(previouslyExecutedScript);
             }
         }
 
-        //region > previouslyExecuted
+        // -- previouslyExecuted
 
         /**
          * Always populated, irrespective of {@link FixtureScripts#getMultipleExecutionStrategy() execution strategy},
          * but used only by {@link FixtureScripts.MultipleExecutionStrategy#EXECUTE_ONCE_BY_VALUE} to determine whether
          * should execute or not.
          */
-        private final List<FixtureScript> previouslyExecuted = Lists.newArrayList();
+        private final List<FixtureScript> previouslyExecuted = _Lists.newArrayList();
 
         /**
          * Returns a list of the {@link FixtureScript} instances that have already been executed.
@@ -703,23 +703,23 @@ public abstract class FixtureScript
             return Collections.unmodifiableList(previouslyExecuted);
         }
 
-        //endregion
+        
 
         /**
          * used and populated only if the {@link FixtureScripts.MultipleExecutionStrategy#EXECUTE_ONCE_BY_CLASS}
          * strategy is in use.
          */
-        private final Map<Class<? extends FixtureScript>, FixtureScript> fixtureScriptByClass = Maps.newLinkedHashMap();
+        private final Map<Class<? extends FixtureScript>, FixtureScript> fixtureScriptByClass = _Maps.newLinkedHashMap();
 
         /**
          * used and populated only if the {@link FixtureScripts.MultipleExecutionStrategy#EXECUTE_ONCE_BY_VALUE}
          * strategy is in use.
          */
-        private final Map<FixtureScript, FixtureScript> fixtureScriptByValue = Maps.newLinkedHashMap();
+        private final Map<FixtureScript, FixtureScript> fixtureScriptByValue = _Maps.newLinkedHashMap();
 
-        //endregion
+        
 
-        //region > tracing
+        // -- tracing
 
         private int traceHighwatermark = 40;
         private PrintStream tracePrintStream;
@@ -754,10 +754,10 @@ public abstract class FixtureScript
             traceHighwatermark = Math.max(key.length(), traceHighwatermark);
             return pad(key, roundup(traceHighwatermark, 20));
         }
-        //endregion
+        
 
         private static String pad(final String str, final int padTo) {
-            return Strings.padEnd(str, padTo, ' ');
+            return _Strings.padEnd(str, padTo, ' ');
         }
 
         static int roundup(final int n, final int roundTo) {
@@ -765,25 +765,25 @@ public abstract class FixtureScript
         }
 
 
-        private Map<Class<?>, Object> userData = Maps.newHashMap();
+        private Map<Class<?>, Object> userData = _Maps.newHashMap();
         @Programmatic
         public void setUserData(final Object object) {
             userData.put(object.getClass(), object);
         }
         @Programmatic
         public <T> T getUserData(final Class<T> cls) {
-            return Casts.uncheckedCast(userData.get(cls));
+            return _Casts.uncheckedCast(userData.get(cls));
         }
         @Programmatic
         public <T> T clearUserData(final Class<T> cls) {
-            return Casts.uncheckedCast(userData.remove(cls));
+            return _Casts.uncheckedCast(userData.remove(cls));
         }
 
     }
 
-    //endregion
+    
 
-    //region > defaultParam, checkParam
+    // -- defaultParam, checkParam
     protected <T> T defaultParam(final String parameterName, final ExecutionContext ec, final T defaultValue) {
         final T value = valueFor(parameterName, ec, defaultValue);
         setParam(parameterName, value);
@@ -791,7 +791,7 @@ public abstract class FixtureScript
     }
 
     private <T> T valueFor(final String parameterName, final ExecutionContext ec, final T defaultValue) {
-        final Class<T> cls = Casts.uncheckedCast(defaultValue.getClass());
+        final Class<T> cls = _Casts.uncheckedCast(defaultValue.getClass());
 
         final T value = readParam(parameterName, ec, cls);
         if(value != null) { return (T) value; }
@@ -819,7 +819,7 @@ public abstract class FixtureScript
         Method method;
         try {
             method = this.getClass().getMethod("get" + uppercase(parameterName));
-            value = Casts.uncheckedCast(method.invoke(this));
+            value = _Casts.uncheckedCast(method.invoke(this));
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
 
         }
@@ -828,7 +828,7 @@ public abstract class FixtureScript
         if (cls == Boolean.class || cls == boolean.class) {
             try {
                 method = this.getClass().getMethod("is" + uppercase(parameterName));
-                value = Casts.uncheckedCast(method.invoke(this));
+                value = _Casts.uncheckedCast(method.invoke(this));
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
 
             }
@@ -855,9 +855,9 @@ public abstract class FixtureScript
     private String uppercase(final String parameterName) {
         return parameterName.substring(0, 1).toUpperCase() + parameterName.substring(1);
     }
-    //endregion
+    
 
-    //region > run (entry point for FixtureScripts service to call)
+    // -- run (entry point for FixtureScripts service to call)
 
     /**
      * It's a bit nasty to hold onto this as a field, but required in order to support
@@ -887,10 +887,10 @@ public abstract class FixtureScript
         return null;
     }
 
-    //endregion
+    
 
 
-    //region > execute (API for subclasses to implement)
+    // -- execute (API for subclasses to implement)
 
     /**
      * Subclasses should <b>implement this</b> but SHOULD <i>NOT</i> CALL DIRECTLY.
@@ -902,9 +902,9 @@ public abstract class FixtureScript
     @Programmatic
     protected abstract void execute(final ExecutionContext executionContext);
 
-    //endregion
+    
 
-    //region > (legacy) InstallableFixture impl
+    // -- (legacy) InstallableFixture impl
 
     @Override
     @Programmatic
@@ -917,14 +917,15 @@ public abstract class FixtureScript
         run(null);
     }
 
-    //endregion
+    
 
-    //region > helpers (for subclasses)
+    // -- helpers (for subclasses)
 
     /**
      * Returns the first non-null value; for convenience of subclass implementations
      */
-    protected static <T> T coalesce(final T... ts) {
+    @SafeVarargs
+	protected static <T> T coalesce(final T... ts) {
         for (final T t : ts) {
             if(t != null) return t;
         }
@@ -963,18 +964,18 @@ public abstract class FixtureScript
         transactionService.nextTransaction();
     }
 
-    //endregion
+    
 
 
-    //region > helpers (local)
+    // -- helpers (local)
 
     @Programmatic
     String pathWith(final String subkey) {
         return (getQualifiedName() != null? getQualifiedName() + PATH_SEPARATOR: "") +  subkey;
     }
-    //endregion
+    
 
-    //region > injected services
+    // -- injected services
 
     @javax.inject.Inject
     protected FixtureScripts fixtureScripts;
@@ -1001,5 +1002,5 @@ public abstract class FixtureScript
     protected SessionManagementService sessionManagementService;
 
 
-    //endregion
+    
 }

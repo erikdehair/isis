@@ -24,27 +24,27 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 import org.apache.isis.applib.annotation.CommandExecuteIn;
 import org.apache.isis.applib.annotation.CommandPersistence;
 import org.apache.isis.applib.annotation.Programmatic;
+import org.apache.isis.applib.internal.collections._Lists;
+import org.apache.isis.applib.internal.collections._Maps;
 import org.apache.isis.applib.services.bookmark.Bookmark;
 import org.apache.isis.applib.services.eventbus.ActionDomainEvent;
 import org.apache.isis.applib.util.ObjectContracts;
+import org.apache.isis.applib.util.ToString;
 
 public class CommandDefault implements Command {
 
-    //region > constructor
+    // -- constructor
 
     public CommandDefault() {
         setExecutor(Executor.OTHER);
     }
 
-    //endregion
+    
 
-    //region > actionIdentifier (property)
+    // -- actionIdentifier (property)
 
     private String actionIdentifier;
     public String getMemberIdentifier() {
@@ -56,9 +56,9 @@ public class CommandDefault implements Command {
         this.actionIdentifier = actionIdentifier;
     }
 
-    //endregion
+    
 
-    //region > targetClass (property)
+    // -- targetClass (property)
 
     private String targetClass;
     public String getTargetClass() {
@@ -70,9 +70,9 @@ public class CommandDefault implements Command {
         this.targetClass = targetClass;
     }
 
-    //endregion
+    
 
-    //region > targetAction (property)
+    // -- targetAction (property)
 
     private String targetAction;
     public String getTargetAction() {
@@ -84,9 +84,9 @@ public class CommandDefault implements Command {
         this.targetAction = targetAction;
     }
 
-    //endregion
+    
 
-    //region > arguments (property)
+    // -- arguments (property)
 
     private String arguments;
     public String getArguments() {
@@ -98,9 +98,9 @@ public class CommandDefault implements Command {
         this.arguments = arguments;
     }
     
-    //endregion
+    
 
-    //region > memento (property)
+    // -- memento (property)
 
     private String memento;
     
@@ -113,9 +113,9 @@ public class CommandDefault implements Command {
         this.memento = memento;
     }
     
-    //endregion
+    
 
-    //region > target (property)
+    // -- target (property)
 
     private Bookmark target;
     public Bookmark getTarget() {
@@ -126,9 +126,9 @@ public class CommandDefault implements Command {
         this.target = target;
     }
 
-    //endregion
+    
 
-    //region > timestamp (property)
+    // -- timestamp (property)
 
     private Timestamp timestamp;
     public Timestamp getTimestamp() {
@@ -140,9 +140,9 @@ public class CommandDefault implements Command {
         this.timestamp = timestamp;
     }
 
-    //endregion
+    
 
-    //region > startedAt (property)
+    // -- startedAt (property)
 
     private Timestamp startedAt;
     @Override
@@ -154,9 +154,9 @@ public class CommandDefault implements Command {
         this.startedAt = startedAt;
     }
 
-    //endregion
+    
 
-    //region > completedAt (property)
+    // -- completedAt (property)
 
     private Timestamp completedAt;
 
@@ -170,9 +170,9 @@ public class CommandDefault implements Command {
         this.completedAt = completed;
     }
 
-    //endregion
+    
 
-    //region > user (property)
+    // -- user (property)
 
     private String user;
     public String getUser() {
@@ -184,11 +184,11 @@ public class CommandDefault implements Command {
         this.user = user;
     }
 
-    //endregion
+    
 
-    //region > actionDomainEvent (peek/pop/flush)
+    // -- actionDomainEvent (peek/pop/flush)
 
-    private final LinkedList<ActionDomainEvent<?>> actionDomainEvents = Lists.newLinkedList();
+    private final LinkedList<ActionDomainEvent<?>> actionDomainEvents = _Lists.newLinkedList();
 
     @Override
     public ActionDomainEvent<?> peekActionDomainEvent() {
@@ -211,14 +211,14 @@ public class CommandDefault implements Command {
     @Programmatic
     public List<ActionDomainEvent<?>> flushActionDomainEvents() {
         final List<ActionDomainEvent<?>> events =
-                Collections.unmodifiableList(Lists.newArrayList(actionDomainEvents));
+                Collections.unmodifiableList(_Lists.newArrayList(actionDomainEvents));
         actionDomainEvents.clear();
         return events;
     }
 
-    //endregion
+    
 
-    //region > executor (property)
+    // -- executor (property)
 
     private Executor executor;
     
@@ -235,9 +235,9 @@ public class CommandDefault implements Command {
         this.executor = nature;
     }
 
-    //endregion
+    
 
-    //region > executionType (property)
+    // -- executionType (property)
 
     private CommandExecuteIn executionType;
 
@@ -255,9 +255,9 @@ public class CommandDefault implements Command {
     }
 
 
-    //endregion
+    
 
-    //region > parent (property)
+    // -- parent (property)
 
     private Command parent;
     
@@ -272,9 +272,9 @@ public class CommandDefault implements Command {
     }
 
     
-    //endregion
+    
 
-    //region > result (property)
+    // -- result (property)
 
     private Bookmark result;
     
@@ -287,9 +287,9 @@ public class CommandDefault implements Command {
         this.result = result;
     }
 
-    //endregion
+    
 
-    //region > exceptionStackTrace (property)
+    // -- exceptionStackTrace (property)
 
     private String exceptionStackTrace;
     
@@ -302,9 +302,9 @@ public class CommandDefault implements Command {
         this.exceptionStackTrace = exceptionStackTrace;
     }
     
-    //endregion
+    
 
-    //region > transactionId (property)
+    // -- transactionId (property)
 
     private UUID transactionId;
     
@@ -318,9 +318,9 @@ public class CommandDefault implements Command {
     }
     
 
-    //endregion
+    
 
-    //region > persistence
+    // -- persistence
 
     private CommandPersistence persistence;
     
@@ -334,9 +334,9 @@ public class CommandDefault implements Command {
         this.persistence = persistence; 
     }
 
-    //endregion
+    
 
-    //region > persistHint
+    // -- persistHint
 
     private boolean persistHint;
     
@@ -349,11 +349,11 @@ public class CommandDefault implements Command {
     }
 
 
-    //endregion
+    
 
-    //region > next
+    // -- next
 
-    private final Map<String, AtomicInteger> sequenceByName = Maps.newHashMap();
+    private final Map<String, AtomicInteger> sequenceByName = _Maps.newHashMap();
 
     @Deprecated
     @Override
@@ -368,16 +368,24 @@ public class CommandDefault implements Command {
         return next.get();
     }
 
-    //endregion
+    
 
-    //region > toString
+    // -- toString
 
+    private final static ToString<CommandDefault> toString = ObjectContracts
+    		.toString("startedAt", CommandDefault::getStartedAt)
+    		.thenToString("user", CommandDefault::getUser)
+			.thenToString("memberIdentifier", CommandDefault::getMemberIdentifier) 
+			.thenToString("target", CommandDefault::getTarget) 
+			.thenToString("transactionId", CommandDefault::getTransactionId);
+    		
+    
     @Override
     public String toString() {
-        return ObjectContracts.toString(this, "startedAt","user","memberIdentifier","target","transactionId");
+    	return toString.toString(this);
     }
 
-    //endregion
+    
 
 
 }

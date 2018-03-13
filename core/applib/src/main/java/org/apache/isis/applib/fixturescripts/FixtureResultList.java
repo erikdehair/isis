@@ -23,10 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.isis.applib.util.Casts;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import org.apache.isis.applib.internal.base._Casts;
+import org.apache.isis.applib.internal.collections._Lists;
+import org.apache.isis.applib.internal.collections._Maps;
 
 /**
  * Collecting parameter.
@@ -37,7 +36,7 @@ import com.google.common.collect.Maps;
 public class FixtureResultList {
 
 
-    //region > constructor
+    // -- constructor
 
     FixtureResultList(
             final FixtureScripts fixtureScripts,
@@ -45,12 +44,12 @@ public class FixtureResultList {
         this.fixtureScripts = fixtureScripts;
         this.executionContext = executionContext;
     }
-    //endregion
+    
 
 
-    //region > list of FixtureResults
+    // -- list of FixtureResults
 
-    private final List<FixtureResult> list = Lists.newArrayList();
+    private final List<FixtureResult> list = _Lists.newArrayList();
 
     /**
      * Irrespective of the setting for {@link FixtureScripts#getMultipleExecutionStrategy()}, this list ensures
@@ -69,9 +68,9 @@ public class FixtureResultList {
      * </p>
      * {@link org.apache.isis.applib.fixturescripts.FixtureScript}s used to generate this result list.
      */
-    private final List<FixtureScript> fixtureScriptList = Lists.newArrayList();
+    private final List<FixtureScript> fixtureScriptList = _Lists.newArrayList();
 
-    private final Map<String, FixtureResult> fixtureResultByKey = Maps.newHashMap();
+    private final Map<String, FixtureResult> fixtureResultByKey = _Maps.newHashMap();
 
     public <T> T add(final FixtureScript script, final T object) {
         return add(script, nextItemFor(script), object);
@@ -104,11 +103,11 @@ public class FixtureResultList {
         return Collections.unmodifiableList(list);
     }
 
-    //endregion
+    
 
-    //region > nextItemFor
+    // -- nextItemFor
 
-    private final Map<FixtureScript, AtomicInteger> itemNumberByScript = Maps.newHashMap();
+    private final Map<FixtureScript, AtomicInteger> itemNumberByScript = _Maps.newHashMap();
 
     String nextItemFor(final FixtureScript script) {
         AtomicInteger atomicInteger = itemNumberByScript.get(script);
@@ -119,10 +118,10 @@ public class FixtureResultList {
         return "item-"+atomicInteger.incrementAndGet();
     }
 
-    //endregion
+    
 
 
-    //region > lookup
+    // -- lookup
 
     <T> T lookup(final String key, Class<T> cls) {
         final FixtureResult fixtureResult = fixtureResultByKey.get(key);
@@ -136,12 +135,12 @@ public class FixtureResultList {
         if (!cls.isAssignableFrom(object.getClass())) {
             throw new IllegalStateException(String.format("Fixture result exists and contains object but is of type %s, not %s", object.getClass().getName(), cls.getName()));
         }
-        return Casts.uncheckedCast(object);
+        return _Casts.uncheckedCast(object);
     }
 
-    //endregion
+    
 
-    //region > injected services 
+    // -- injected services 
 
     /**
      * Injected in {@link #FixtureResultList(FixtureScripts, org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext) constructor}.
@@ -151,5 +150,5 @@ public class FixtureResultList {
      * Injected in {@link #FixtureResultList(FixtureScripts, org.apache.isis.applib.fixturescripts.FixtureScript.ExecutionContext) constructor}.
      */
     private final FixtureScript.ExecutionContext executionContext;
-    //endregion
+    
 }

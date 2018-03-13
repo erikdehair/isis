@@ -74,7 +74,7 @@ public class ShiroAuthenticatorOrAuthorizor implements Authenticator, Authorizor
     private static final String ISIS_AUTHENTICATION_SHIRO_AUTO_LOGOUT_KEY = "isis.authentication.shiro.autoLogoutIfAlreadyAuthenticated";
     private static final boolean ISIS_AUTHENTICATION_SHIRO_AUTO_LOGOUT_DEFAULT = false;
 
-    //region > constructor and fields
+    // -- constructor and fields
     private final IsisConfiguration configuration;
     private final boolean autoLogout;
 
@@ -91,9 +91,9 @@ public class ShiroAuthenticatorOrAuthorizor implements Authenticator, Authorizor
         return configuration;
     }
 
-    //endregion
+    
 
-    //region > init, shutdown
+    // -- init, shutdown
 
     @Override
     public void init(final DeploymentCategory deploymentCategory) {
@@ -110,9 +110,9 @@ public class ShiroAuthenticatorOrAuthorizor implements Authenticator, Authorizor
         return deploymentCategory;
     }
 
-    //endregion
+    
 
-    //region > Authenticator API
+    // -- Authenticator API
 
     @Override
     public final boolean canAuthenticate(final Class<? extends AuthenticationRequest> authenticationRequestClass) {
@@ -233,9 +233,9 @@ public class ShiroAuthenticatorOrAuthorizor implements Authenticator, Authorizor
         
         return new UsernamePasswordToken(username, password);
     }
-    //endregion
+    
 
-    //region > Authorizor API
+    // -- Authorizor API
 
     @Override
     public boolean isVisibleInAnyRole(Identifier identifier) {
@@ -299,9 +299,9 @@ public class ShiroAuthenticatorOrAuthorizor implements Authenticator, Authorizor
         return false;
     }
 
-    //endregion
+    
 
-    //region > Injected (via Shiro service locator)
+    // -- Injected (via Shiro service locator)
 
     /**
      * The {@link SecurityManager} is shared between both the {@link Authenticator} and the {@link Authorizor}
@@ -320,6 +320,6 @@ public class ShiroAuthenticatorOrAuthorizor implements Authenticator, Authorizor
         return (RealmSecurityManager) securityManager;
     }
 
-    //endregion
+    
 
 }

@@ -27,15 +27,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
-
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.function.Consumer;
 
 import org.apache.isis.applib.NonRecoverableException;
 import org.apache.isis.applib.RecoverableException;
+import org.apache.isis.applib.internal.base._Casts;
 import org.apache.isis.applib.services.bookmark.Bookmark;
 import org.apache.isis.applib.services.bookmark.BookmarkService;
 import org.apache.isis.applib.services.clock.ClockService;
@@ -51,7 +47,6 @@ import org.apache.isis.applib.services.queryresultscache.QueryResultsCache;
 import org.apache.isis.applib.services.repository.RepositoryService;
 import org.apache.isis.applib.services.xactn.TransactionService;
 import org.apache.isis.applib.services.xactn.TransactionState;
-import org.apache.isis.applib.util.Casts;
 import org.apache.isis.core.commons.authentication.AuthenticationSession;
 import org.apache.isis.core.commons.authentication.AuthenticationSessionProvider;
 import org.apache.isis.core.commons.config.IsisConfiguration;
@@ -83,6 +78,11 @@ import org.apache.isis.core.metamodel.specloader.ReflectiveActionException;
 import org.apache.isis.core.metamodel.specloader.specimpl.MixedInMember2;
 import org.apache.isis.core.runtime.system.transaction.TransactionalClosure;
 import org.apache.isis.schema.ixn.v1.ActionInvocationDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
 public abstract class ActionInvocationFacetForDomainEventAbstract
         extends ActionInvocationFacetAbstract
@@ -274,36 +274,29 @@ public abstract class ActionInvocationFacetForDomainEventAbstract
 
                         return ObjectAdapter.Util.unwrap(resultAdapterPossiblyCloned);
 
-                    } catch (IllegalAccessException ex) {
-                        throw new ReflectiveActionException("Illegal access of " + method, ex);
-                    } catch (InvocationTargetException ex) {
-
-                        final Throwable targetException = ex.getTargetException();
-                        if (targetException instanceof IllegalStateException) {
-                            throw new ReflectiveActionException( String.format(
-                                    "IllegalStateException thrown while executing %s %s",
-                                    method, targetException.getMessage()), targetException);
-                        }
-
-                        if(targetException instanceof RecoverableException) {
-                            if (!getTransactionState().canCommit()) {
-                                // something severe has happened to the underlying transaction;
-                                // so escalate this exception to be non-recoverable
-                                final Throwable targetExceptionCause = targetException.getCause();
-                                Throwable nonRecoverableCause = targetExceptionCause != null
-                                        ? targetExceptionCause
-                                        : targetException;
-
-                                // trim to first 300 chars
-                                final String message = trim(nonRecoverableCause.getMessage(), 300);
-
-                                throw new NonRecoverableException(message, nonRecoverableCause);
-                            }
-                        }
-
-                        ThrowableExtensions.throwWithinIsisException(ex, "Exception executing " + method);
-                        return null; // never executed, previous line throws
-                    }
+                    } catch (Exception e) {
+                    	
+                    	final Consumer<RecoverableException> recovery = recoverableException->{
+                    		
+                    		if (!getTransactionState().canCommit()) {
+		                        // something severe has happened to the underlying transaction;
+		                        // so escalate this exception to be non-recoverable
+		                        final Throwable recoverableExceptionCause = recoverableException.getCause();
+		                        Throwable nonRecoverableCause = recoverableExceptionCause != null
+		                                ? recoverableExceptionCause
+		                                : recoverableException;
+		
+		                        // trim to first 300 chars
+		                        final String message = trim(nonRecoverableCause.getMessage(), 300);
+		
+		                        throw new NonRecoverableException(message, nonRecoverableCause);
+                    		}
+                        };
+                    	
+                    	return ThrowableExtensions.handleInvocationException(e, method.getName(), recovery);
+					}
+                    
+                    
                 }
             };
 
@@ -312,7 +305,7 @@ public abstract class ActionInvocationFacetForDomainEventAbstract
 
             // handle any exceptions
             final Interaction.Execution<ActionInvocationDto, ?> priorExecution = 
-            		Casts.uncheckedCast(interaction.getPriorExecution());
+            		_Casts.uncheckedCast(interaction.getPriorExecution());
 
             final Exception executionExceptionIfAny = priorExecution.getThrew();
 
@@ -396,15 +389,12 @@ public abstract class ActionInvocationFacetForDomainEventAbstract
         if(cacheable) {
             final QueryResultsCache queryResultsCache = getQueryResultsCache();
             final Object[] targetPojoPlusExecutionParameters = ArrayExtensions.appendT(executionParameters, targetPojo);
-            return queryResultsCache.execute(new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    return method.invoke(targetPojo, executionParameters);
-                }
-            }, targetPojo.getClass(), method.getName(), targetPojoPlusExecutionParameters);
+            return queryResultsCache.execute(
+            		()->MethodIncompatibilityWorkaround.invoke(method, targetPojo, executionParameters),
+            		targetPojo.getClass(), method.getName(), targetPojoPlusExecutionParameters);
 
         } else {
-            return method.invoke(targetPojo, executionParameters);
+            return MethodIncompatibilityWorkaround.invoke(method, targetPojo, executionParameters);
         }
     }
 

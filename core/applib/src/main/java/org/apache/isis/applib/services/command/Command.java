@@ -19,8 +19,6 @@ package org.apache.isis.applib.services.command;
 import java.sql.Timestamp;
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import org.apache.isis.applib.Identifier;
 import org.apache.isis.applib.annotation.Action;
 import org.apache.isis.applib.annotation.CommandExecuteIn;
@@ -73,7 +71,7 @@ public interface Command extends HasTransactionId {
     String ACTION_IDENTIFIER_FOR_EDIT = "(edit)";
 
 
-    //region > user (property)
+    // -- user (property)
     /**
      * The user that created the command.
      */
@@ -86,9 +84,9 @@ public interface Command extends HasTransactionId {
      * Implementation notes: set when the Isis PersistenceSession is opened.
      */
     void setUser(String user);
-    //endregion
+    
 
-    //region > timestamp (property)
+    // -- timestamp (property)
 
     /**
      * The date/time at which this command was created.
@@ -102,9 +100,9 @@ public interface Command extends HasTransactionId {
      */
     void setTimestamp(Timestamp timestamp);
 
-    //endregion
+    
 
-    //region > target (property)
+    // -- target (property)
 
     /**
      * {@link Bookmark} of the target object (entity or service) on which this action was performed.
@@ -121,9 +119,9 @@ public interface Command extends HasTransactionId {
      */
     void setTarget(Bookmark target);
 
-    //endregion
+    
 
-    //region > memberIdentifier (property)
+    // -- memberIdentifier (property)
 
     /**
      * Holds a string representation of the invoked action, or the edited property, equivalent to
@@ -140,9 +138,9 @@ public interface Command extends HasTransactionId {
      */
     void setMemberIdentifier(String memberIdentifier);
 
-    //endregion
+    
 
-    //region > targetClass (property)
+    // -- targetClass (property)
 
     /**
      * A human-friendly description of the class of the target object.
@@ -157,9 +155,9 @@ public interface Command extends HasTransactionId {
      */
     void setTargetClass(String targetClass);
 
-    //endregion
+    
 
-    //region > targetAction (property)
+    // -- targetAction (property)
 
     /**
      * The human-friendly name of the action invoked/property edited on the target object.
@@ -179,9 +177,9 @@ public interface Command extends HasTransactionId {
      */
     void setTargetAction(String targetAction);
 
-    //endregion
+    
 
-    //region > arguments (property)
+    // -- arguments (property)
 
     /**
      * A human-friendly description of the arguments with which the action was invoked.
@@ -196,9 +194,9 @@ public interface Command extends HasTransactionId {
      */
     void setArguments(final String arguments);
 
-    //endregion
+    
 
-    //region > memento (property)
+    // -- memento (property)
 
     /**
      * A formal (XML or similar) specification of the action to invoke/being invoked.
@@ -213,9 +211,9 @@ public interface Command extends HasTransactionId {
      */
     void setMemento(final String memento);
 
-    //endregion
+    
 
-    //region > executeIn (property)
+    // -- executeIn (property)
 
     /**
      * The mechanism by which this command is to be executed, either synchronously &quot;in the 
@@ -257,9 +255,9 @@ public interface Command extends HasTransactionId {
     @Programmatic
     List<ActionDomainEvent<?>> flushActionDomainEvents();
 
-    //endregion
+    
 
-    //region > executor (property)
+    // -- executor (property)
 
     enum Executor {
         /**
@@ -303,51 +301,76 @@ public interface Command extends HasTransactionId {
      */
     void setExecutor(final Executor executor);
 
-    //endregion
+    
 
-    //region > startedAt (property, deprecated)
+    // -- startedAt (property)
 
     /**
      * For an command that has actually been executed, holds the date/time at which the {@link Interaction} that
      * executed the command started.
      *
-     * @deprecated - see {@link Interaction.Execution#getStartedAt()}.
+     * <p>
+     *     Previously this field was deprecated (on the basis that the startedAt is also held in
+     *     {@link Interaction.Execution#getStartedAt()}). However, this property is now used in master/slave
+     *     replay scenarios which may query a persisted Command.
+     * </p>
+     *
+     * See also {@link Interaction#getCurrentExecution()} and
+     * {@link Interaction.Execution#getStartedAt()}.
      */
-    @Deprecated
     Timestamp getStartedAt();
     
     /**
      * <b>NOT API</b>: intended to be called only by the framework.
      *
-     * @deprecated - see {@link Interaction#getCurrentExecution()} and {@link org.apache.isis.applib.services.iactn.Interaction.Execution#setStartedAt(Timestamp)}.
+     *
+     * <p>
+     *     Previously this field was deprecated (on the basis that the completedAt is also held in
+     *     {@link Interaction.Execution#getCompletedAt()}). However, this property is now used in master/slave
+     *     replay scenarios which may query a persisted Command.
+     * </p>
+     *
+     * See also {@link Interaction#getCurrentExecution()} and
+     * {@link Interaction.Execution#setStartedAt(Timestamp)}.
      */
-    @Deprecated
     void setStartedAt(Timestamp startedAt);
 
-    //endregion
+    
 
-    //region > completedAt (property, deprecated)
+    // -- completedAt (property, deprecated)
 
     /**
      * For an command that has actually been executed, holds the date/time at which the {@link Interaction} that
      * executed the command completed.
      *
-     * @deprecated - see {@link Interaction#getCurrentExecution()} and  {@link org.apache.isis.applib.services.iactn.Interaction.Execution#getCompletedAt()}.
+     * <p>
+     *     Previously this field was deprecated (on the basis that the completedAt is also held in
+     *     {@link Interaction.Execution#getCompletedAt()}). However, this property is now used in master/slave
+     *     replay scenarios which may query a persisted Command.
+     * </p>
+     *
+     * See also {@link Interaction#getCurrentExecution()} and
+     * {@link Interaction.Execution#getCompletedAt()}.
      */
-    @Deprecated
     Timestamp getCompletedAt();
     
     /**
      * <b>NOT API</b>: intended to be called only by the framework.
      *
-     * @deprecated - see {@link org.apache.isis.applib.services.iactn.Interaction.Execution#setCompletedAt(Timestamp)}.
+     * <p>
+     *     Previously this field was deprecated (on the basis that the completedAt is also held in
+     *     {@link Interaction.Execution#getCompletedAt()}). However, this property is now used in master/slave
+     *     replay scenarios which may query a persisted Command.
+     * </p>
+     *
+     * See also {@link Interaction#getCurrentExecution()} and
+     * {@link Interaction.Execution#setCompletedAt(Timestamp)}.
      */
-    @Deprecated
     void setCompletedAt(Timestamp completedAt);
 
-    //endregion
+    
 
-    //region > parent (property)
+    // -- parent (property)
 
     /**
      * For actions created through the {@link BackgroundService} and {@link BackgroundCommandService},
@@ -360,18 +383,22 @@ public interface Command extends HasTransactionId {
      */
     void setParent(final Command parent);
 
-    //endregion
+    
 
-    //region > exception (property, deprecated)
+    // -- exception (property, deprecated)
 
     /**
      * For an command that has actually been executed, holds the exception stack
      * trace if the action invocation/property modification threw an exception.
      *
-     * @deprecated - see {@link Interaction#getCurrentExecution()} and  {@link org.apache.isis.applib.services.iactn.Interaction.Execution#getThrew()} instead.
+     * <p>
+     *     Previously this field was deprecated (on the basis that the exception is also held in
+     *     {@link Interaction.Execution#getThrew()}). However, this property is now used in master/slave
+     *     replay scenarios which may query a persisted Command.
+     * </p>
+     *
+     * See also {@link Interaction#getCurrentExecution()} and  {@link org.apache.isis.applib.services.iactn.Interaction.Execution#getThrew()}.
      */
-    @Deprecated
-    @Nullable
     String getException();
 
     /**
@@ -379,17 +406,22 @@ public interface Command extends HasTransactionId {
      */
     void setException(String stackTrace);
 
-    //endregion
+    
 
-    //region > result (property, deprecated)
+    // -- result (property, deprecated)
 
 
     /**
      * For an command that has actually been executed, holds a {@link Bookmark} to the object returned by the corresponding action/property modification.
-     * 
-     * @deprecated - see {@link Interaction#getCurrentExecution()} and  {@link org.apache.isis.applib.services.iactn.Interaction.Execution#getReturned()} instead.
+     *
+     * <p>
+     *     Previously this field was deprecated (on the basis that the returned value is also held in
+     *     {@link Interaction.Execution#getReturned()}). However, this property is now used in master/slave
+     *     replay scenarios which may query a persisted Command.
+     * </p>
+     *
+     * See also  {@link Interaction#getCurrentExecution()} and  {@link org.apache.isis.applib.services.iactn.Interaction.Execution#getReturned()}.
      */
-    @Deprecated
     Bookmark getResult();
     
     /**
@@ -397,9 +429,9 @@ public interface Command extends HasTransactionId {
      */
     void setResult(Bookmark resultBookmark);
 
-    //endregion
+    
 
-    //region > persistence (property)
+    // -- persistence (property)
 
     /**
      * Whether this command should ultimately be persisted (if the configured {@link BackgroundCommandService} supports
@@ -430,9 +462,9 @@ public interface Command extends HasTransactionId {
      * <b>NOT API</b>: intended to be called only by the framework.
      */
     void setPersistence(final CommandPersistence persistence);
-    //endregion
+    
 
-    //region > persistHint (programmatic)
+    // -- persistHint (programmatic)
 
 
     /**
@@ -451,9 +483,9 @@ public interface Command extends HasTransactionId {
      */
     @Programmatic
     void setPersistHint(boolean persistHint);
-    //endregion
+    
 
-    //region > next (programmatic, deprecated)
+    // -- next (programmatic, deprecated)
 
     /**
      * <b>NOT API</b>: intended to be called only by the framework.
@@ -464,6 +496,6 @@ public interface Command extends HasTransactionId {
     @Programmatic
     int next(final String sequenceAbbr);
 
-    //endregion
+    
 
 }

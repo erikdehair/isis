@@ -24,6 +24,7 @@ import javax.jdo.annotations.VersionStrategy;
 import com.google.common.collect.ComparisonChain;
 
 import org.apache.isis.applib.annotation.Action;
+import org.apache.isis.applib.annotation.ActionLayout;
 import org.apache.isis.applib.annotation.Auditing;
 import org.apache.isis.applib.annotation.CommandReification;
 import org.apache.isis.applib.annotation.DomainObject;
@@ -63,7 +64,7 @@ public class SimpleObject implements Comparable<SimpleObject> {
     private String notes;
 
 
-    @Action(semantics = SemanticsOf.IDEMPOTENT, command = CommandReification.ENABLED, publishing = Publishing.ENABLED)
+    @Action(semantics = SemanticsOf.IDEMPOTENT, command = CommandReification.ENABLED, publishing = Publishing.ENABLED, associateWith = "name")
     public SimpleObject updateName(
             @Name final String name) {
         setName(name);
@@ -87,7 +88,7 @@ public class SimpleObject implements Comparable<SimpleObject> {
 
 
 
-    //region > toString, compareTo
+    // -- toString, compareTo
     @Override
     public String toString() {
         return getName();
@@ -101,7 +102,7 @@ public class SimpleObject implements Comparable<SimpleObject> {
     //endregion
 
 
-    //region > injected services
+    // -- injected services
     @javax.inject.Inject
     @javax.jdo.annotations.NotPersistent
     @lombok.Getter(AccessLevel.NONE) @lombok.Setter(AccessLevel.NONE)

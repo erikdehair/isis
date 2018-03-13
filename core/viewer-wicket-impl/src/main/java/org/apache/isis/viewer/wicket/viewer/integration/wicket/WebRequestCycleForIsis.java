@@ -23,8 +23,8 @@ import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
-import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 
@@ -128,9 +128,7 @@ public class WebRequestCycleForIsis extends AbstractRequestCycleListener {
      */
     @Override
     public void onRequestHandlerExecuted(RequestCycle cycle, IRequestHandler handler) {
-        if(LOG.isDebugEnabled()) {
-            LOG.debug("onRequestHandlerExecuted: handler: " + handler);
-        }
+        LOG.debug("onRequestHandlerExecuted: handler: {}", handler);
 
         if(handler instanceof RenderPageRequestHandler) {
             AdapterManager.ConcurrencyChecking.reset(AdapterManager.ConcurrencyChecking.CHECK);
@@ -352,7 +350,7 @@ public class WebRequestCycleForIsis extends AbstractRequestCycleListener {
         this.pageClassRegistry = pageClassRegistry;
     }
 
-    //region > Dependencies (from isis' context)
+    // -- Dependencies (from isis' context)
     protected ServicesInjector getServicesInjector() {
         return getIsisSessionFactory().getServicesInjector();
     }
@@ -383,14 +381,14 @@ public class WebRequestCycleForIsis extends AbstractRequestCycleListener {
     }
 
 
-    //endregion
+    
 
-    //region > Dependencies (from wicket)
+    // -- Dependencies (from wicket)
 
     protected AuthenticatedWebSession getWicketAuthenticationSession() {
         return AuthenticatedWebSession.get();
     }
 
-    //endregion
+    
 
 }

@@ -54,7 +54,7 @@ import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
 public class DomainObjectContainerDefault implements DomainObjectContainer {
 
 
-    //region > newViewModelInstance
+    // -- newViewModelInstance
 
     @Programmatic
     @SuppressWarnings("unchecked")
@@ -72,9 +72,9 @@ public class DomainObjectContainerDefault implements DomainObjectContainer {
         }
     }
 
-    //endregion
+    
 
-    //region >  remove
+    // --  remove
 
     @Programmatic
     @Override
@@ -90,10 +90,10 @@ public class DomainObjectContainerDefault implements DomainObjectContainer {
         persistenceSessionServiceInternal.remove(adapter);
     }
 
-    //endregion
+    
 
 
-    //region > resolve, objectChanged (DEPRECATED)
+    // -- resolve, objectChanged (DEPRECATED)
 
     /**
      * Re-initialises the fields of an object, using the
@@ -140,9 +140,9 @@ public class DomainObjectContainerDefault implements DomainObjectContainer {
     public void objectChanged(final Object object) {
     }
 
-    //endregion
+    
 
-    //region > commit (deprecated)
+    // -- commit (deprecated)
 
     /**
      * @deprecated
@@ -154,9 +154,9 @@ public class DomainObjectContainerDefault implements DomainObjectContainer {
         persistenceSessionServiceInternal.commit();
     }
 
-    //endregion
+    
 
-    //region > isValid, validate
+    // -- isValid, validate
 
     @Programmatic
     @Override
@@ -173,10 +173,10 @@ public class DomainObjectContainerDefault implements DomainObjectContainer {
         return validityResult.getReason();
     }
 
-    //endregion
+    
 
 
-    //region > isViewModel
+    // -- isViewModel
 
     @Programmatic
     @Override
@@ -184,9 +184,9 @@ public class DomainObjectContainerDefault implements DomainObjectContainer {
         final ObjectAdapter adapter = persistenceSessionServiceInternal.adapterFor(unwrapped(domainObject));
         return adapter.getSpecification().isViewModel();
     }
-    //endregion
+    
 
-    //region > persistence
+    // -- persistence
 
 
     /**
@@ -211,7 +211,7 @@ public class DomainObjectContainerDefault implements DomainObjectContainer {
     }
 
 
-    //endregion
+    
 
 
 
@@ -221,15 +221,15 @@ public class DomainObjectContainerDefault implements DomainObjectContainer {
 
 
 
-    //region > helpers
+    // -- helpers
 
     private Object unwrapped(Object domainObject) {
         return wrapperFactory != null ? wrapperFactory.unwrap(domainObject) : domainObject;
     }
-    //endregion
+    
 
 
-    //region > service dependencies
+    // -- service dependencies
 
     @javax.inject.Inject
     SpecificationLoader specificationLoader;
@@ -243,6 +243,6 @@ public class DomainObjectContainerDefault implements DomainObjectContainer {
     @javax.inject.Inject
     PersistenceSessionServiceInternal persistenceSessionServiceInternal;
 
-    //endregion
+    
 
 }

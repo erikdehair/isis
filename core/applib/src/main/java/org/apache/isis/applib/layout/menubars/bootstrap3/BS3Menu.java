@@ -25,9 +25,8 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
-import com.google.common.collect.Lists;
-
 import org.apache.isis.applib.annotation.DomainServiceLayout;
+import org.apache.isis.applib.internal.collections._Lists;
 import org.apache.isis.applib.layout.menubars.Menu;
 
 /**
@@ -79,18 +78,13 @@ public class BS3Menu implements Menu, Serializable {
 
 
 
-    private List<BS3MenuSection> sections = Lists.newArrayList();
+    private List<BS3MenuSection> sections = _Lists.newArrayList();
 
     // no wrapper
     @XmlElement(name = "section", required = true)
     public List<BS3MenuSection> getSections() {
         return sections;
     }
-
-    public void setSections(List<BS3MenuSection> menuSections) {
-        this.sections = sections;
-    }
-
 
     private Boolean unreferencedActions;
 

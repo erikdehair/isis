@@ -54,7 +54,7 @@ public class FixturesInstallerFromConfiguration extends FixturesInstallerAbstrac
             boolean fixtureLoaded = false;
             for (final String element : fixtureConfig.getFixtures()) {
                 final String fixtureFullyQualifiedName = fixtureConfig.getFixturePrefix() + element;
-                LOG.info("  adding fixture " + fixtureFullyQualifiedName);
+                LOG.info("  adding fixture {}", fixtureFullyQualifiedName);
                 final Object fixture = InstanceUtil.createInstance(fixtureFullyQualifiedName);
                 fixtureLoaded = true;
                 delegate.addFixture(fixture);
@@ -69,7 +69,7 @@ public class FixturesInstallerFromConfiguration extends FixturesInstallerAbstrac
 
     private static class FixtureConfig {
 
-        //region > fixtures
+        // -- fixtures
 
         private String[] fixtures;
 
@@ -94,9 +94,9 @@ public class FixturesInstallerFromConfiguration extends FixturesInstallerAbstrac
         boolean hasFixtures() {
             return fixtures != null && fixtures.length != 0;
         }
-        //endregion
+        
 
-        //region > fixturePrefix
+        // -- fixturePrefix
 
         private String fixturePrefix;
         String getFixturePrefix() {
@@ -111,7 +111,7 @@ public class FixturesInstallerFromConfiguration extends FixturesInstallerAbstrac
 
             this.fixturePrefix = fixturePrefix;
         }
-        //endregion
+        
 
 
     }

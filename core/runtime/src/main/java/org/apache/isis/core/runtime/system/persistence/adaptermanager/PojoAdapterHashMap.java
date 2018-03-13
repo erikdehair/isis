@@ -55,7 +55,7 @@ public class PojoAdapterHashMap implements Iterable<ObjectAdapter>, SessionScope
 
     protected final Map<Object, ObjectAdapter> adapterByPojoMap;
 
-    //region > Constructors, finalize
+    // -- Constructors, finalize
     public PojoAdapterHashMap() {
         this(DEFAULT_POJO_ADAPTER_MAP_SIZE);
     }
@@ -71,9 +71,9 @@ public class PojoAdapterHashMap implements Iterable<ObjectAdapter>, SessionScope
             LOG.debug("finalizing hash of pojos");
         }
     }
-    //endregion
+    
 
-    //region > open, close
+    // -- open, close
 
     public void open() {
         // nothing to do
@@ -86,29 +86,27 @@ public class PojoAdapterHashMap implements Iterable<ObjectAdapter>, SessionScope
         adapterByPojoMap.clear();
     }
 
-    //endregion
+    
 
-    //region > add, remove
+    // -- add, remove
 
     public void add(final Object pojo, final ObjectAdapter adapter) {
         adapterByPojoMap.put(key(pojo), adapter);
 
         if(LOG.isDebugEnabled()) {
-            LOG.debug("add adapter: #" + key(pojo) + " -> #" + Long.toHexString(adapter.hashCode()));
+            LOG.debug("add adapter: #{} -> #{}", key(pojo), Long.toHexString(adapter.hashCode()));
 
         }
     }
 
     public void remove(final ObjectAdapter object) {
-        if(LOG.isDebugEnabled()) {
-            LOG.debug("remove adapter: " + object);
-        }
+        LOG.debug("remove adapter: {}", object);
         adapterByPojoMap.remove(key(object.getObject()));
     }
 
-    //endregion
+    
 
-    //region > getAdapter, containsPojo
+    // -- getAdapter, containsPojo
 
     public boolean containsPojo(final Object pojo) {
         return adapterByPojoMap.containsKey(key(pojo));
@@ -118,9 +116,9 @@ public class PojoAdapterHashMap implements Iterable<ObjectAdapter>, SessionScope
         return adapterByPojoMap.get(key(pojo));
     }
 
-    //endregion
+    
 
-    //region > iterator, key
+    // -- iterator, key
     @Override
     public Iterator<ObjectAdapter> iterator() {
         return adapterByPojoMap.values().iterator();
@@ -130,7 +128,7 @@ public class PojoAdapterHashMap implements Iterable<ObjectAdapter>, SessionScope
         return new IdentityHashKey(pojo);
     }
 
-    //endregion
+    
 
 
 }

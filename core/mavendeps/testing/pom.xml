@@ -24,7 +24,7 @@
 	<parent>
         <groupId>org.apache.isis.core</groupId>
         <artifactId>isis</artifactId>
-        <version>2.0.0-M1-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -77,10 +77,6 @@
                 <dependency>
                     <groupId>org.hsqldb</groupId>
                     <artifactId>hsqldb</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.datanucleus</groupId>
-                    <artifactId>datanucleus-core</artifactId>
                 </dependency>
 
             </dependencies>

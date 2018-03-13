@@ -91,8 +91,10 @@ public class StandaloneCollectionPanel extends PanelAbstract<EntityCollectionMod
         ObjectAction action = actionModel.getActionMemento().getAction(entityCollectionModel.getSpecificationLoader());
         outerDiv.addOrReplace(new Label(StandaloneCollectionPanel.ID_ACTION_NAME, Model.of(action.getName())));
 
-        CssClassAppender.appendCssClassTo(outerDiv, action.getOnType().getFullIdentifier().replace('.', '-') + "_" + action.getId());
-        CssClassAppender.appendCssClassTo(outerDiv, entityCollectionModel.getTypeOfSpecification().getFullIdentifier().replace('.','-'));
+        CssClassAppender.appendCssClassTo(outerDiv,
+                CssClassAppender.asCssStyle("isis-" + action.getOnType().getSpecId().asString().replace('.', '-') + "-" + action.getId()));
+        CssClassAppender.appendCssClassTo(outerDiv,
+                CssClassAppender.asCssStyle("isis-" + entityCollectionModel.getTypeOfSpecification().getSpecId().asString().replace('.','-')));
 
         // action prompt
         this.actionPromptModalWindow = ActionPromptModalWindow.newModalWindow(ID_ACTION_PROMPT_MODAL_WINDOW);
@@ -128,41 +130,45 @@ public class StandaloneCollectionPanel extends PanelAbstract<EntityCollectionMod
         bulkActionsHelper = new BulkActionsHelper(entityCollectionModel);
     }
 
-    //region > ActionPromptModalWindowProvider
+    // -- ActionPromptModalWindowProvider
 
     public ActionPromptModalWindow getActionPrompt() {
         return actionPromptModalWindow;
     }
 
-    //endregion
+    
 
-    //region > BulkActionsProvider
+    // -- BulkActionsProvider
+
+    ObjectAdapterToggleboxColumn toggleboxColumn;
 
     @Override
-    public ObjectAdapterToggleboxColumn createToggleboxColumn() {
+    public ObjectAdapterToggleboxColumn getToggleboxColumn() {
 
-        final List<ObjectAction> bulkActions = bulkActionsHelper.getBulkActions(getIsisSessionFactory());
+        if (toggleboxColumn == null) {
+            final List<ObjectAction> bulkActions = bulkActionsHelper.getBulkActions(getIsisSessionFactory());
 
-        final EntityCollectionModel entityCollectionModel = getModel();
-        if(bulkActions.isEmpty() || entityCollectionModel.isParented()) {
-            return null;
-        }
-
-        final ObjectAdapterToggleboxColumn toggleboxColumn = new ObjectAdapterToggleboxColumn();
-        final OnSelectionHandler handler = new OnSelectionHandler() {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void onSelected(
-                    final Component context,
-                    final ObjectAdapter selectedAdapter,
-                    final AjaxRequestTarget ajaxRequestTarget) {
-                getModel().toggleSelectionOn(selectedAdapter);
+            final EntityCollectionModel entityCollectionModel = getModel();
+            if(bulkActions.isEmpty() || entityCollectionModel.isParented()) {
+                return null;
             }
 
-        };
-        toggleboxColumn.setOnSelectionHandler(handler);
+            toggleboxColumn = new ObjectAdapterToggleboxColumn();
+            final OnSelectionHandler handler = new OnSelectionHandler() {
+
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                public void onSelected(
+                        final Component context,
+                        final ObjectAdapter selectedAdapter,
+                        final AjaxRequestTarget ajaxRequestTarget) {
+                    getModel().toggleSelectionOn(selectedAdapter);
+                }
+
+            };
+            toggleboxColumn.setOnSelectionHandler(handler);
+        }
 
         return toggleboxColumn;
     }
@@ -181,7 +187,7 @@ public class StandaloneCollectionPanel extends PanelAbstract<EntityCollectionMod
         List<LinkAndLabel> linkAndLabels = Lists.transform(bulkActions, new Function<ObjectAction, LinkAndLabel>(){
             @Override
             public LinkAndLabel apply(ObjectAction objectAction) {
-                return linkFactory.newLink(objectAction, ID_ADDITIONAL_LINK);
+                return linkFactory.newLink(objectAction, ID_ADDITIONAL_LINK, null);
             }
         });
 
@@ -191,21 +197,21 @@ public class StandaloneCollectionPanel extends PanelAbstract<EntityCollectionMod
 
     }
 
-    //endregion
+    
 
 
 
 
-    //region > CollectionSelectorProvider
+    // -- CollectionSelectorProvider
 
     @Override
     public CollectionSelectorPanel getSelectorDropdownPanel() {
         return selectorDropdownPanel;
     }
 
-    //endregion
+    
 
-    //region > CollectionCountProvider
+    // -- CollectionCountProvider
 
     @Override
     public Integer getCount() {
@@ -213,6 +219,6 @@ public class StandaloneCollectionPanel extends PanelAbstract<EntityCollectionMod
         return model.getCount();
     }
 
-    //endregion
+    
 
 }

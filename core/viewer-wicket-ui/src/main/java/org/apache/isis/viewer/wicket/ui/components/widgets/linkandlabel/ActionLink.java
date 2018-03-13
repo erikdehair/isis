@@ -32,6 +32,7 @@ import org.apache.wicket.request.handler.resource.ResourceStreamRequestHandler;
 import org.apache.wicket.util.time.Duration;
 
 import org.apache.isis.applib.annotation.Programmatic;
+import org.apache.isis.applib.value.LocalResourcePath;
 import org.apache.isis.core.metamodel.adapter.ObjectAdapter;
 import org.apache.isis.core.metamodel.adapter.version.ConcurrencyException;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
@@ -236,11 +237,11 @@ public abstract class ActionLink extends AjaxLink<ObjectAdapter> implements IAja
                 @Override
                 protected IRequestHandler getRequestHandler() {
                     final ObjectAdapter resultAdapter = actionModel.execute();
-                    final Object value = resultAdapter.getObject();
+                    final Object value = resultAdapter!=null ? resultAdapter.getObject() : null;
                     
                     final IRequestHandler handler = ActionModel.downloadHandler(value);
                     
-                    //XXX ISIS-1619, prevent clients from caching the response content
+                    //ISIS-1619, prevent clients from caching the response content
                     return isNonIdempotent(actionModel) 
                     		? enforceNoCacheOnClientSide(handler)
                     		: handler                    		
@@ -255,7 +256,11 @@ public abstract class ActionLink extends AjaxLink<ObjectAdapter> implements IAja
     private static boolean isNoArgReturnTypeRedirect(final ObjectAction action) {
         return action.getParameterCount() == 0 &&
                 action.getReturnType() != null &&
-                action.getReturnType().getCorrespondingClass() == java.net.URL.class;
+                (
+                		action.getReturnType().getCorrespondingClass() == java.net.URL.class ||
+                		action.getReturnType().getCorrespondingClass() == LocalResourcePath.class
+                )
+                ;
     }
 
     // TODO: should unify with ActionResultResponseType (as used in ActionParametersPanel)

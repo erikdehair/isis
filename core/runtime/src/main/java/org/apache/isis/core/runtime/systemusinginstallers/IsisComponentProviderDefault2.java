@@ -30,7 +30,7 @@ import org.apache.isis.core.runtime.authorization.standard.AuthorizationManagerS
 
 public class IsisComponentProviderDefault2 extends IsisComponentProvider  {
 
-    //region > constructors
+    // -- constructors
 
     public IsisComponentProviderDefault2(
             final AppManifest appManifest,
@@ -58,9 +58,9 @@ public class IsisComponentProviderDefault2 extends IsisComponentProvider  {
         super(appManifest, configuration, authenticationManager, authorizationManager);
     }
 
-    //endregion
+    
 
-    //region > constructor helpers (factories)
+    // -- constructor helpers (factories)
     /**
      * Default will read <tt>isis.properties</tt> (and other optional property files) from the &quot;config&quot;
      * package on the current classpath.
@@ -79,7 +79,7 @@ public class IsisComponentProviderDefault2 extends IsisComponentProvider  {
         authenticationManager.addAuthenticator(new AuthenticatorBypass(configuration));
         return authenticationManager;
     }
-    //endregion
+    
 
 
 }

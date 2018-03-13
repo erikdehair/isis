@@ -47,7 +47,7 @@ import org.apache.isis.schema.utils.jaxbadapters.JavaSqlTimestampXmlGregorianCal
  */
 public class PublishedObjectsDefault implements PublishedObjects {
 
-    //region > constructor, fields
+    // -- constructor, fields
     private UUID transactionUuid;
     private final int sequence;
     private final String userName;
@@ -72,10 +72,10 @@ public class PublishedObjectsDefault implements PublishedObjects {
         this.numberObjectPropertiesModified = numberObjectPropertiesModified;
         this.changesByAdapter = changesByAdapter;
     }
-    //endregion
+    
 
 
-    //region > transactionId, completedAt, user
+    // -- transactionId, completedAt, user
     @Programmatic
     @Override
     public UUID getTransactionId() {
@@ -102,9 +102,9 @@ public class PublishedObjectsDefault implements PublishedObjects {
     public String getUsername() {
         return userName;
     }
-    //endregion
+    
 
-    //region > dto
+    // -- dto
     /**
      * lazily computed
      */
@@ -114,9 +114,9 @@ public class PublishedObjectsDefault implements PublishedObjects {
     public ChangesDto getDto() {
         return dto != null ? dto : (dto = newDto());
     }
-    //endregion
+    
 
-    //region > numberLoaded, numberCreated, numberUpdated, numberDeleted, numberObjectPropertiesModified
+    // -- numberLoaded, numberCreated, numberUpdated, numberDeleted, numberObjectPropertiesModified
 
     @Override
     public int getNumberLoaded() {
@@ -167,10 +167,10 @@ public class PublishedObjectsDefault implements PublishedObjects {
         );
     }
 
-    //endregion
+    
 
 
-    //region > newDto, newObjectsDto, newChangesDto
+    // -- newDto, newObjectsDto, newChangesDto
 
     private ChangesDto newDto() {
         final ObjectsDto objectsDto = newObjectsDto();
@@ -229,7 +229,7 @@ public class PublishedObjectsDefault implements PublishedObjects {
     }
 
 
-    //endregion
+    
 
 
 }

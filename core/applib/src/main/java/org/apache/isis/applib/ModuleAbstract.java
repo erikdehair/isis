@@ -27,9 +27,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.isis.applib.fixturescripts.FixtureScript;
-import org.apache.isis.applib.util.Streams;
-
-import com.google.common.collect.Sets;
+import org.apache.isis.applib.internal.base._NullSafe;
+import org.apache.isis.applib.internal.collections._Sets;
 
 /**
  * Adapter for {@link Module} which has a default no-op implementation.
@@ -46,13 +45,13 @@ public abstract class ModuleAbstract
     @Override
     @XmlTransient
     public Set<Module> getDependencies() {
-        return Sets.newLinkedHashSet();
+        return _Sets.newLinkedHashSet();
     }
 
     @XmlElement(name = "module", required = true)
     private Set<ModuleAbstract> getModuleDependencies() {
 
-    	return Streams.stream(getDependencies())
+    	return _NullSafe.stream(getDependencies())
     	.filter(module->module instanceof ModuleAbstract)
     	.map(module->(ModuleAbstract) module)
     	.collect(Collectors.toSet());

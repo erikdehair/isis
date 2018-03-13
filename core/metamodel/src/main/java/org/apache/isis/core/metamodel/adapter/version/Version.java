@@ -51,7 +51,7 @@ public class Version implements Serializable, Encodable {
 
     private final static OidMarshaller OID_MARSHALLER = OidMarshaller.INSTANCE;
 
-    //region > factory methods
+    // -- factory methods
 
     public static Version create(final Long sequence) {
         return create(sequence, null, (Long)null);
@@ -75,9 +75,9 @@ public class Version implements Serializable, Encodable {
         return new Version(sequence, user, utcTimestamp);
     }
 
-    //endregion
+    
 
-    //region > constructor, fields
+    // -- constructor, fields
     private final Long sequence;
     private final String user;
     private final Long utcTimestamp;
@@ -88,9 +88,9 @@ public class Version implements Serializable, Encodable {
         this.utcTimestamp = utcTimestamp;
     }
 
-    //endregion
+    
 
-    //region > encodable
+    // -- encodable
 
     public Version(final DataInputExtended input) throws IOException {
         this(input.readLong(), input.readUTF(), input.readLong());
@@ -104,9 +104,9 @@ public class Version implements Serializable, Encodable {
         output.writeLong(utcTimestamp);
     }
 
-    //endregion
+    
 
-    //region > getters
+    // -- getters
     /**
      * The internal, strictly monotonically increasing, version number.
      * 
@@ -151,17 +151,17 @@ public class Version implements Serializable, Encodable {
         return utcTimestamp != null? new Date(this.utcTimestamp): null;
     }
 
-    //endregion
+    
 
-    //region > enString
+    // -- enString
 
     public String enString() {
         return OID_MARSHALLER.marshal(this);
     }
 
-    //endregion
+    
 
-    //region > equals, hashCode
+    // -- equals, hashCode
 
     @Override
     public int hashCode() {
@@ -200,9 +200,9 @@ public class Version implements Serializable, Encodable {
         return !equals(version);
     }
 
-    //endregion
+    
 
-    //region > sequence
+    // -- sequence
 
     @Override
     public String toString() {
@@ -216,6 +216,6 @@ public class Version implements Serializable, Encodable {
         return Long.toString(sequence, 16);
     }
 
-    //endregion
+    
 
 }

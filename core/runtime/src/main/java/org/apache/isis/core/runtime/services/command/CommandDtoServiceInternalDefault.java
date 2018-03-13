@@ -217,7 +217,7 @@ public class CommandDtoServiceInternalDefault implements CommandDtoServiceIntern
 
     // //////////////////////////////////////
 
-    //region > injected services
+    // -- injected services
     @javax.inject.Inject
     CommandContext commandContext;
 
@@ -234,7 +234,7 @@ public class CommandDtoServiceInternalDefault implements CommandDtoServiceIntern
         return isisSessionFactory.getCurrentSession().getPersistenceSession();
     }
 
-    //endregion
+    
 
 
 }

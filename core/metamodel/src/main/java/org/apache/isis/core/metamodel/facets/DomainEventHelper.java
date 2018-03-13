@@ -51,7 +51,7 @@ public class DomainEventHelper {
         this.servicesInjector = servicesInjector;
     }
 
-    //region > postEventForAction, newActionDomainEvent
+    // -- postEventForAction, newActionDomainEvent
     @SuppressWarnings({ "rawtypes" })
     public ActionDomainEvent<?> postEventForAction(
             final AbstractDomainEvent.Phase phase,
@@ -171,9 +171,9 @@ public class DomainEventHelper {
                 ? Arrays.asList(arguments)
                 : Collections.emptyList();
     }
-    //endregion
+    
 
-    //region > postEventForProperty, newPropertyInteraction
+    // -- postEventForProperty, newPropertyInteraction
     public PropertyDomainEvent<?, ?> postEventForProperty(
             final AbstractDomainEvent.Phase phase,
             final Class eventType,
@@ -260,9 +260,9 @@ public class DomainEventHelper {
 
         throw new NoSuchMethodException(type.getName()+".<init>(? super " + source.getClass().getName() + ", " + Identifier.class.getName() + ", java.lang.Object, java.lang.Object)");
     }
-    //endregion
+    
 
-    //region > postEventForCollection, newCollectionDomainEvent
+    // -- postEventForCollection, newCollectionDomainEvent
 
     public CollectionDomainEvent<?, ?> postEventForCollection(
             AbstractDomainEvent.Phase phase,
@@ -390,10 +390,10 @@ public class DomainEventHelper {
         throw new NoSuchMethodException(type.getName()+".<init>(? super " + source.getClass().getName() + ", " + Identifier.class.getName() + ", java.lang.Object)");
     }
 
-    //endregion
+    
 
 
-    //region > eventBusService
+    // -- eventBusService
 
     private EventBusService getEventBusService() {
         // previously this method used to cache, however it prevents integration tests
@@ -401,6 +401,6 @@ public class DomainEventHelper {
         return this.servicesInjector.lookupService(EventBusService.class);
     }
 
-    //endregion
+    
 
 }

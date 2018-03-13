@@ -53,7 +53,7 @@ public final class ObjectAdapterToggleboxColumn extends ColumnAbstract<ObjectAda
         this.onConcurrencyExceptionHandler = onConcurrencyExceptionHandler;
     }
 
-    //region > OnSelectionHandler
+    // -- OnSelectionHandler
     private OnSelectionHandler onSelectionHandler;
     public OnSelectionHandler getOnSelectionHandler() {
         return onSelectionHandler;
@@ -62,9 +62,9 @@ public final class ObjectAdapterToggleboxColumn extends ColumnAbstract<ObjectAda
     public void setOnSelectionHandler(OnSelectionHandler onSelectionHandler) {
         this.onSelectionHandler = onSelectionHandler;
     }
-    //endregion
+    
 
-    //region > OnConcurrencyExceptionHandler
+    // -- OnConcurrencyExceptionHandler
 
     private OnConcurrencyExceptionHandler onConcurrencyExceptionHandler;
     public OnConcurrencyExceptionHandler getOnConcurrencyExceptionHandler() {
@@ -74,7 +74,7 @@ public final class ObjectAdapterToggleboxColumn extends ColumnAbstract<ObjectAda
     public void setOnConcurrencyExceptionHandler(OnConcurrencyExceptionHandler onConcurrencyExceptionHandler) {
         this.onConcurrencyExceptionHandler = onConcurrencyExceptionHandler;
     }
-    //endregion
+    
 
 
     @Override

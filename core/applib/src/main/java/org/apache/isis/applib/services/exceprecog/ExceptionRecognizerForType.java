@@ -19,16 +19,17 @@
 package org.apache.isis.applib.services.exceprecog;
 
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 import javax.jdo.JDODataStoreException;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Throwables;
+
+import org.apache.isis.applib.internal.exceptions._Exceptions;
 
 /**
  * An specific implementation of {@link ExceptionRecognizer} that looks for an
  * exception of the type provided in the constructor
- * and, if found anywhere in the {@link Throwables#getCausalChain(Throwable) causal chain},
+ * and, if found anywhere in the causal chain,
  * then returns a non-null message indicating that the exception has been recognized.
  * 
  * <p>
@@ -36,22 +37,17 @@ import com.google.common.base.Throwables;
  * then the message can be altered.  Otherwise the exception's {@link Throwable#getMessage() message} is returned as-is.
  */
 public class ExceptionRecognizerForType extends ExceptionRecognizerAbstract {
-
-    protected final static Predicate<Throwable> ofTypeExcluding(final Class<? extends Throwable> exceptionType, final String... messages) {
-        return Predicates.and(ofType(exceptionType), excluding(messages));
+	
+	protected final static Predicate<Throwable> ofTypeExcluding(final Class<? extends Throwable> exceptionType, final String... messages) {
+        return ofType(exceptionType).and(excluding(messages));
     }
 
     protected final static Predicate<Throwable> ofTypeIncluding(final Class<? extends Throwable> exceptionType, final String... messages) {
-        return Predicates.and(ofType(exceptionType), including(messages));
+        return ofType(exceptionType).and(including(messages));
     }
     
     protected final static Predicate<Throwable> ofType(final Class<? extends Throwable> exceptionType) {
-        return new Predicate<Throwable>() {
-            @Override
-            public boolean apply(Throwable input) {
-                return exceptionType.isAssignableFrom(input.getClass());
-            }
-        };
+        return input->exceptionType.isAssignableFrom(input.getClass());
     }
     
     /**
@@ -63,10 +59,8 @@ public class ExceptionRecognizerForType extends ExceptionRecognizerAbstract {
      * Intended to prevent too eager matching of an overly general exception type.
      */
     protected final static Predicate<Throwable> excluding(final String... messages) {
-        return new Predicate<Throwable>() {
-            @Override
-            public boolean apply(Throwable input) {
-                final List<Throwable> causalChain = Throwables.getCausalChain(input);
+        return input->{
+                final List<Throwable> causalChain = _Exceptions.getCausalChain(input);
                 for (String message : messages) {
                     for (Throwable throwable : causalChain) {
                         final String throwableMessage = throwable.getMessage();
@@ -86,8 +80,8 @@ public class ExceptionRecognizerForType extends ExceptionRecognizerAbstract {
                     }
                 }
                 return true;
-            }
-        };
+            };
+
     }
 
     /**
@@ -99,10 +93,8 @@ public class ExceptionRecognizerForType extends ExceptionRecognizerAbstract {
      * Intended to prevent more precise matching of a specific general exception type.
      */
     protected final static Predicate<Throwable> including(final String... messages) {
-        return new Predicate<Throwable>() {
-            @Override
-            public boolean apply(Throwable input) {
-                final List<Throwable> causalChain = Throwables.getCausalChain(input);
+        return input->{
+                final List<Throwable> causalChain = _Exceptions.getCausalChain(input);
                 for (String message : messages) {
                     for (Throwable throwable : causalChain) {
                         final String throwableMessage = throwable.getMessage();
@@ -112,15 +104,20 @@ public class ExceptionRecognizerForType extends ExceptionRecognizerAbstract {
                     }
                 }
                 return false;
-            }
-        };
+            };
     }
 
-    public ExceptionRecognizerForType(Category category, final Class<? extends Exception> exceptionType, final Function<String,String> messageParser) {
+    public ExceptionRecognizerForType(
+    		Category category, 
+    		final Class<? extends Exception> exceptionType, 
+    		final Function<String,String> messageParser) {
         this(category, ofType(exceptionType), messageParser);
     }
     
-    public ExceptionRecognizerForType(Category category, final Predicate<Throwable> predicate, final Function<String,String> messageParser) {
+    public ExceptionRecognizerForType(
+    		Category category, 
+    		final Predicate<Throwable> predicate, 
+    		final Function<String,String> messageParser) {
         super(category, predicate, messageParser);
     }
     
@@ -128,16 +125,20 @@ public class ExceptionRecognizerForType extends ExceptionRecognizerAbstract {
         this(category, exceptionType, null);
     }
 
-    public ExceptionRecognizerForType(final Class<? extends Exception> exceptionType, final Function<String,String> messageParser) {
+    public ExceptionRecognizerForType(
+    		final Class<? extends Exception> exceptionType, 
+    		final Function<String,String> messageParser) {
         this(Category.OTHER, exceptionType, messageParser);
     }
 
-    public ExceptionRecognizerForType(final Predicate<Throwable> predicate, final Function<String,String> messageParser) {
+    public ExceptionRecognizerForType(
+    		final Predicate<Throwable> predicate, 
+    		final Function<String,String> messageParser) {
         this(Category.OTHER, predicate, messageParser);
     }
 
     public ExceptionRecognizerForType(Class<? extends Exception> exceptionType) {
         this(Category.OTHER, exceptionType);
     }
-
+	
 }

@@ -3,7 +3,7 @@
 :notice: licensed to the apache software foundation (asf) under one or more contributor license agreements. see the notice file distributed with this work for additional information regarding copyright ownership. the asf licenses this file to you under the apache license, version 2.0 (the "license"); you may not use this file except in compliance with the license. you may obtain a copy of the license at. http://www.apache.org/licenses/license-2.0 . unless required by applicable law or agreed to in writing, software distributed under the license is distributed on an "as is" basis, without warranties or  conditions of any kind, either express or implied. see the license for the specific language governing permissions and limitations under the license.
 :_basedir: ../
 :_imagesdir: images/
-:toc: right
+#:toc: right
 
 
 [[__release-notes_summary]]
@@ -20,6 +20,22 @@ This table summarises all releases of Apache Isis to date.
 | Improves
 | Bugs
 | JIRA relnotes
+
+| xref:release-notes.adoc#_release-notes_1.16.2[1.16.2]
+| 05-03-2018
+| RO viewer support, performance improvement, fix of severe bug for parented checkboxes
+| 1
+| 6
+| 1
+| https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12311171&version=12342822[Release notes for 1.16.2]
+
+| xref:release-notes.adoc#_release-notes_1.16.1[1.16.1]
+| 22-02-2018
+| Parented collections with checkboxes, replay module
+| 4
+| 10
+| 17
+| https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12311171&version=12342424[Release notes for v1.16.1]
 
 | xref:release-notes.adoc#_release-notes_1.16.0[1.16.0]
 | 08-01-2018
@@ -305,6 +321,8 @@ This table summarises all releases of Apache Isis to date.
 
 
 
+include::_release-notes_1.16.2.adoc[leveloffset=+1]
+include::_release-notes_1.16.1.adoc[leveloffset=+1]
 include::_release-notes_1.16.0.adoc[leveloffset=+1]
 include::_release-notes_1.15.1.adoc[leveloffset=+1]
 include::_release-notes_1.15.0.adoc[leveloffset=+1]

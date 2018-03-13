@@ -24,13 +24,17 @@
 	<parent>
 		<groupId>org.apache.isis.core</groupId>
 		<artifactId>isis</artifactId>
-		<version>2.0.0-M1-SNAPSHOT</version>
+		<version>${revision}</version>
 	</parent>
 
 	<name>Apache Isis Wicket Viewer Implementation</name>
 
-    <groupId>org.apache.isis.core</groupId>
 	<artifactId>isis-core-viewer-wicket-impl</artifactId>
+
+	<properties>
+		<jar-plugin.automaticModuleName>org.apache.isis.viewer.wicket.impl</jar-plugin.automaticModuleName>
+		<git-plugin.propertiesDir>org/apache/isis/viewer/wicket/impl</git-plugin.propertiesDir>
+	</properties>
 
 	<build>
 		<resources>
@@ -68,12 +72,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.apache.geronimo.specs</groupId>
-			<artifactId>geronimo-servlet_3.0_spec</artifactId>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
 			<groupId>org.apache.wicket</groupId>
 			<artifactId>wicket-auth-roles</artifactId>
 		</dependency>
@@ -82,6 +80,12 @@
             <groupId>net.ftlines.wicket-source</groupId>
             <artifactId>wicket-source</artifactId>
         </dependency>
+
+		<!-- as required by wicket -->
+		<dependency>
+		    <groupId>commons-io</groupId>
+		    <artifactId>commons-io</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>com.google.inject</groupId>

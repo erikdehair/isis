@@ -64,17 +64,17 @@ import org.apache.isis.core.metamodel.specloader.specimpl.ContributeeMember;
 )
 public class ApplicationFeatureRepositoryDefault implements ApplicationFeatureRepository {
 
-    //region > caches
+    // -- caches
     SortedMap<ApplicationFeatureId, ApplicationFeature> packageFeatures = Maps.newTreeMap();
     private final SortedMap<ApplicationFeatureId, ApplicationFeature> classFeatures = Maps.newTreeMap();
     private final SortedMap<ApplicationFeatureId, ApplicationFeature> memberFeatures = Maps.newTreeMap();
     private final SortedMap<ApplicationFeatureId, ApplicationFeature> propertyFeatures = Maps.newTreeMap();
     private final SortedMap<ApplicationFeatureId, ApplicationFeature> collectionFeatures = Maps.newTreeMap();
     private final SortedMap<ApplicationFeatureId, ApplicationFeature> actionFeatures = Maps.newTreeMap();
-    //endregion
+    
 
 
-    //region > init
+    // -- init
 
     private static final String KEY = "isis.services.applicationFeatures.init";
 
@@ -92,10 +92,10 @@ public class ApplicationFeatureRepositoryDefault implements ApplicationFeatureRe
                 "eagerly".equalsIgnoreCase(configuredValue);
     }
 
-    //endregion
+    
 
 
-    //region > initializeIfRequired
+    // -- initializeIfRequired
 
     enum InitializationState {
         NOT_INITIALIZED,
@@ -386,9 +386,9 @@ public class ApplicationFeatureRepositoryDefault implements ApplicationFeatureRe
         final String className = spec.getFullIdentifier();
         return className.startsWith("java") || className.startsWith("org.joda");
     }
-    //endregion
+    
 
-    //region > packageFeatures, classFeatures, memberFeatures
+    // -- packageFeatures, classFeatures, memberFeatures
     @Programmatic
     public ApplicationFeature findFeature(final ApplicationFeatureId featureId) {
         initializeIfRequired();
@@ -421,9 +421,9 @@ public class ApplicationFeatureRepositoryDefault implements ApplicationFeatureRe
         return memberFeatures.get(featureId);
     }
 
-    //endregion
+    
 
-    //region > allFeatures, allPackages, allClasses, allMembers
+    // -- allFeatures, allPackages, allClasses, allMembers
     @Programmatic
     public Collection<ApplicationFeature> allFeatures(final ApplicationFeatureType featureType) {
         initializeIfRequired();
@@ -476,9 +476,9 @@ public class ApplicationFeatureRepositoryDefault implements ApplicationFeatureRe
         initializeIfRequired();
         return actionFeatures.values();
     }
-    //endregion
+    
 
-    //region > packageNames, packageNamesContainingClasses, classNamesContainedIn, memberNamesOf
+    // -- packageNames, packageNamesContainingClasses, classNamesContainedIn, memberNamesOf
     @Override @Programmatic
     public List<String> packageNames() {
         initializeIfRequired();
@@ -551,7 +551,7 @@ public class ApplicationFeatureRepositoryDefault implements ApplicationFeatureRe
         );
     }
 
-    //endregion
+    
 
     //region  > services (injected)
 
@@ -567,7 +567,7 @@ public class ApplicationFeatureRepositoryDefault implements ApplicationFeatureRe
     @javax.inject.Inject
     ApplicationFeatureFactory applicationFeatureFactory;
 
-    //endregion
+    
 
 
 }

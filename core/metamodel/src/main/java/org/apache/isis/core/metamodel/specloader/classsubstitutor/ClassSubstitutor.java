@@ -30,7 +30,7 @@ import org.apache.isis.core.commons.lang.ClassUtil;
  */
 public class ClassSubstitutor {
 
-    //region > constructor
+    // -- constructor
 
     public ClassSubstitutor() {
         ignore(DomainObjectContainer.class);
@@ -45,9 +45,9 @@ public class ClassSubstitutor {
         ignore("javassist.util.proxy.MethodHandler");
 
     }
-    //endregion
+    
 
-    //region > getClass(Class)
+    // -- getClass(Class)
 
     public Class<?> getClass(final Class<?> cls) {
     	
@@ -81,9 +81,9 @@ public class ClassSubstitutor {
         return cls;
     }
 
-    //endregion
+    
 
-    //region > helpers
+    // -- helpers
 
     private final Set<Class<?>> classesToIgnore = Sets.newHashSet();
     private final Set<String> classNamesToIgnore = Sets.newHashSet();
@@ -117,7 +117,7 @@ public class ClassSubstitutor {
         return classesToIgnore.contains(cls) || classNamesToIgnore.contains(cls.getCanonicalName());
     }
 
-    //endregion
+    
 
 
 }
